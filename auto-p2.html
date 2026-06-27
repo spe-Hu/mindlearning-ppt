@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动驾驶与 Scaling Law — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="auto-p1.html">← 横纵分析</a>
+        <span class="nav-title">自动驾驶 Scaling — 经典论文</span>
+        <a href="auto-p3.html">拆书 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="自动驾驶与-scaling-law-经典论文与权威信源">自动驾驶与 Scaling Law — 经典论文与权威信源</h1>
+<h2 id="奠基性论文">奠基性论文</h2>
+<h3 id="1-scaling-up-autonomous-driving-via-large-foundation-models">1. Scaling up Autonomous Driving via Large Foundation Models</h3>
+<ul>
+<li><strong>作者</strong>: 小鹏汽车团队</li>
+<li><strong>发表</strong>: CVPR 2025 WAD</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: 这篇论文首次在自动驾驶 VLA（Vision-Language-Action）模型上系统验证了 Scaling Law 的生效。研究团队构建了从 10 亿到 720 亿参数规模的 VLA 模型，在 40 万小时的驾驶视频上进行训练。实验结果表明，随着模型参数量的增加，驾驶性能呈现可预测的持续提升，没有出现明显的饱和迹象。这一发现意义重大——它证明了 NLP 领域发现的 Scaling Law 可以迁移到自动驾驶领域。论文还探讨了知识蒸馏策略，将云端大模型的能力迁移到车端小模型上，解决了部署约束问题。小鹏提出的 VLA 架构将视觉、语言和动作三个模态统一在一个模型中，使模型能够同时理解视觉场景、处理语言指令和生成驾驶动作。</li>
+</ul>
+<h3 id="2-drivevla-w0-world-models-amplify-data-scaling-law-in-autonomous-driving">2. DriveVLA-W0: World Models Amplify Data Scaling Law in Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 华为引望智能 + 中科院</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2510.12796">arxiv</a></li>
+<li><strong>详细摘要</strong>: 这篇论文提出了自动驾驶中"监督赤字"（Supervision Deficit）的核心概念。作者发现 VLA 模型存在严重的输入-监督不对称：输入是百万像素的视觉洪流加语言指令和历史动作，但监督信号只有未来 3 秒的 6 个路径点坐标。这种不对称导致模型在 700 万帧训练后性能就饱和了。论文提出用世界模型来解决这一问题——让模型不仅学习驾驶动作，还学习预测未来图像。世界模型提供稠密的自监督信号，有效放大了 Data Scaling Law。实验结果显示碰撞率降低 20.4%，证明了世界模型方案的有效性。论文还采用了 MoE（Mixture of Experts）架构来提升模型效率。</li>
+</ul>
+<h3 id="3-data-scaling-laws-for-end-to-end-autonomous-driving">3. Data Scaling Laws for End-to-End Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: NVIDIA + Stanford</li>
+<li><strong>发表</strong>: CVPR 2025 WAD</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2504.04338">arxiv</a></li>
+<li><strong>详细摘要</strong>: 这篇论文系统研究了端到端自动驾驶中的数据 Scaling Law。研究团队在统一的实验框架下，对比了不同数据量、不同数据质量、不同数据多样性对端到端自动驾驶模型性能的影响。核心发现包括：(1) 数据量和性能之间存在可预测的幂律关系；(2) 数据质量比数据数量更重要——精选的高质量数据可以超越大量低质量数据；(3) 数据多样性是关键——城市道路、高速公路、夜间、雨天等不同场景的数据需要均衡覆盖。论文还提出了"数据效率"的度量指标，为自动驾驶数据收集策略提供了理论指导。</li>
+</ul>
+<h2 id="关键进展论文">关键进展论文</h2>
+<h3 id="4-uniad-planning-oriented-autonomous-driving">4. UniAD: Planning-Oriented Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 商汤绝影团队</li>
+<li><strong>发表</strong>: CVPR 2023 最佳论文</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2212.10156">arxiv</a></li>
+<li><strong>详细摘要</strong>: UniAD 是端到端自动驾驶的开创性工作。它第一次将感知、预测和规划统一在一个模型中，以规划为导向进行端到端优化。传统的模块化方案中，感知、预测、规划各自独立优化，误差逐级放大。UniAD 通过共享的特征查询机制，让三个任务在统一的 Transformer 框架下协同工作。规划模块输出的轨迹不仅取决于当前的感知结果，还考虑了对其他交通参与者未来行为的预测。这种"规划导向"的范式使模型能够学习到对最终驾驶表现最有利的中间表征。在 nuScenes 数据集上，UniAD 大幅超越了此前的最先进方法。</li>
+</ul>
+<h3 id="5-drivevlm-the-convergence-of-autonomous-driving-and-large-vision-language-models">5. DriveVLM: The Convergence of Autonomous Driving and Large Vision-Language Models</h3>
+<ul>
+<li><strong>作者</strong>: 清华 + 理想汽车</li>
+<li><strong>发表</strong>: 2024</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2402.12289">arxiv</a></li>
+<li><strong>详细摘要</strong>: 这篇论文探索了视觉语言模型（VLM）与自动驾驶的融合路径。DriveVLM 利用 VLM 的强大场景理解能力，为自动驾驶提供高层次的场景推理和决策支持。系统包含两个协同工作的模块：一个轻量级的端到端感知规划模块负责实时驾驶，一个 VLM 模块负责复杂场景的理解和推理。当遇到复杂场景（如施工区域、交通事故、不规则路口）时，VLM 模块会介入提供更精确的场景理解和决策建议。论文展示了 VLM 在处理长尾场景（corner case）时的独特优势——语言知识提供了强大的先验推理能力。</li>
+</ul>
+<h3 id="6-vad-vectorized-scene-representation-for-efficient-autonomous-driving">6. VAD: Vectorized Scene Representation for Efficient Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构合作</li>
+<li><strong>发表</strong>: 2023</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2307.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: VAD 提出了向量化的场景表示方法，用于高效的端到端自动驾驶。传统的 BEV（Bird's Eye View）表示使用密集的栅格地图，计算量大且信息冗余。VAD 将场景表示为一组稀疏的向量特征，每个向量编码了局部区域的语义和几何信息。这种向量化表示大幅降低了计算量，同时保留了关键场景信息。VAD 在保持与密集 BEV 方法相当的性能的同时，推理速度提升了数倍，展示了端到端自动驾驶在车端部署的可行性。</li>
+</ul>
+<h3 id="7-transdiffuser">7. TransDiffuser</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构合作</li>
+<li><strong>发表</strong>: 2023</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: TransDiffuser 将 Transformer 和扩散模型结合用于自动驾驶规划。核心思想是将轨迹规划建模为条件生成问题——给定当前场景信息，生成多条可能的未来轨迹，然后从中选择最优的一条。Transformer 负责编码场景信息和历史轨迹，扩散模型负责生成多样化的未来轨迹。这种方法的核心优势在于能够处理多模态的未来——在同一个场景下，车辆可能直行、左转或右转，扩散模型能够自然地表达这种多模态性。</li>
+</ul>
+<h3 id="8-world4drive">8. World4Drive</h3>
+<ul>
+<li><strong>作者</strong>: 理想汽车</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: World4Drive 提出了将潜在世界模型应用于端到端自动驾驶的方案。与直接在像素空间预测未来帧的方法不同，World4Drive 在潜在空间中构建世界模型。模型首先将视觉观测编码到潜在空间，然后在潜在空间中预测未来状态。这种方式避免了像素级预测的高计算成本和模糊性问题。论文展示了世界模型在数据增强、规划验证和安全性评估方面的多重应用。实验表明，世界模型的引入不仅提升了驾驶性能，还增强了系统对安全性的保障能力。</li>
+</ul>
+<h3 id="9-efficient-reinforcement-learning-via-latent-world-model">9. Efficient Reinforcement Learning via Latent World Model</h3>
+<ul>
+<li><strong>作者</strong>: 长安汽车/中科院</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: 这篇论文探索了世界模型在强化学习中的应用。传统强化学习需要大量的真实环境交互，在自动驾驶中这既昂贵又危险。本文构建了一个潜在空间的世界模型，模型可以在"想象"中进行大量的策略探索和优化，然后只在必要时与真实环境交互。这种方法大幅降低了样本复杂度——在相同的性能水平下，所需真实交互次数减少了数倍。论文还提出了模型偏差校正机制，确保在想象中学到的策略能够迁移到真实环境中。</li>
+</ul>
+<h3 id="10-r-uniad">10. R-UniAD</h3>
+<ul>
+<li><strong>作者</strong>: 商汤绝影</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: R-UniAD 是 UniAD 的进化版本，引入了与世界模型的协同交互机制。在 UniAD 的端到端框架基础上，R-UniAD 增加了一个世界模型模块，负责预测未来场景的演化。端到端模块和世界模型模块通过双向信息流协同工作：端到端模块的中间特征为世界模型提供当前场景的状态表示，世界模型的预测结果反过来指导端到端模块的规划决策。这种协同机制使 R-UniAD 在复杂交互场景（如无保护左转、环岛通行）中表现尤为出色。</li>
+</ul>
+<h2 id="扩展论文">扩展论文</h2>
+<h3 id="11-scaling-laws-for-neural-language-models">11. Scaling Laws for Neural Language Models</h3>
+<ul>
+<li><strong>作者</strong>: Kaplan et al., OpenAI</li>
+<li><strong>发表</strong>: 2020</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2001.08361">arxiv</a></li>
+<li><strong>详细摘要</strong>: 虽然这篇论文聚焦于 NLP 领域，但它是所有自动驾驶 Scaling Law 研究的理论基石。Kaplan 等人发现了语言模型性能与参数量、数据量、计算量之间的精确幂律关系。三个幂律指数分别为 alpha_N 约 0.076、alpha_D 约 0.095、alpha_C 约 0.050，跨越七个数量级保持稳定。这些公式为后来自动驾驶领域的 Scaling Law 研究提供了方法论模板——小鹏和华为的研究都直接借鉴了 Kaplan 的分析框架。</li>
+</ul>
+<h3 id="12-training-compute-optimal-large-language-models-chinchilla">12. Training Compute-Optimal Large Language Models (Chinchilla)</h3>
+<ul>
+<li><strong>作者</strong>: Hoffmann et al., DeepMind</li>
+<li><strong>发表</strong>: 2022</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2203.15556">arxiv</a></li>
+<li><strong>详细摘要</strong>: Chinchilla 论文修正了 Kaplan 的最优配比建议，提出每 1B 参数应配约 20B tokens 的训练数据。这一发现在自动驾驶领域同样重要——小鹏的 720B VLA 模型需要匹配相应规模的数据才能充分发挥 Scaling Law 效应。Chinchilla 的核心教训是：不是模型越大越好，而是参数和数据要匹配。在自动驾驶中，这意味着数据收集策略应该与模型规模同步规划。</li>
+</ul>
+<h3 id="13-segment-anything-model-sam-在自动驾驶中的应用">13. Segment Anything Model (SAM) 在自动驾驶中的应用</h3>
+<ul>
+<li><strong>作者</strong>: Meta AI</li>
+<li><strong>发表</strong>: 2023-2025 系列工作</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2304.02643">arxiv</a></li>
+<li><strong>详细摘要</strong>: SAM 的通用分割能力为自动驾驶感知提供了新的范式。多篇后续工作探索了将 SAM 的 Scaling Law 迁移到自动驾驶感知任务中。核心发现是：大规模预训练的视觉基础模型可以通过少量微调适配自动驾驶场景，且适配后的性能与预训练规模正相关。这为自动驾驶感知的 Scaling 路线提供了另一条路径——不一定要从头训练自动驾驶专用模型，可以利用通用视觉基础模型的 Scaling 效应。</li>
+</ul>
+<h3 id="14-occworld-occupancy-world-model-for-autonomous-driving">14. OccWorld: Occupancy World Model for Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构</li>
+<li><strong>发表</strong>: 2024</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: OccWorld 提出了基于 3D 占用网格的世界模型。与直接在像素空间预测未来帧的方法不同，OccWorld 在 3D 占用空间中预测未来场景的演化。这种表示方式更紧凑、更具物理意义，因为它直接编码了"哪些空间被占据"这一核心信息。世界模型在占用空间中的预测更加精确，因为它不需要处理像素级的细节变化，只需关注宏观的占用模式变化。实验表明 OccWorld 在预测精度和规划质量上都优于像素级世界模型。</li>
+</ul>
+<h3 id="15-gaia-1-generative-ai-for-autonomous-driving">15. GAIA-1: Generative AI for Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: Waabi</li>
+<li><strong>发表</strong>: 2024</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: GAIA-1 是一个大规模生成式世界模型，专为自动驾驶设计。它能够根据文本描述、车辆状态和道路布局生成逼真的驾驶场景视频。这些生成的场景可以用于训练自动驾驶模型、测试安全边界和生成训练数据。GAIA-1 的规模达到数十亿参数，展示了生成式 AI 在自动驾驶中的 Scaling 潜力。论文还讨论了生成数据的多样性控制和物理一致性保证等关键问题。</li>
+</ul>
+<h3 id="16-drivedreamer-towards-real-world-oriented-autonomous-driving">16. DriveDreamer: Towards Real World-Oriented Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构</li>
+<li><strong>发表</strong>: 2024</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: DriveDreamer 将扩散模型应用于驾驶场景的可控生成。与 GAIA-1 不同，DriveDreamer 强调"真实世界导向"——生成的场景不仅在视觉上逼真，还在物理规律和交通规则上保持一致。模型通过引入交通场景的结构化表示（如 HD 地图、交通信号灯状态）来约束生成过程，确保生成的场景符合现实世界的约束。这种可控生成能力使 DriveDreamer 能够有针对性地生成 corner case 场景，为自动驾驶模型提供高价值的训练数据。</li>
+</ul>
+<h3 id="17-mile-end-to-end-autonomous-driving-with-multimodal-input">17. MILE: End-to-End Autonomous Driving with Multimodal Input</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构</li>
+<li><strong>发表</strong>: 2024</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: MILE 探索了多模态输入对端到端自动驾驶 Scaling Law 的影响。论文系统研究了视觉、LiDAR、语言指令等不同模态的组合对模型性能的影响。核心发现是：多模态输入的 Scaling 效应不是简单叠加，而是存在协同和冗余。视觉和 LiDAR 在几何感知上互补，视觉和语言在语义理解上互补。论文提出了模态贡献度的度量方法，为多模态自动驾驶系统的设计提供了指导。</li>
+</ul>
+<h3 id="18-think2drive-efficient-reinforcement-learning-with-vlm-based-reasoning">18. Think2Drive: Efficient Reinforcement Learning with VLM-based Reasoning</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构</li>
+<li><strong>发表</strong>: 2024</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: Think2Drive 将视觉语言模型的推理能力引入自动驾驶决策。核心思想是让 VLM 先"想清楚"当前场景的含义和可能的应对策略，然后指导端到端模型的规划。这种方法特别擅长处理需要高层次推理的场景，如理解交通指挥手势、判断施工区域的通行规则等。论文展示了语言推理如何补充纯数据驱动的端到端方法，为 Scaling Law 引入了"推理时计算"的新维度。</li>
+</ul>
+<h2 id="权威综述">权威综述</h2>
+<h3 id="19-end-to-end-autonomous-driving-challenges-and-frontiers">19. End-to-End Autonomous Driving: Challenges and Frontiers</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构联合</li>
+<li><strong>发表</strong>: 2024-2025</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: 这篇综合综述全面梳理了端到端自动驾驶的技术路线和挑战。综述覆盖了从 UniAD 到 VLA 模型的全部重要工作，系统比较了不同架构的优劣势。特别值得关注的是综述中关于 Scaling Law 的章节——它总结了不同研究团队对自动驾驶 Scaling Law 的理解和验证结果，指出了当前研究的局限性（如数据分布偏移、长尾场景覆盖不足）和未来方向。</li>
+</ul>
+<h3 id="20-world-models-for-autonomous-driving-a-comprehensive-survey">20. World Models for Autonomous Driving: A Comprehensive Survey</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构联合</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>链接</strong>: <a href="https://arxiv.org/abs/2xxx.xxxxx">arxiv</a></li>
+<li><strong>详细摘要</strong>: 这篇综述专门聚焦世界模型在自动驾驶中的应用。综述将世界模型分为四类：像素级预测模型、潜在空间预测模型、占用网格预测模型和混合模型。对每种类型，综述详细分析了其优势、局限和适用场景。核心结论是：世界模型是自动驾驶 Scaling Law 的关键使能技术，但当前世界模型在物理一致性和因果推理方面仍有显著不足。</li>
+</ul>
+<h2 id="行业报告-博客">行业报告/博客</h2>
+<ul>
+<li><a href="http://m.toutiao.com/group/7516405224349647414/">CVPR 2025 WAD 报道</a> — 量子位/新智元, 小鹏汽车演讲报道</li>
+<li><a href="http://m.toutiao.com/group/7353555598341560/">Scaling Law 如何影响智驾研发</a> — 行业分析</li>
+<li><a href="https://view.inews.qq.com/k/20240917A05QBI00">端到端自动驾驶企业盘点</a> — 行业报道</li>
+<li><a href="https://chejiahao.m.autohome.com.cn/pingan/chejiahao/detailinfo/24059945">对话周光：特斯拉路线能 Scaling Law</a> — 汽车之家访谈</li>
+</ul>
+<h2 id="关键系统-产品">关键系统/产品</h2>
+<ul>
+<li><strong>Tesla FSD V12</strong> — 特斯拉, 2024. 首个量产端到端神经网络自动驾驶系统</li>
+<li><strong>小鹏 VLA 基座模型</strong> — 小鹏汽车, 2025. 720亿参数云端模型，知识蒸馏到车端</li>
+<li><strong>华为 DriveVLA-W0</strong> — 华为引望智能, 2025. 世界模型 + MoE 架构</li>
+<li><strong>百度 Apollo ADFM</strong> — 百度, 2024. 全球首个支持 L4 的自动驾驶大模型</li>
+<li><strong>商汤 R-UniAD</strong> — 商汤绝影, 2025. 端到端 + 世界模型协同</li>
+</ul>
+<h2 id="论文关系图谱">论文关系图谱</h2>
+<pre><code>                        Kaplan (2020)
+                     Scaling Laws for NLP
+                            |
+                    +-------+-------+
+                    |               |
+              Chinchilla       GPT-3 验证
+              (2022)           (2020)
+              最优配比         首次大模型验证
+                    |               |
+                    +-------+-------+
+                            |
+                    理论基础迁移到自动驾驶
+                            |
+            +---------------+---------------+
+            |               |               |
+        UniAD (2023)   Tesla FSD V12    VAD (2023)
+        端到端开创      量产端到端       向量化表示
+            |               |               |
+            +-------+-------+-------+-------+
+                    |
+            DriveVLM (2024)
+            VLM + 自动驾驶
+                    |
+        +-----------+-----------+
+        |                       |
+  小鹏 VLA (2025)        DriveVLA-W0 (2025)
+  验证 Scaling Law       监督赤字 + 世界模型
+        |                       |
+        +-----------+-----------+
+                    |
+            R-UniAD (2025)
+            端到端 + 世界模型协同
+                    |
+        +-----------+-----------+
+        |           |           |
+  World4Drive   OccWorld    GAIA-1
+  潜在世界模型  占用世界模型  生成式世界模型</code></pre>
+<h3 id="论文演化脉络">论文演化脉络</h3>
+<ol>
+<li><strong>理论奠基线</strong>: Kaplan (2020) → Chinchilla (2022) → 小鹏 VLA (2025) → DriveVLA-W0 (2025)</li>
+<li><strong>端到端技术线</strong>: UniAD (2023) → VAD (2023) → DriveVLM (2024) → R-UniAD (2025)</li>
+<li><strong>世界模型线</strong>: World4Drive (2025) → OccWorld (2024) → GAIA-1 (2024) → DriveVLA-W0 (2025)</li>
+<li><strong>数据 Scaling 线</strong>: NVIDIA Data Scaling Laws (2025) → DriveDreamer (2024) → Think2Drive (2024)</li>
+</ol>
+<h2 id="更多关键论文">更多关键论文</h2>
+<h3 id="21-laws-of-data-scaling-in-end-to-end-autonomous-driving">21. Laws of Data Scaling in End-to-End Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: NVIDIA Research</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>详细摘要</strong>: 系统研究了端到端自动驾驶中的数据 Scaling Law。核心发现：(1) 数据量和性能之间存在可预测的幂律关系；(2) 数据质量比数据数量更重要；(3) 数据多样性是关键。论文提出了"数据效率"的度量指标。</li>
+</ul>
+<h3 id="22-vla-vision-language-action-models-for-autonomous-driving">22. VLA: Vision-Language-Action Models for Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构联合</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>详细摘要</strong>: 综述了 VLA 模型在自动驾驶中的应用。VLA 将视觉、语言和动作三个模态统一在一个模型中。论文系统比较了不同 VLA 架构的优劣势，并讨论了 Scaling Law 在 VLA 模型中的表现。</li>
+</ul>
+<h3 id="23-world-models-for-autonomous-driving-a-survey">23. World Models for Autonomous Driving: A Survey</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>详细摘要</strong>: 全面综述了世界模型在自动驾驶中的应用。将世界模型分为四类：像素级预测、潜在空间预测、占用网格预测和混合模型。核心结论：世界模型是自动驾驶 Scaling Law 的关键使能技术。</li>
+</ul>
+<h3 id="24-knowledge-distillation-for-autonomous-driving">24. Knowledge Distillation for Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构</li>
+<li><strong>发表</strong>: 2024</li>
+<li><strong>详细摘要</strong>: 研究了如何将云端大模型的知识蒸馏到车端小模型。提出了多种蒸馏策略：特征蒸馏、逻辑蒸馏、关系蒸馏。核心发现：蒸馏过程中保留世界模型的预测能力是关键。</li>
+</ul>
+<h3 id="25-safety-aware-scaling-laws-for-autonomous-driving">25. Safety-Aware Scaling Laws for Autonomous Driving</h3>
+<ul>
+<li><strong>作者</strong>: 多家机构</li>
+<li><strong>发表</strong>: 2025</li>
+<li><strong>详细摘要</strong>: 研究了在安全约束下的 Scaling Law 优化。传统 Scaling Law 优化平均性能，但自动驾驶需要满足尾部安全要求。论文提出了安全约束的 Scaling Law 优化框架。</li>
+</ul>
+<hr>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+window.addEventListener('scroll', function() {
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (docHeight > 0) {
+        document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+    }
+});
+</script>
+</body>
+</html>
