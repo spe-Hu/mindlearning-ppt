@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scaling Law — 规模之力</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #3D5A80;
+            --secondary: #98C1D9;
+            --accent: #E0FBFC;
+            --dark: #293241;
+            --light: #F5F7FA;
+            --text: #1a1a2e;
+            --text-light: #6c757d;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: var(--light);
+            color: var(--text);
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        .slide {
+            min-height: 100vh;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            scroll-snap-align: start;
+        }
+        
+        body {
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+        }
+        
+        .slide-number {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background: var(--primary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 100;
+            opacity: 0.8;
+        }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+        
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--secondary);
+        }
+        
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 16px 0 8px;
+        }
+        
+        p {
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-light);
+            margin-bottom: 24px;
+        }
+        
+        .formula {
+            background: linear-gradient(135deg, var(--primary), var(--dark));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 20px;
+            font-family: "SF Mono", Monaco, monospace;
+            margin: 16px 0;
+            box-shadow: 0 4px 20px rgba(61,90,128,0.3);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 12px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .card.accent {
+            border-left-color: var(--secondary);
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 24px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 16px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 3px solid var(--light);
+        }
+        
+        .timeline-year {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 14px;
+        }
+        
+        .timeline-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text);
+            margin-top: 4px;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, var(--accent) 0%, var(--accent) 100%);
+            background-repeat: no-repeat;
+            background-size: 100% 40%;
+            background-position: 0 88%;
+            padding: 0 4px;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .stat-box {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        
+        .quote {
+            background: linear-gradient(135deg, var(--dark), var(--primary));
+            color: white;
+            padding: 24px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-style: italic;
+            line-height: 1.6;
+            margin: 16px 0;
+            position: relative;
+        }
+        
+        .quote::before {
+            content: '"';
+            position: absolute;
+            top: -10px;
+            left: 16px;
+            font-size: 60px;
+            opacity: 0.3;
+            font-family: Georgia, serif;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 4px 4px 4px 0;
+        }
+        
+        .cover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            color: white;
+            text-align: center;
+        }
+        
+        .cover h1 {
+            color: white;
+            font-size: 40px;
+        }
+        
+        .cover .subtitle {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .dimension-box {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 12px 0;
+            border: 2px solid var(--secondary);
+        }
+        
+        .dimension-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        ul {
+            padding-left: 20px;
+            margin: 12px 0;
+        }
+        
+        li {
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+        
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
+        
+        @media (max-width: 380px) {
+            h1 { font-size: 28px; }
+            h2 { font-size: 20px; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progress"></div>
+    <div class="slide-number" id="slideNum">1 / 10</div>
+    
+    <!-- Slide 1: Cover -->
+    <section class="slide cover">
+        <h1>Scaling Law</h1>
+        <p class="subtitle">规模之力</p>
+        <p style="margin-top: 24px; opacity: 0.9;">从感知器学习曲线到三维 Scaling 体系</p>
+        <div style="margin-top: 40px;">
+            <span class="tag" style="background: rgba(255,255,255,0.2); color: white;">AI</span>
+            <span class="tag" style="background: rgba(255,255,255,0.2); color: white;">大模型</span>
+            <span class="tag" style="background: rgba(255,255,255,0.2); color: white;">深度学习</span>
+        </div>
+    </section>
+    
+    <!-- Slide 2: Core Definition -->
+    <section class="slide">
+        <h2>核心定义</h2>
+        <p><span class="highlight">Scaling Law（缩放定律）</span>：AI 模型的性能与模型参数量、训练数据量、计算资源之间存在可预测的幂律关系。</p>
+        
+        <div class="formula">
+            L(X) = (X<sub>c</sub> / X)<sup>α</sup>
+        </div>
+        
+        <p style="text-align: center; color: var(--text-light); font-size: 14px;">X 可以是参数量 N、数据量 D 或计算量 C</p>
+        
+        <div class="card" style="margin-top: 20px;">
+            <p style="margin: 0;"><strong>关键洞见</strong>：这条规律不是"建议"，是"铁律"——跨越七个数量级、跨越无数架构变化，始终成立。</p>
+        </div>
+    </section>
+    
+    <!-- Slide 3: Timeline -->
+    <section class="slide">
+        <h2>七十年演化</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-year">1958</div>
+                <div class="timeline-content">Rosenblatt 感知器学习曲线，种子埋下</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">1992-93</div>
+                <div class="timeline-content">Amari & Vapnik 证明幂律收敛的理论界</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2020</div>
+                <div class="timeline-content"><strong>Kaplan 三大公式</strong>，精确的幂律公式体系</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2020</div>
+                <div class="timeline-content">GPT-3 验证：175B 参数，300B tokens</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2022</div>
+                <div class="timeline-content"><strong>Chinchilla 修正</strong>：1:20 黄金配比</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2023</div>
+                <div class="timeline-content">Phi 模型：数据质量与数量同等重要</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2024</div>
+                <div class="timeline-content"><strong>推理时 Scaling</strong>：o1 / R1 开辟新维度</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Slide 4: Kaplan Formulas -->
+    <section class="slide">
+        <h2>Kaplan 三大公式</h2>
+        
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-value">0.076</div>
+                <div class="stat-label">α<sub>N</sub><br>参数量</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">0.095</div>
+                <div class="stat-label">α<sub>D</sub><br>数据量</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">0.050</div>
+                <div class="stat-label">α<sub>C</sub><br>计算量</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <p style="margin: 0;"><strong>洞见</strong>：增加数据的边际收益最高（0.095），其次是增加参数（0.076），增加计算量的边际收益最低（0.050）。</p>
+        </div>
+        
+        <p style="margin-top: 16px; font-size: 14px; color: var(--text-light);">跨越七个数量级，无明显衰减</p>
+    </section>
+    
+    <!-- Slide 5: Chinchilla -->
+    <section class="slide">
+        <h2>Chinchilla 黄金配比</h2>
+        
+        <div class="formula">
+            D ≈ 20N
+        </div>
+        
+        <p style="text-align: center;">每 <strong>1B 参数</strong> 应配约 <strong>20B tokens</strong> 的训练数据</p>
+        
+        <div class="card" style="margin-top: 24px;">
+            <h3>Kaplan 的建议</h3>
+            <p>"训练超大模型然后早停"</p>
+        </div>
+        
+        <div class="card accent">
+            <h3>DeepMind 的修正</h3>
+            <p>参数和数据应该<strong>等比扩张</strong></p>
+            <p style="margin: 8px 0 0; font-size: 14px;">7B 模型配 140B tokens<br>70B 模型配 1400B tokens</p>
+        </div>
+        
+        <p style="margin-top: 16px; font-size: 14px;">LLaMA、Mistral 等后续模型均采用此配比</p>
+    </section>
+    
+    <!-- Slide 6: 3D Scaling -->
+    <section class="slide">
+        <h2>三维 Scaling 体系</h2>
+        
+        <div class="dimension-box">
+            <div class="dimension-title">🔵 第一维：预训练 Scaling</div>
+            <p style="font-size: 14px; margin: 8px 0 0;">堆参数、堆数据、堆算力</p>
+            <p style="font-size: 13px; color: var(--text-light); margin: 4px 0 0;">代表：GPT-3/4、LLaMA、Chinchilla</p>
+        </div>
+        
+        <div class="dimension-box">
+            <div class="dimension-title">🟣 第二维：后训练 Scaling</div>
+            <p style="font-size: 14px; margin: 8px 0 0;">强化学习优化：SFT + RLHF + DPO</p>
+            <p style="font-size: 13px; color: var(--text-light); margin: 4px 0 0;">代表：InstructGPT、Claude、Gemini</p>
+        </div>
+        
+        <div class="dimension-box">
+            <div class="dimension-title">🟢 第三维：推理时 Scaling</div>
+            <p style="font-size: 14px; margin: 8px 0 0;">推理阶段投入更多计算，"思考"更长时间</p>
+            <p style="font-size: 13px; color: var(--text-light); margin: 4px 0 0;">代表：OpenAI o1、DeepSeek R1</p>
+        </div>
+    </section>
+    
+    <!-- Slide 7: Challenges -->
+    <section class="slide">
+        <h2>挑战与危机</h2>
+        
+        <div class="card">
+            <h3>📊 数据枯竭</h3>
+            <p style="font-size: 14px;">互联网高质量文本数据总量约 10T tokens，按当前消耗速度将在数年内耗尽</p>
+        </div>
+        
+        <div class="card">
+            <h3>⚠️ "Scaling 已死"？</h3>
+            <p style="font-size: 14px;">Ilya Sutskever 在 NeurIPS 2024 宣布"预训练即将终结"</p>
+        </div>
+        
+        <div class="card">
+            <h3>💡 但 Scaling 在蜕变</h3>
+            <p style="font-size: 14px;">从"堆参数"到"优化资源配置"，三维体系刚刚建立</p>
+        </div>
+    </section>
+    
+    <!-- Slide 8: Quote -->
+    <section class="slide">
+        <h2>核心观点</h2>
+        
+        <div class="quote">
+            只要目前 Scaling Law 仍然成立，其实就没有看衰大模型未来发展的理由。
+        </div>
+        
+        <p style="text-align: right; color: var(--text-light); font-size: 14px;">— 张俊林</p>
+        
+        <div class="card" style="margin-top: 24px;">
+            <p style="margin: 0;">这场论战的本质，不是"Scaling Law 是否有效"，而是<strong>"我们在 Scaling 什么"</strong>。</p>
+        </div>
+    </section>
+    
+    <!-- Slide 9: Key Takeaway -->
+    <section class="slide">
+        <h2>精神内核</h2>
+        
+        <div class="formula" style="font-size: 18px; line-height: 1.6;">
+            规模带来性能<br>
+            但"规模"的定义在不断扩展
+        </div>
+        
+        <ul style="margin-top: 24px;">
+            <li>从 1958 到 2026，核心思想从未改变</li>
+            <li>从"暴力美学"到"精细工程"</li>
+            <li>真正的 Scaling 是在每一个维度上找到最优的资源配置</li>
+        </ul>
+    </section>
+    
+    <!-- Slide 10: End -->
+    <section class="slide cover">
+        <h1 style="font-size: 36px;">谢谢</h1>
+        <p class="subtitle">Scaling Law 不是终点，而是新的起点</p>
+        <div style="margin-top: 40px; font-size: 14px; opacity: 0.7;">
+            <p>← → 滑动浏览</p>
+            <p style="margin-top: 8px;">MindLearning 知识库</p>
+        </div>
+    </section>
+    
+    <script>
+        // Progress bar & slide number
+        const slides = document.querySelectorAll('.slide');
+        const progress = document.getElementById('progress');
+        const slideNum = document.getElementById('slideNum');
+        const total = slides.length;
+        
+        function updateProgress() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progressPercent = (scrollTop / docHeight) * 100;
+            progress.style.width = progressPercent + '%';
+            
+            // Calculate current slide
+            let current = 1;
+            slides.forEach((slide, index) => {
+                const rect = slide.getBoundingClientRect();
+                if (rect.top <= window.innerHeight / 2) {
+                    current = index + 1;
+                }
+            });
+            slideNum.textContent = current + ' / ' + total;
+        }
+        
+        window.addEventListener('scroll', updateProgress);
+        updateProgress();
+        
+        // Touch feedback
+        document.addEventListener('touchstart', function() {}, false);
+    </script>
+</body>
+</html>
