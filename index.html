@@ -3,488 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scaling Law — 规模之力 | MindLearning</title>
+    <title>MindLearning — Scaling Law 知识库</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         :root {
-            --bg: #0a0a0f;
-            --bg-soft: #14141f;
-            --surface: #1a1a2e;
-            --primary: #6366f1;
-            --primary-light: #818cf8;
-            --accent: #f59e0b;
-            --text: #e2e8f0;
-            --text-dim: #94a3b8;
-            --text-muted: #64748b;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --bg: #0a0a0f; --bg-soft: #14141f; --surface: #1a1a2e;
+            --primary: #6366f1; --primary-light: #818cf8; --accent: #f59e0b;
+            --text: #e2e8f0; --text-dim: #94a3b8; --text-muted: #64748b;
             --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
         }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
         
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
+        /* Hero */
+        .hero { background: radial-gradient(ellipse at top, rgba(99,102,241,0.15) 0%, transparent 50%), var(--bg); padding: 80px 24px 60px; text-align: center; }
+        .hero h1 { font-family: 'Noto Serif SC', serif; font-size: clamp(32px, 7vw, 56px); font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+        .hero .subtitle { font-size: 18px; color: var(--text-dim); margin-bottom: 32px; }
+        .hero .stats { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+        .hero .stat { text-align: center; }
+        .hero .stat-value { font-size: 28px; font-weight: 700; color: var(--primary-light); }
+        .hero .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
         
-        .slide {
-            min-height: 100vh;
-            padding: 60px 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            scroll-snap-align: start;
-        }
+        /* Container */
+        .container { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
         
-        body { scroll-snap-type: y mandatory; overflow-y: scroll; }
+        /* Section */
+        .section { margin-top: 48px; }
+        .section-title { font-family: 'Noto Serif SC', serif; font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+        .section-title .icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .section-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
         
-        /* Progress */
-        .progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--gradient); z-index: 1000; transition: width 0.3s; }
-        .page-num { position: fixed; bottom: 20px; right: 20px; background: var(--surface); color: var(--text-dim); padding: 8px 16px; border-radius: 20px; font-size: 13px; z-index: 100; border: 1px solid rgba(255,255,255,0.1); }
+        /* Card Grid */
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
         
-        /* Typography */
-        h1 { font-family: 'Noto Serif SC', serif; font-size: clamp(36px, 8vw, 64px); font-weight: 700; line-height: 1.2; margin-bottom: 20px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        h2 { font-family: 'Noto Serif SC', serif; font-size: clamp(28px, 5vw, 42px); font-weight: 600; margin-bottom: 24px; color: var(--text); }
-        h3 { font-size: 20px; font-weight: 600; color: var(--primary-light); margin-bottom: 12px; }
-        p { font-size: 17px; line-height: 1.8; color: var(--text-dim); margin-bottom: 16px; }
-        .lead { font-size: 20px; color: var(--text); line-height: 1.7; }
+        /* Card */
+        .card { background: var(--surface); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: inherit; transition: all 0.2s; display: block; position: relative; overflow: hidden; }
+        .card:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.15); }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .card.p1::before { background: #6366f1; }
+        .card.p2::before { background: #8b5cf6; }
+        .card.p3::before { background: #a855f7; }
+        .card.p4::before { background: #d946ef; }
+        .card.p5::before { background: #ec4899; }
+        .card .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; margin-bottom: 12px; }
+        .card.p1 .badge { background: rgba(99,102,241,0.15); color: #818cf8; }
+        .card.p2 .badge { background: rgba(139,92,246,0.15); color: #a78bfa; }
+        .card.p3 .badge { background: rgba(168,85,247,0.15); color: #c084fc; }
+        .card.p4 .badge { background: rgba(217,70,239,0.15); color: #e879f9; }
+        .card.p5 .badge { background: rgba(236,72,153,0.15); color: #f472b6; }
+        .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+        .card p { font-size: 13px; color: var(--text-dim); line-height: 1.6; margin: 0; }
+        .card .meta { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
         
-        /* Cover */
-        .cover { background: radial-gradient(ellipse at top, rgba(99,102,241,0.15) 0%, transparent 50%), var(--bg); text-align: center; }
-        .cover .subtitle { font-size: 22px; color: var(--text-dim); margin-bottom: 40px; }
-        .tags { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
-        .tag { background: rgba(99,102,241,0.15); color: var(--primary-light); padding: 8px 20px; border-radius: 24px; font-size: 14px; font-weight: 500; border: 1px solid rgba(99,102,241,0.3); }
+        /* PPT Card */
+        .ppt-card { background: linear-gradient(135deg, var(--surface), var(--bg-soft)); border-radius: 16px; padding: 28px; border: 1px solid rgba(99,102,241,0.2); text-decoration: none; color: inherit; display: block; transition: all 0.2s; text-align: center; }
+        .ppt-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.2); }
+        .ppt-card .emoji { font-size: 40px; margin-bottom: 12px; }
+        .ppt-card h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+        .ppt-card p { font-size: 14px; color: var(--text-dim); margin: 0; }
         
-        /* Cards */
-        .card { background: var(--surface); border-radius: 16px; padding: 28px; margin: 16px 0; border: 1px solid rgba(255,255,255,0.05); }
-        .card.highlight { border-left: 4px solid var(--primary); }
-        .card.warning { border-left: 4px solid var(--warning); }
-        .card.success { border-left: 4px solid var(--success); }
-        
-        /* Formula */
-        .formula { background: var(--gradient); color: white; padding: 24px 32px; border-radius: 12px; text-align: center; font-size: 24px; font-family: 'SF Mono', Monaco, monospace; margin: 24px 0; box-shadow: 0 8px 32px rgba(99,102,241,0.3); }
-        
-        /* Stats Grid */
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin: 24px 0; }
-        .stat { background: var(--surface); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-        .stat-value { font-size: 32px; font-weight: 700; color: var(--primary-light); }
-        .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
-        
-        /* Timeline */
-        .timeline { position: relative; padding-left: 32px; margin: 24px 0; }
-        .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--primary), var(--primary-light), transparent); }
-        .timeline-item { position: relative; margin-bottom: 24px; }
-        .timeline-item::before { content: ''; position: absolute; left: -28px; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: var(--primary); border: 3px solid var(--bg); }
-        .timeline-year { font-weight: 700; color: var(--primary-light); font-size: 15px; }
-        .timeline-text { font-size: 15px; color: var(--text-dim); margin-top: 4px; line-height: 1.6; }
-        
-        /* Dimension Boxes */
-        .dimensions { display: grid; gap: 16px; margin: 24px 0; }
-        .dim-box { background: var(--surface); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; }
-        .dim-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-        .dim-box.pre::before { background: #6366f1; }
-        .dim-box.post::before { background: #8b5cf6; }
-        .dim-box.test::before { background: #a855f7; }
-        .dim-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-        .dim-desc { font-size: 14px; color: var(--text-dim); }
-        
-        /* Quote */
-        .quote { background: linear-gradient(135deg, var(--surface), var(--bg-soft)); border-radius: 16px; padding: 32px; margin: 24px 0; position: relative; border: 1px solid rgba(99,102,241,0.2); }
-        .quote::before { content: '"'; position: absolute; top: -10px; left: 20px; font-size: 80px; color: var(--primary); opacity: 0.3; font-family: Georgia, serif; }
-        .quote p { font-size: 20px; font-style: italic; color: var(--text); margin: 0; }
-        .quote cite { display: block; margin-top: 16px; font-size: 14px; color: var(--text-muted); font-style: normal; }
-        
-        /* List */
-        ul { padding-left: 24px; margin: 16px 0; }
-        li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 12px; }
-        li strong { color: var(--text); }
-        
-        /* Comparison Table */
-        .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
-        .compare-item { background: var(--surface); border-radius: 12px; padding: 20px; }
-        .compare-item h4 { font-size: 16px; color: var(--primary-light); margin-bottom: 12px; }
-        .compare-item p { font-size: 14px; margin: 0; }
-        
-        /* End */
-        .end { text-align: center; background: radial-gradient(ellipse at bottom, rgba(99,102,241,0.1) 0%, transparent 50%), var(--bg); }
+        /* Footer */
+        .footer { text-align: center; padding: 40px 24px; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); font-size: 13px; }
         
         @media (max-width: 600px) {
-            .slide { padding: 40px 24px; }
-            .compare { grid-template-columns: 1fr; }
-            .stats { grid-template-columns: repeat(2, 1fr); }
+            .hero { padding: 60px 20px 40px; }
+            .card-grid { grid-template-columns: 1fr; }
+            .container { padding: 0 16px 60px; }
         }
     </style>
 </head>
 <body>
-    <div class="progress" id="progress"></div>
-    <div class="page-num" id="pageNum">1 / 15</div>
-    
-    <!-- 1. Cover -->
-    <section class="slide cover">
+    <!-- Hero -->
+    <div class="hero">
         <h1>Scaling Law</h1>
         <p class="subtitle">规模之力 — 从感知器到三维 Scaling 体系</p>
-        <p class="lead">AI 模型的性能与规模之间存在可预测的幂律关系<br>这条规律跨越七个数量级，七十年未被打破</p>
-        <div class="tags">
-            <span class="tag">深度学习</span>
-            <span class="tag">大模型</span>
-            <span class="tag">幂律</span>
-            <span class="tag">涌现</span>
-        </div>
-    </section>
-    
-    <!-- 2. Core Definition -->
-    <section class="slide">
-        <h2>核心定义</h2>
-        <p class="lead"><strong>Scaling Law（缩放定律）</strong>：AI 模型的性能与模型参数量、训练数据量、计算资源之间存在可预测的幂律关系。</p>
-        
-        <div class="formula">L(X) = (X<sub>c</sub> / X)<sup>α</sup></div>
-        
         <div class="stats">
-            <div class="stat">
-                <div class="stat-value">0.076</div>
-                <div class="stat-label">α<sub>N</sub> 参数量</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">0.095</div>
-                <div class="stat-label">α<sub>D</sub> 数据量</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">0.050</div>
-                <div class="stat-label">α<sub>C</sub> 计算量</div>
-            </div>
+            <div class="stat"><div class="stat-value">48</div><div class="stat-label">文件</div></div>
+            <div class="stat"><div class="stat-value">70</div><div class="stat-label">年历史</div></div>
+            <div class="stat"><div class="stat-value">7</div><div class="stat-label">个数量级</div></div>
+            <div class="stat"><div class="stat-value">3</div><div class="stat-label">维体系</div></div>
         </div>
-        
-        <div class="card highlight">
-            <p style="margin:0"><strong>关键洞见</strong>：增加数据的边际收益最高（0.095），其次是增加参数（0.076），增加计算量的边际收益最低（0.050）。</p>
-        </div>
-    </section>
+    </div>
     
-    <!-- 3. Timeline -->
-    <section class="slide">
-        <h2>七十年演化</h2>
-        <div class="timeline">
-            <div class="timeline-item">
-                <div class="timeline-year">1958</div>
-                <div class="timeline-text">Rosenblatt 感知器学习曲线 — 种子埋下</div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-year">1992-93</div>
-                <div class="timeline-text">Amari & Vapnik 证明幂律收敛的理论界</div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-year">2020</div>
-                <div class="timeline-text"><strong>Kaplan 三大公式</strong> — 精确的幂律公式体系</div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-year">2020</div>
-                <div class="timeline-text">GPT-3 验证：175B 参数，300B tokens</div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-year">2022</div>
-                <div class="timeline-text"><strong>Chinchilla 修正</strong>：1:20 黄金配比</div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-year">2023</div>
-                <div class="timeline-text">Phi 模型：数据质量与数量同等重要</div>
-            </div>
-            <div class="timeline-item">
-                <div class="timeline-year">2024</div>
-                <div class="timeline-text"><strong>推理时 Scaling</strong>：o1 / R1 开辟新维度</div>
+    <div class="container">
+        <!-- PPT 演示 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🎬</span> 演示文稿</div>
+            <p class="section-desc">快速浏览 Scaling Law 的核心概念</p>
+            <a href="scaling-law.html" class="ppt-card">
+                <div class="emoji">📊</div>
+                <h3>Scaling Law — 规模之力</h3>
+                <p>15 页精华演示，涵盖核心定义、公式、三维体系、案例与哲学思考</p>
+            </a>
+        </div>
+        
+        <!-- Scaling Law 概念 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">📚</span> Scaling Law 概念</div>
+            <p class="section-desc">从概念本身出发，理解 Scaling Law 的本质</p>
+            <div class="card-grid">
+                <a href="concept-p1.html" class="card p1">
+                    <span class="badge">P1 · 横纵分析</span>
+                    <h3>横纵分析报告</h3>
+                    <p>从 1958 年感知器到 2026 年三维 Scaling 体系，纵向追踪七十年演化脉络，横向对比同期技术路线。</p>
+                    <div class="meta">~30,000 字符 · 深度分析</div>
+                </a>
+                <a href="concept-p2.html" class="card p2">
+                    <span class="badge">P2 · 经典论文</span>
+                    <h3>经典论文与权威信源</h3>
+                    <p>Kaplan 2020、Chinchilla 2022、GPT-3 2020 等核心论文的详细解读与关系图谱。</p>
+                    <div class="meta">~17,000 字符 · 论文索引</div>
+                </a>
+                <a href="concept-p3.html" class="card p3">
+                    <span class="badge">P3 · 拆书</span>
+                    <h3>拆书：Scaling Law</h3>
+                    <p>五部分拆解：核心问题、基础假设、分析框架、核心观点、精神内核。</p>
+                    <div class="meta">~10,000 字符 · 结构化解读</div>
+                </a>
+                <a href="concept-p4.html" class="card p4">
+                    <span class="badge">P4 · 视觉卡片</span>
+                    <h3>知识卡片集</h3>
+                    <p>15+ 张知识卡片，涵盖核心公式、Kaplan 三大指数、Chinchilla 配比、三维体系等。</p>
+                    <div class="meta">~23,000 字符 · 速查手册</div>
+                </a>
+                <a href="concept-p5.html" class="card p5">
+                    <span class="badge">P5 · 概念解剖</span>
+                    <h3>概念解剖：八刀分析</h3>
+                    <p>历史、辩证、现象、语言、形式、存在、美感、元反思——八个维度深度解剖 Scaling Law。</p>
+                    <div class="meta">~25,000 字符 · 深度解剖</div>
+                </a>
             </div>
         </div>
-    </section>
+        
+        <!-- 自动驾驶与 Scaling Law -->
+        <div class="section">
+            <div class="section-title"><span class="icon">🚗</span> 自动驾驶与 Scaling Law</div>
+            <p class="section-desc">Scaling Law 在自动驾驶领域的应用与实践</p>
+            <div class="card-grid">
+                <a href="auto-p1.html" class="card p1">
+                    <span class="badge">P1 · 横纵分析</span>
+                    <h3>横纵分析报告</h3>
+                    <p>Scaling Law 在自动驾驶中的纵向演化：从感知模型到端到端大模型的规模效应。</p>
+                    <div class="meta">~16,000 字符 · 领域分析</div>
+                </a>
+                <a href="auto-p2.html" class="card p2">
+                    <span class="badge">P2 · 经典论文</span>
+                    <h3>经典论文与权威信源</h3>
+                    <p>Tesla AI Day、Waymo、小鹏、华为等在自动驾驶 Scaling 方面的核心论文。</p>
+                    <div class="meta">~20,000 字符 · 论文索引</div>
+                </a>
+                <a href="auto-p3.html" class="card p3">
+                    <span class="badge">P3 · 拆书</span>
+                    <h3>拆书：自动驾驶 Scaling</h3>
+                    <p>自动驾驶场景下 Scaling Law 的特殊性：数据飞轮、仿真闭环、端到端模型。</p>
+                    <div class="meta">~25,000 字符 · 领域解读</div>
+                </a>
+                <a href="auto-p4.html" class="card p4">
+                    <span class="badge">P4 · 视觉卡片</span>
+                    <h3>知识卡片集</h3>
+                    <p>自动驾驶 Scaling 的关键数据、Tesla/Huawei/Waymo 对比、数据飞轮机制。</p>
+                    <div class="meta">~23,000 字符 · 速查手册</div>
+                </a>
+                <a href="auto-p5.html" class="card p5">
+                    <span class="badge">P5 · 概念解剖</span>
+                    <h3>概念解剖：八刀分析</h3>
+                    <p>从历史、辩证、形式等八个维度解剖 Scaling Law 在自动驾驶中的独特表现。</p>
+                    <div class="meta">~26,000 字符 · 深度解剖</div>
+                </a>
+            </div>
+        </div>
+    </div>
     
-    <!-- 4. Kaplan Formulas -->
-    <section class="slide">
-        <h2>Kaplan 三大公式</h2>
-        <p>2020 年，OpenAI 的 Kaplan 等人发表了跨越七个数量级的实证研究：</p>
-        
-        <div class="card">
-            <h3>参数量限制</h3>
-            <p>L(N) = (N<sub>c</sub> / N)<sup>0.076</sup></p>
-            <p>模型越大，损失越低。从 1B 到 1000B（三个数量级），损失降低约 1.7 倍。</p>
-        </div>
-        
-        <div class="card">
-            <h3>数据量限制</h3>
-            <p>L(D) = (D<sub>c</sub> / D)<sup>0.095</sup></p>
-            <p>数据越多，损失越低。三个指数中最大，意味着增加数据的边际收益最高。</p>
-        </div>
-        
-        <div class="card">
-            <h3>计算量限制</h3>
-            <p>L(C<sub>min</sub>) = (C<sub>c</sub> / C)<sup>0.050</sup></p>
-            <p>计算越多，损失越低。三个指数中最小，单纯增加计算量效率最低。</p>
-        </div>
-    </section>
-    
-    <!-- 5. Chinchilla -->
-    <section class="slide">
-        <h2>Chinchilla 黄金配比</h2>
-        
-        <div class="formula">D ≈ 20N</div>
-        
-        <p style="text-align:center">每 <strong>1B 参数</strong> 应配约 <strong>20B tokens</strong> 的训练数据</p>
-        
-        <div class="compare">
-            <div class="compare-item">
-                <h4>Kaplan 的建议</h4>
-                <p>"训练超大模型然后早停"<br>用小数据训练大模型</p>
-            </div>
-            <div class="compare-item">
-                <h4>DeepMind 的修正</h4>
-                <p>参数和数据应该<strong>等比扩张</strong><br>7B → 140B tokens<br>70B → 1400B tokens</p>
-            </div>
-        </div>
-        
-        <div class="card success">
-            <p style="margin:0"><strong>实际影响</strong>：LLaMA、Mistral、DeepSeek 等后续模型均采用 Chinchilla 配比。</p>
-        </div>
-    </section>
-    
-    <!-- 6. 3D Scaling -->
-    <section class="slide">
-        <h2>三维 Scaling 体系</h2>
-        <p>2024-2026 年最重要的框架扩展——从一维到三维：</p>
-        
-        <div class="dimensions">
-            <div class="dim-box pre">
-                <div class="dim-title">🔵 第一维：预训练 Scaling</div>
-                <div class="dim-desc">堆参数、堆数据、堆算力。核心变量：N（参数量）、D（数据量）、C<sub>train</sub>（训练计算量）。</div>
-                <div class="dim-desc" style="margin-top:8px;color:var(--text-muted)">代表：GPT-3/4、LLaMA、Chinchilla</div>
-            </div>
-            <div class="dim-box post">
-                <div class="dim-title">🟣 第二维：后训练 Scaling</div>
-                <div class="dim-desc">强化学习优化。SFT + RLHF + DPO。核心变量：RL_budget（强化学习计算预算）。</div>
-                <div class="dim-desc" style="margin-top:8px;color:var(--text-muted)">代表：InstructGPT、Claude、Gemini</div>
-            </div>
-            <div class="dim-box test">
-                <div class="dim-title">🟢 第三维：推理时 Scaling</div>
-                <div class="dim-desc">推理阶段投入更多计算，"思考"更长时间。不是靠更大的模型，而是靠更多的推理。</div>
-                <div class="dim-desc" style="margin-top:8px;color:var(--text-muted)">代表：OpenAI o1、DeepSeek R1</div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- 7. Assumptions -->
-    <section class="slide">
-        <h2>三条基础假设</h2>
-        
-        <div class="card highlight">
-            <h3>假设一：性能可以用单一数值度量</h3>
-            <p>交叉熵损失、基准测试分数——"模型好不好"能压缩成一个数。这意味着智能是"一维的"。但涌现能力的存在暗示能力可能是多维的。</p>
-        </div>
-        
-        <div class="card highlight">
-            <h3>假设二：规模是性能的首要决定因素</h3>
-            <p>参数量、数据量、算力比架构细节更决定性能。Kaplan 原话：架构细节的影响仅有几个百分点。但 Phi 模型证明数据质量可以弥补数量不足。</p>
-        </div>
-        
-        <div class="card highlight">
-            <h3>假设三：幂律关系可以外推</h3>
-            <p>跨越七个数量级观察到的规律，在尚未到达的规模上仍然成立。这是最胆大的一条假设——也是 Dario Amodei "棋盘稻米寓言"的底气。</p>
-        </div>
-    </section>
-    
-    <!-- 8. Challenges -->
-    <section class="slide">
-        <h2>挑战与危机</h2>
-        
-        <div class="card warning">
-            <h3>📊 数据枯竭</h3>
-            <p>互联网高质量文本数据总量约 10T tokens，按当前消耗速度将在数年内耗尽。这是 Scaling Law 今天最大的裂缝。</p>
-        </div>
-        
-        <div class="card warning">
-            <h3>⚠️ "Scaling 已死"？</h3>
-            <p>Ilya Sutskever 在 NeurIPS 2024 宣布"预训练即将终结"。LeCun 一贯唱衰。但 Scaling Law 同时在蜕变——从"堆参数"到"优化资源配置"。</p>
-        </div>
-        
-        <div class="card success">
-            <h3>💡 新的数据来源</h3>
-            <p>合成数据、自我对弈、世界模型生成的数据——正如 AlphaGo 通过自我对弈产生了超越人类棋谱的数据，未来的 AI 系统也可能通过自我探索产生无限的训练数据。</p>
-        </div>
-    </section>
-    
-    <!-- 9. Core Insight -->
-    <section class="slide">
-        <h2>核心观点</h2>
-        
-        <div class="quote">
-            <p>只要目前 Scaling Law 仍然成立，其实就没有看衰大模型未来发展的理由。</p>
-            <cite>— 张俊林</cite>
-        </div>
-        
-        <div class="card">
-            <p>这场论战的本质，不是"Scaling Law 是否有效"，而是<strong>"我们在 Scaling 什么"</strong>。</p>
-            <p>Ilya 和 Hinton 的分歧不在于"要不要 Scaling"，而在于"Scaling 的对象是什么"。Ilya 说单纯的参数堆叠走到头了。Hinton 说 Scaling 的对象可以扩展——数据、架构、推理策略都算。</p>
-        </div>
-        
-        <p style="margin-top:24px">从历史角度看，每一次"Scaling 已死"的论调最终都被证明是过早的结论：</p>
-        <ul>
-            <li>2012 年 AlexNet 之后有人说 CNN 的 Scaling 到头了——然后 ResNet 来了</li>
-            <li>2018 年 BERT 之后有人说 Transformer 的 Scaling 到头了——然后 GPT-3 来了</li>
-            <li>2024 年 Ilya 说预训练到头了——但推理时 Scaling 才刚刚开始</li>
-        </ul>
-    </section>
-    
-    <!-- 10. DeepSeek Case -->
-    <section class="slide">
-        <h2>案例：DeepSeek-V3</h2>
-        
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value">671B</div>
-                <div class="stat-label">总参数</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">37B</div>
-                <div class="stat-label">激活参数</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">$5.5M</div>
-                <div class="stat-label">训练成本</div>
-            </div>
-        </div>
-        
-        <div class="card highlight">
-            <h3>MoE 架构的启示</h3>
-            <p>DeepSeek-V3 用 MoE（混合专家）架构证明：671B 总参数、37B 激活参数的模型可以达到 GPT-4o 水平，训练成本仅 550 万美元。</p>
-            <p>这说明：<strong>规模不是万能的，架构创新可以显著改变 Scaling 的效率</strong>。</p>
-        </div>
-        
-        <p>MoE 的成功挑战了 Kaplan 的"架构无关性"假设——在合理范围内，层数、维度比、注意力头数对性能影响仅几个百分点。但 MoE 证明架构创新可以大幅改变 Scaling 的效率。</p>
-    </section>
-    
-    <!-- 11. Philosophy -->
-    <section class="slide">
-        <h2>哲学思考</h2>
-        
-        <div class="card">
-            <h3>美在简洁</h3>
-            <p>七个数量级，三个变量，一条幂律曲线。从感知器到 GPT-4，从 1958 到 2026，跨越七十年、跨越无数架构变化，这条曲线始终成立。这种跨时空的稳定性本身就是一种美——像物理学中的守恒定律。</p>
-        </div>
-        
-        <div class="card">
-            <h3>统一性</h3>
-            <p>Scaling Law 把看似毫不相关的现象统一在一个框架下——从 1M 参数的感知器到 1T 参数的 GPT-4，性能的变化遵循同一条曲线。就像热力学不需要知道每个分子的运动轨迹就能描述宏观行为一样，Scaling Law 不需要知道每个参数的值就能预测模型的性能。</p>
-        </div>
-        
-        <div class="card">
-            <h3>隐喻的力量</h3>
-            <p><strong>攀登</strong>：告诉你方向（向上），但挡住了代价和替代路径。<br>
-            <strong>调音</strong>：不是把音量拧到最大，而是在参数、数据、推理三个旋钮之间找到谐振频率。<br>
-            <strong>进化</strong>：不是"设计"一个更好的模型，而是"培育"一个更好的模型。</p>
-        </div>
-    </section>
-    
-    <!-- 12. Key Takeaway -->
-    <section class="slide">
-        <h2>精神内核</h2>
-        
-        <div class="formula" style="font-size:22px;line-height:1.6">
-            规模带来性能<br>
-            但"规模"的定义在不断扩展
-        </div>
-        
-        <ul>
-            <li>从 1958 到 2026，核心思想从未改变</li>
-            <li>从"暴力美学"到"精细工程"</li>
-            <li>真正的 Scaling 不是简单地堆资源，而是在每一个维度上找到最优的资源配置</li>
-        </ul>
-        
-        <div class="card highlight" style="margin-top:24px">
-            <p style="margin:0"><strong>一个洞见</strong>：Scaling Law 的核心问题不是"能不能继续 Scale"，而是"我们在 Scaling 什么"。</p>
-        </div>
-        
-        <p style="margin-top:24px">三维 Scaling 体系刚刚建立，还有巨大的优化空间。未来可能出现四维、五维的 Scaling 体系。每一次维度的扩展，都是 AI 能力的一次跃升。</p>
-    </section>
-    
-    <!-- 13. Future -->
-    <section class="slide">
-        <h2>未来展望</h2>
-        
-        <div class="card">
-            <h3>🔮 下一条 S 型曲线</h3>
-            <p>张俊林提出的"大模型摩尔定律"：通过技术创新不断产生新的 S 型 Scaling Law 子曲线，叠加到现有曲线中，维持整体智能持续上升。</p>
-            <p>候选者：合成数据、世界模型、全新的架构创新...</p>
-        </div>
-        
-        <div class="card">
-            <h3>🌐 数据的新来源</h3>
-            <p>正如 AlphaGo 通过自我对弈产生了超越人类棋谱的数据，未来的 AI 系统也可能通过自我探索产生无限的训练数据。</p>
-        </div>
-        
-        <div class="card">
-            <h3>⚡ 推理时 Scaling 的潜力</h3>
-            <p>o1 和 R1 只是开始。推理时计算的数学形式尚未完全建立，还有巨大的优化空间。</p>
-        </div>
-    </section>
-    
-    <!-- 14. Summary -->
-    <section class="slide">
-        <h2>总结</h2>
-        
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value">70</div>
-                <div class="stat-label">年演化历史</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">7</div>
-                <div class="stat-label">个数量级验证</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value">3</div>
-                <div class="stat-label">维 Scaling 体系</div>
-            </div>
-        </div>
-        
-        <div class="card highlight">
-            <p style="margin:0"><strong>Scaling Law 不是终点，而是新的起点。</strong></p>
-        </div>
-        
-        <p style="margin-top:24px">带走了这一件，Scaling Law 的精神内核就在手：</p>
-        <p class="lead" style="margin-top:12px">规模带来性能，但"规模"的定义在不断扩展。<br>真正的 Scaling 是在每一个维度上找到最优的资源配置。</p>
-    </section>
-    
-    <!-- 15. End -->
-    <section class="slide end">
-        <h1 style="font-size:48px">谢谢</h1>
-        <p class="subtitle">Scaling Law — 规模之力</p>
-        <p style="margin-top:40px;color:var(--text-muted)">MindLearning 知识库</p>
-        <div class="tags" style="margin-top:24px">
-            <span class="tag">← → 滑动浏览</span>
-        </div>
-    </section>
-    
-    <script>
-        const slides = document.querySelectorAll('.slide');
-        const progress = document.getElementById('progress');
-        const pageNum = document.getElementById('pageNum');
-        const total = slides.length;
-        
-        function update() {
-            const scrollTop = window.scrollY;
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            progress.style.width = (scrollTop / docHeight * 100) + '%';
-            
-            let current = 1;
-            slides.forEach((slide, i) => {
-                if (slide.getBoundingClientRect().top <= window.innerHeight / 2) current = i + 1;
-            });
-            pageNum.textContent = current + ' / ' + total;
-        }
-        
-        window.addEventListener('scroll', update);
-        update();
-    </script>
+    <!-- Footer -->
+    <div class="footer">
+        <p>MindLearning 知识库 · Scaling Law 专题</p>
+        <p style="margin-top:8px">共 48 个文件 · 超过 1,000,000 字符</p>
+    </div>
 </body>
 </html>

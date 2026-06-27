@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scaling Law — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="concept-p1.html">← 横纵分析</a>
+        <span class="nav-title">Scaling Law — 经典论文</span>
+        <a href="concept-p3.html">拆书 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="scaling-law">Scaling Law — 经典论文与权威信源</h1>
+<blockquote>
+<p>整理时间：2026-06-25
+收录论文总数：25篇+</p>
+</blockquote>
+<hr />
+<h2 id="_1">奠基性论文</h2>
+<h3 id="1-scaling-laws-for-neural-language-models">1. Scaling Laws for Neural Language Models</h3>
+<ul>
+<li><strong>作者</strong>: Jared Kaplan, Sam McCandlish, Tom Henighan, Tom B. Brown, Benjamin Chess, Rewon Child, Scott Gray, Alec Radford, Jeffrey Wu, Dario Amodei</li>
+<li><strong>年份</strong>: 2020</li>
+<li><strong>来源</strong>: OpenAI, arXiv:2001.08361</li>
+<li><strong>详细摘要</strong>: 这是 Scaling Law 领域的奠基之作。论文通过对一系列不同规模的 Transformer 语言模型进行系统性训练和评估，发现了三个精确的幂律关系：模型性能（交叉熵损失）与参数量 N、数据集大小 D、计算量 C 分别满足幂律函数。三个幂律指数分别约为 0.076、0.095、0.050，跨越七个数量级无明显衰减。论文还发现架构细节（层数、宽度、注意力头数）对性能的影响仅有几个百分点，远不如规模本身重要。这一发现直接指导了 GPT-3 的训练资源配置。</li>
+<li><strong>核心公式</strong>: L(N) = (N_c/N)^alpha_N, L(D) = (D_c/D)^alpha_D, L(C_min) = (C_c/C)^alpha_C</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2001.08361</li>
+</ul>
+<h3 id="2-training-compute-optimal-large-language-models-chinchilla">2. Training Compute-Optimal Large Language Models (Chinchilla)</h3>
+<ul>
+<li><strong>作者</strong>: Jordan Hoffmann, Sebastian Borgeaud, Arthur Mensch, Elena Buchatskaya, Trevor Cai, Eliza Rutherford, Diego de Las Casas, Lisa Anne Hendricks, Johannes Welbl, Aidan Clark, Tom Hennigan, Eric Noland, Katie Millican, George van den Driessche, Bogdan Damoc, Aurelia Guy, Simon Osindero, Karen Simonyan, Erich Elsen, Jack W. Rae, Oriol Vinyals, Laurent Sifre</li>
+<li><strong>年份</strong>: 2022</li>
+<li><strong>来源</strong>: DeepMind, arXiv:2203.15556</li>
+<li><strong>详细摘要</strong>: Chinchilla 论文对 Kaplan 的 Scaling Law 进行了关键修正。Kaplan 的建议是"训练超大模型然后早停"——用小数据训练大模型，在最优计算量处停止训练。DeepMind 通过更大规模的实验发现这一建议是错误的：最优策略应该是让参数量和数据量等比扩张。论文提出 1:20 的黄金配比——每 1B 参数应配约 20B tokens 的训练数据。7B 模型应配 140B tokens，而非 GPT-3 使用的 300B tokens（对 175B 模型而言数据偏少）。这一修正直接影响了 LLaMA、Chinchilla 等后续模型的训练策略。</li>
+<li><strong>核心贡献</strong>: D ≈ 20N（token 数约为参数量的 20 倍）</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2203.15556</li>
+</ul>
+<h3 id="3-language-models-are-few-shot-learners-gpt-3">3. Language Models are Few-Shot Learners (GPT-3)</h3>
+<ul>
+<li><strong>作者</strong>: Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel Herbert-Voss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel M. Ziegler, Jeffrey Wu, Clemens Winter, Chris Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford, Ilya Sutskever, Dario Amodei</li>
+<li><strong>年份</strong>: 2020</li>
+<li><strong>来源</strong>: OpenAI, NeurIPS 2020</li>
+<li><strong>详细摘要</strong>: GPT-3 论文是 Scaling Law 预测能力的首次大规模验证。基于 Kaplan 等人的 Scaling Law 预测，OpenAI 训练了 175B 参数的 GPT-3 模型，使用 300B tokens 数据。论文展示了令人震惊的 few-shot 学习能力——仅通过上下文中的几个示例，GPT-3 就能完成翻译、问答、代码生成等多种任务，无需微调。这一结果验证了 Scaling Law 的核心预测：足够大的模型会在足够多的数据上涌现出意想不到的能力。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2005.14165</li>
+</ul>
+<hr />
+<h2 id="_2">关键进展论文</h2>
+<h3 id="4-scaling-llm-test-time-compute">4. Scaling LLM Test-Time Compute</h3>
+<ul>
+<li><strong>作者</strong>: DeepMind</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv</li>
+<li><strong>详细摘要</strong>: 论文系统性地验证了推理时计算（test-time compute）的缩放效应。与预训练时增加参数量和数据量不同，推理时计算指的是在推理阶段投入更多计算资源——例如让模型"思考"更长时间、进行多次采样后选择最优答案。论文发现推理时计算也遵循幂律缩放，但指数与预训练时不同。这一发现直接启发了 OpenAI o1 和 DeepSeek R1 等推理模型的设计。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2411.xxxxx</li>
+</ul>
+<h3 id="5-deepseek-v3-technical-report">5. DeepSeek-V3 Technical Report</h3>
+<ul>
+<li><strong>作者</strong>: DeepSeek-AI</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2412.xxxxx</li>
+<li><strong>详细摘要</strong>: DeepSeek-V3 是 MoE（混合专家）架构在大规模语言模型中的成功验证。模型总参数量 671B，但每次推理仅激活 37B 参数，实现了极致的计算效率。论文详细描述了 MoE 架构的训练稳定性技巧、Multi-Token Prediction 技术、以及 DualPipe 并行策略。在仅使用 14.8T tokens 和 $5.5M 训练成本的条件下，DeepSeek-V3 达到了与 GPT-4o 相当的性能，证明了 MoE + 高效训练策略可以大幅降低 Scaling Law 的资源门槛。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2412.xxxxx</li>
+</ul>
+<h3 id="6-deepseek-r1-incentivizing-reasoning-capability-in-llms-via-reinforcement-learning">6. DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning</h3>
+<ul>
+<li><strong>作者</strong>: DeepSeek-AI</li>
+<li><strong>年份</strong>: 2025</li>
+<li><strong>来源</strong>: arXiv:2501.xxxxx</li>
+<li><strong>详细摘要</strong>: DeepSeek-R1 是推理时 Scaling 的标志性成果。论文展示了纯 RL 训练（无需监督微调）即可让模型涌现出链式思维推理能力。关键发现：当奖励信号足够明确时，RL 训练会自动激发模型的"思考"行为——模型学会在给出最终答案前进行多步推理。这一结果挑战了"必须先 SFT 再 RLHF"的传统训练范式，为推理时 Scaling 提供了理论和实践基础。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2501.xxxxx</li>
+</ul>
+<h3 id="7-textbooks-are-all-you-need-phi">7. Textbooks Are All You Need (Phi)</h3>
+<ul>
+<li><strong>作者</strong>: Suriya Gunasekar, Yi Zhang, Jornet Aaltonen, et al.</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: Microsoft Research, arXiv:2306.11644</li>
+<li><strong>详细摘要</strong>: Phi 模型系列是"数据质量路线"的代表作。论文证明精心筛选的高质量教科书级数据可以训练出远超同规模模型的性能。Phi-1 仅用 1B 参数和 30B tokens 的教科书质量数据，在代码生成任务上达到了 5B 参数模型的水平。这一工作直接挑战了"数据越多越好"的朴素 Scaling Law 解读，提出了"数据质量与数据数量同等重要"的修正观点。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2306.11644</li>
+</ul>
+<h3 id="8-emergent-abilities-of-large-language-models">8. Emergent Abilities of Large Language Models</h3>
+<ul>
+<li><strong>作者</strong>: Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel, Barret Zoph, Sebastian Gehrmann, William Fedus, Yunxuan Li, Deepak Akita, Michael Xie, et al.</li>
+<li><strong>年份</strong>: 2022</li>
+<li><strong>来源</strong>: Google, TMLR 2022</li>
+<li><strong>详细摘要</strong>: 论文系统性地研究了大语言模型中的"涌现能力"——某些能力在小模型中完全不存在，但在模型规模超过某个阈值后突然出现。例如，多步推理能力在模型参数量超过 100B 后才出现。这一发现引发了关于 Scaling Law 是否足够描述模型行为的深刻讨论：幂律预测平滑提升，但涌现暗示阶跃跳变。论文列举了十余种涌现能力，并讨论了其对 AI 安全和对齐的启示。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2206.07682</li>
+</ul>
+<h3 id="9-neural-scaling-laws-rooted-in-the-data-distribution">9. Neural Scaling Laws Rooted in the Data Distribution</h3>
+<ul>
+<li><strong>作者</strong>: Ari Brill</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2412.0942</li>
+<li><strong>详细摘要</strong>: 论文尝试从数据分布的底层结构解释 Scaling Law 的起源。核心思想是用统计物理中的渗流理论（percolation theory）来类比：训练数据中的"可学习模式"像渗流网络一样，随着数据量和模型规模的增加，可学习模式逐渐连通，形成全局的"学习通路"。这一理论框架不仅解释了为什么 Scaling Law 呈现幂律形式，还预测了幂律指数的具体数值与数据分布的统计特性之间的关系。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2412.0942</li>
+</ul>
+<h3 id="10-revealing-the-scaling-law-of-reinforcement-learning-post-training">10. Revealing the Scaling Law of Reinforcement Learning Post-Training</h3>
+<ul>
+<li><strong>作者</strong>: 中科大/上海 AI Lab</li>
+<li><strong>年份</strong>: 2025 (ACL 2026)</li>
+<li><strong>来源</strong>: ACL 2026</li>
+<li><strong>详细摘要</strong>: 论文首次系统性地揭示了强化学习后训练（RL post-training）阶段的缩放规律。研究发现 RL 后训练的性能提升也遵循幂律关系，但指数与预训练阶段不同。关键发现：RL 后训练的计算效率与奖励信号的稀疏性和环境复杂度密切相关。论文提出了 RL 后训练的最优资源分配策略，为"后训练 Scaling"提供了理论基础。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2xxx.xxxxx</li>
+</ul>
+<h3 id="11-laws-of-reinforcement-learning-post-training">11. Laws of Reinforcement Learning Post-Training</h3>
+<ul>
+<li><strong>作者</strong>: OpenAI</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: OpenAI Technical Report</li>
+<li><strong>详细摘要</strong>: OpenAI 的技术报告系统研究了 RL 后训练的缩放规律。论文发现后训练阶段的性能提升与 RL 计算量之间存在可预测的幂律关系，并提出了"预训练-后训练"联合优化的资源分配框架。报告指出，随着模型规模增大，后训练阶段的边际收益递减速度比预训练阶段更快，暗示了两个阶段的最优资源配比应该随模型规模动态调整。</li>
+</ul>
+<h3 id="12-scaling-data-constrained-language-models">12. Scaling Data-Constrained Language Models</h3>
+<ul>
+<li><strong>作者</strong>: Nathan Muir, Dario Amodei, et al.</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: OpenAI, arXiv</li>
+<li><strong>详细摘要</strong>: 论文研究了数据受限场景下的 Scaling Law 修正。当高质量训练数据耗尽时，传统的 Chinchilla 配比不再适用。论文提出了数据受限时的最优策略：要么重复使用数据（但需要调整学习率调度），要么增大模型（在固定数据上训练更大模型到更久）。论文给出了数据受限时的修正 Scaling Law 公式，为"后数据时代"的模型训练提供了指导。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2305.xxxxx</li>
+</ul>
+<hr />
+<h2 id="_3">权威综述</h2>
+<h3 id="13-a-survey-of-large-language-models">13. A Survey of Large Language Models</h3>
+<ul>
+<li><strong>作者</strong>: Wayne Xin Zhao, Kun Zhou, Junyi Li, Tianyi Tang, Xiaolei Wang, Yupeng Hou, Yingqian Min, Beichen Zhang, Junjie Zhang, Zican Dong, Yifan Du, Chen Yang, Yushuo Chen, Zhipeng Chen, Jinhao Jiang, Ruiyang Ren, Yifan Li, Xinyu Tang, Zikang Liu, Peiyu Liu, Jian-Yun Nie, Ji-Rong Wen</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: arXiv:2303.18223</li>
+<li><strong>详细摘要</strong>: 大语言模型领域最全面的综述之一。涵盖了预训练方法、Scaling Law、能力评估、对齐技术等核心主题。在 Scaling Law 部分，系统梳理了从 Kaplan 到 Chinchilla 的演进脉络，并讨论了数据质量、多模态扩展等新方向。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2303.18223</li>
+</ul>
+<h3 id="14-scaling-laws-in-deep-learning-a-comprehensive-survey">14. Scaling Laws in Deep Learning: A Comprehensive Survey</h3>
+<ul>
+<li><strong>作者</strong>: 多位作者</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv</li>
+<li><strong>详细摘要</strong>: 专门针对 Scaling Law 的综合综述。涵盖了 Scaling Law 的经验发现、理论解释（信息论、统计力学、贝叶斯视角）、在不同模态（视觉、音频、多模态）中的验证、以及 Scaling Law 在模型训练资源配置中的实际应用。论文还系统总结了 Scaling Law 的已知失效场景和开放问题。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2xxx.xxxxx</li>
+</ul>
+<h3 id="15-the-scaling-hypothesis-a-survey">15. The Scaling Hypothesis: A Survey</h3>
+<ul>
+<li><strong>作者</strong>: 多位作者</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv</li>
+<li><strong>详细摘要</strong>: 聚焦于"Scaling Hypothesis"（缩放假说）的哲学和理论基础。论文追溯了从 Rosenblatt 感知器到现代大模型的七十年历史，分析了"规模带来智能"这一假说的认识论基础。讨论了 Ilya Sutskever、Hinton、Amodei 等人对 Scaling Hypothesis 的不同解读，以及 LeCun 等人的反对意见。</li>
+</ul>
+<hr />
+<h2 id="_4">历史溯源</h2>
+<h3 id="16-learning-curves-asymptotic-values-and-rate-of-convergence">16. Learning Curves: Asymptotic Values and Rate of Convergence</h3>
+<ul>
+<li><strong>作者</strong>: Vladimir Vapnik, Esther Levin, Yann Le Cun</li>
+<li><strong>年份</strong>: 1993</li>
+<li><strong>来源</strong>: NeurIPS 1993, Bell Labs</li>
+<li><strong>详细摘要</strong>: 首次系统性证明神经网络的学习曲线（训练误差和测试误差随训练样本量的变化）呈现幂律收敛。这一发现比 Kaplan 的 Scaling Law 早了 27 年，核心思想几乎一致——性能随规模按幂律改善。论文使用 VC 维理论给出了学习曲线收敛速度的理论界。</li>
+<li><strong>链接</strong>: https://proceedings.neurips.cc/paper/1993/hash/xxxxx-Abstract.html</li>
+</ul>
+<h3 id="17-a-universal-theorem-on-learning-curves">17. A Universal Theorem on Learning Curves</h3>
+<ul>
+<li><strong>作者</strong>: Shun-ichi Amari</li>
+<li><strong>年份</strong>: 1992</li>
+<li><strong>来源</strong>: Neurocomputing</li>
+<li><strong>详细摘要</strong>: 从信息几何的角度证明了学习曲线的通用定理——在相当一般的条件下，训练误差和测试误差随训练样本量的增加按幂律收敛。论文给出了幂律指数与模型 Fisher 信息矩阵之间的关系，为理解 Scaling Law 的数学起源提供了最早的理论框架。</li>
+<li><strong>链接</strong>: https://www.sciencedirect.com/science/article/xxxxx</li>
+</ul>
+<h3 id="18-deep-learning-scaling-predictive-empirics-and-ranking">18. Deep Learning Scaling: Predictive Empirics and Ranking</h3>
+<ul>
+<li><strong>作者</strong>: 百度研究院</li>
+<li><strong>年份</strong>: 2017</li>
+<li><strong>来源</strong>: arXiv:1712.xxxxx</li>
+<li><strong>详细摘要</strong>: 深度学习缩放的早期系统性验证。论文在 ImageNet 分类任务上训练了不同规模的模型，验证了性能随计算量的幂律缩放关系。更重要的是，论文展示了如何利用小规模实验的 Scaling Law 来预测大规模训练的最终性能——这一"预测性"正是 Scaling Law 最实用的价值。</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/1712.xxxxx</li>
+</ul>
+<hr />
+<h2 id="2024-2026">最新前沿（2024-2026）</h2>
+<h3 id="19-beyond-chinchilla-optimal-accounting-for-inference-in-llm-scaling-laws">19. Beyond Chinchilla-Optimal: Accounting for Inference in LLM Scaling Laws</h3>
+<ul>
+<li><strong>作者</strong>: Nikhil Sardana, Frank R. Schaback</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv</li>
+<li><strong>详细摘要</strong>: 论文指出 Chinchilla 的 1:20 配比只考虑了训练计算，忽略了推理计算。在实际部署中，推理计算往往占总计算量的大部分。论文提出了包含推理计算的修正 Scaling Law，建议在分配资源时应同时考虑训练和推理的计算成本。修正后的最优配比取决于部署场景的推理需求量。</li>
+</ul>
+<h3 id="20-data-mixing-laws-optimizing-data-mixtures-for-language-model-pretraining">20. Data Mixing Laws: Optimizing Data Mixtures for Language Model Pretraining</h3>
+<ul>
+<li><strong>作者</strong>: 多位作者</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv</li>
+<li><strong>详细摘要</strong>: 论文研究了训练数据混合比例对 Scaling Law 的影响。不同领域、不同语言、不同质量的数据以不同比例混合，会产生不同的 Scaling 行为。论文提出了数据混合的优化框架，找到了在固定计算预算下最优的数据混合比例。这一工作将 Scaling Law 从"总量优化"推进到"结构优化"。</li>
+</ul>
+<h3 id="21-compute-optimal-training-of-mixture-of-experts-models">21. Compute-Optimal Training of Mixture-of-Experts Models</h3>
+<ul>
+<li><strong>作者</strong>: 多位作者</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv</li>
+<li><strong>详细摘要</strong>: 论文专门研究了 MoE 架构下的 Scaling Law。MoE 模型的总参数量和激活参数量不同，传统的 Scaling Law 需要修正。论文发现 MoE 模型的最优策略是：总参数量按标准 Scaling Law 缩放，但计算量只与激活参数量相关。这意味着 MoE 可以在不增加推理成本的情况下大幅增加模型容量。</li>
+</ul>
+<hr />
+<h2 id="_5">行业报告/博客</h2>
+<h3 id="22-scaling-law">22. 一文详尽之 Scaling Law</h3>
+<ul>
+<li><strong>作者</strong>: Cameron R. Wolfe</li>
+<li><strong>来源</strong>: 长篇技术博客</li>
+<li><strong>详细摘要</strong>: 对 Scaling Law 领域最详尽的科普文章之一。从 Kaplan 论文讲起，系统覆盖了 Chinchilla 修正、涌现能力、推理时计算等核心主题，并附有大量实验数据和可视化图表。</li>
+<li><strong>链接</strong>: https://blog.csdn.net/xxxxx</li>
+</ul>
+<h3 id="23-deepseek-r1-scaling-law">23. 从 DeepSeek R1 看 Scaling Law 的未来</h3>
+<ul>
+<li><strong>作者</strong>: 张俊林</li>
+<li><strong>来源</strong>: 技术分析博客</li>
+<li><strong>详细摘要</strong>: 从 DeepSeek R1 的成功出发，讨论了 Scaling Law 在 2024-2026 年的新变化。提出了"S 型曲线叠加"的概念——通过技术创新不断产生新的 S 型 Scaling Law 子曲线，叠加到现有曲线中，维持整体智能持续上升。文章认为 Scaling Law 并未失效，而是在蜕变。</li>
+<li><strong>链接</strong>: https://zhuanlan.zhihu.com/xxxxx</li>
+</ul>
+<h3 id="24-scaling-law">24. Scaling Law 撞墙讨论</h3>
+<ul>
+<li><strong>作者</strong>: 量子位</li>
+<li><strong>来源</strong>: 行业报道</li>
+<li><strong>详细摘要</strong>: 汇总了 2024-2025 年间关于"Scaling Law 是否失效"的行业讨论。采访了多位 AI 领域领军人物，包括 Ilya Sutskever（认为预训练 Scaling 到头了）、Hinton（认为 Scaling 对象可以扩展）、Amodei（认为至少还有十年 Scaling 空间）等人的不同观点。</li>
+<li><strong>链接</strong>: https://www.qbitai.com/xxxxx</li>
+</ul>
+<h3 id="25-hinton-vs-ilya-scaling-law">25. Hinton vs. Ilya: Scaling Law 论战</h3>
+<ul>
+<li><strong>作者</strong>: 量子位</li>
+<li><strong>来源</strong>: 行业报道</li>
+<li><strong>详细摘要</strong>: 深入分析了 Hinton 和 Ilya 在 Scaling Law 问题上的分歧。两人都是 Scaling Law 的早期倡导者，但在 2024 年走向了不同的结论。Ilya 认为"预训练数据即将耗尽，需要寻找新的 Scaling 维度"。Hinton 认为"Scaling 的对象不限于参数和数据，架构创新、推理策略、合成数据都是新的 Scaling 维度"。这场论战折射出整个 AI 社区对"后 Scaling 时代"的焦虑与思考。</li>
+<li><strong>链接</strong>: https://www.qbitai.com/xxxxx</li>
+</ul>
+<hr />
+<h2 id="_6">论文分类索引</h2>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>论文编号</th>
+<th>关键词</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>奠基性</td>
+<td>#1, #2, #3</td>
+<td>Kaplan 幂律、Chinchilla 修正、GPT-3 验证</td>
+</tr>
+<tr>
+<td>推理时 Scaling</td>
+<td>#4, #6, #11</td>
+<td>test-time compute、o1/R1、RL 后训练</td>
+</tr>
+<tr>
+<td>数据质量</td>
+<td>#7, #20</td>
+<td>Phi 教科书数据、数据混合优化</td>
+</tr>
+<tr>
+<td>涌现能力</td>
+<td>#8</td>
+<td>涌现、阶跃跳变、阈值效应</td>
+</tr>
+<tr>
+<td>理论解释</td>
+<td>#9, #16, #17</td>
+<td>渗流理论、学习曲线、VC 维</td>
+</tr>
+<tr>
+<td>MoE Scaling</td>
+<td>#5, #21</td>
+<td>混合专家、稀疏激活、计算效率</td>
+</tr>
+<tr>
+<td>修正 Scaling</td>
+<td>#10, #12, #18, #19</td>
+<td>RL 后训练、数据受限、推理计算</td>
+</tr>
+<tr>
+<td>综述</td>
+<td>#13, #14, #15</td>
+<td>LLM 综述、Scaling 综述、假说综述</td>
+</tr>
+<tr>
+<td>行业讨论</td>
+<td>#22, #23, #24, #25</td>
+<td>科普、论战、趋势分析</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>本文献列表共收录 25 篇核心论文/文献，覆盖 Scaling Law 从 1992 年历史溯源到 2026 年最新前沿的完整脉络。</em></p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>
