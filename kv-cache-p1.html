@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KV Cache — 横纵分析 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="index-kv-cache.html">← 首页</a>
+        <span class="nav-title">KV Cache — 横纵分析</span>
+        <a href="kv-cache-p2.html">经典论文 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="kv-cache">KV Cache 横纵深度分析</h1>
+<h2 id="transformer-2026">纵轴：从 Transformer 诞生到 2026 年的演进史</h2>
+<h3 id="2017-2019">第一纪元：注意力的原罪（2017-2019）</h3>
+<p>2017 年，Vaswani 等人在划时代的论文 "Attention Is All You Need" 中提出了 Transformer 架构。这个架构的核心——自注意力机制（Self-Attention）——彻底改变了序列建模的范式。然而，这个设计在带来并行训练优势的同时，也埋下了一个深远的隐患：<strong>在自回归解码时，每一步生成新 token 都需要重新计算之前所有 token 的注意力</strong>。</p>
+<p>自回归语言模型（如 GPT 系列）的解码过程是逐步生成的。在时间步 t，模型需要计算：</p>
+<pre><code>Attention(Q_t, K_{1:t}, V_{1:t}) = softmax(Q_t · K_{1:t}^T / √d_k) · V_{1:t}
+</code></pre>
+<p>其中 Q_t 是当前 token 的查询向量，K_{1:t} 和 V_{1:t} 分别是之前所有 token（包括当前 token）的键向量和值向量。如果不做任何缓存，在生成第 t 个 token 时，模型需要对前 t-1 个 token 重新进行前向传播以获得它们的 K 和 V 表示——这意味着每一步的计算量随序列长度线性增长，整体生成 N 个 token 的总计算量为 O(N^3)，极其低效。</p>
+<p><strong>KV Cache 的诞生</strong>正是为了解决这一问题：既然之前 token 的 K 和 V 在后续步骤中不会改变（因为自回归的因果掩码保证了每个 token 只能看到它之前的 token），那么我们可以把这些 K、V 向量缓存起来，避免重复计算。这一优化将解码阶段的计算复杂度从 O(N^3) 降低到 O(N^2)，是一个质的飞跃。</p>
+<p>然而，这个"用空间换时间"的策略也带来了新的问题——<strong>内存消耗随序列长度线性增长</strong>。对于一个具有 L 层、h 个注意力头的 Transformer 模型，每个 token 需要缓存的 KV 空间为：</p>
+<pre><code>KV_cache_size_per_token = 2 × L × h × d_k × sizeof(dtype)
+</code></pre>
+<p>以 LLaMA-2 70B 为例（80 层，8 个 KV 头，d_k=128，FP16）：</p>
+<pre><code>每 token KV = 2 × 80 × 8 × 128 × 2 bytes = 327,680 bytes ≈ 320 KB
+</code></pre>
+<p>当上下文长度从 4K 增长到 128K 时，单个请求的 KV Cache 从约 1.28 GB 膨胀到约 40.96 GB——<strong>直接涨了 32 倍</strong>。这正是文章中提到的"Token 消耗呈指数级增长，KV Cache 随之线性激增"的核心含义。</p>
+<h3 id="2020-2022">第二纪元：大规模模型的内存危机（2020-2022）</h3>
+<p>随着 GPT-3（175B 参数，2020）的发布和模型规模的指数级膨胀，KV Cache 的内存问题从"需要注意"升级为"系统性瓶颈"。</p>
+<p><strong>关键数据对比（2020-2022 年典型模型）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>层数</th>
+<th>KV头数</th>
+<th>d_k</th>
+<th>4K上下文KV Cache</th>
+<th>8K上下文KV Cache</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-3 175B</td>
+<td>175B</td>
+<td>96</td>
+<td>96</td>
+<td>128</td>
+<td>~48 GB</td>
+<td>~96 GB</td>
+</tr>
+<tr>
+<td>PaLM 540B</td>
+<td>540B</td>
+<td>118</td>
+<td>48</td>
+<td>128</td>
+<td>~135 GB</td>
+<td>~270 GB</td>
+</tr>
+<tr>
+<td>Chinchilla 70B</td>
+<td>70B</td>
+<td>80</td>
+<td>8</td>
+<td>128</td>
+<td>~1.3 GB</td>
+<td>~2.6 GB</td>
+</tr>
+</tbody>
+</table>
+<p>这个阶段暴露了一个深刻的矛盾：<strong>模型参数本身是静态的，可以放在 GPU 显存中不动；但 KV Cache 是动态的，随并发请求数和上下文长度线性增长</strong>。在 GPU 显存有限的约束下，系统能同时服务的请求数（batch size）被 KV Cache 的内存占用严重制约。</p>
+<p>这催生了一个关键洞察：Transformer 推理的瓶颈正在从"计算密集型"转向"内存密集型"。GPU 的算力其实并未被充分利用，真正卡脖子的是 HBM（高带宽内存）的容量和带宽。</p>
+<h3 id="2023-2024">第三纪元：优化方案的爆发（2023-2024）</h3>
+<p>2023 年是 KV Cache 优化的分水岭。多项突破性技术在这一年涌现：</p>
+<p><strong>1. Multi-Query Attention (MQA) - Shazeer 2019/2023 实践</strong></p>
+<p>MQA 的核心思想极其简洁：让所有注意力头共享同一组 K 和 V，只保留不同的 Q。这将 KV Cache 的大小从 <code>h × d_k</code> 降低到 <code>1 × d_k</code>，减少了 h 倍。</p>
+<pre><code>标准 MHA: 每 token KV = 2 × L × h × d_k
+MQA:     每 token KV = 2 × L × 1 × d_k    # 减少 h 倍
+</code></pre>
+<p>代价是模型表达能力的轻微下降，但在实践中，MQA 对模型质量的影响微乎其微，而对吞吐量的提升却非常显著。</p>
+<p><strong>2. Grouped-Query Attention (GQA) - Ainslie 2023</strong></p>
+<p>GQA 是 MQA 的推广版本，将 h 个查询头分成 g 组（1 &lt; g &lt; h），每组共享一组 KV。当 g=1 时退化为 MQA，当 g=h 时退化为标准 MHA。</p>
+<pre><code>GQA:     每 token KV = 2 × L × g × d_k    # g 为 KV 头数，1 &lt; g &lt; h
+</code></pre>
+<p>LLaMA-2 70B 使用 g=8（8 个 KV 头对应 64 个查询头），在模型质量和推理效率之间取得了优秀的平衡。GQA 已经成为 2023-2024 年大模型的标配。</p>
+<p><strong>3. PagedAttention - Kwon 2023 (vLLM)</strong></p>
+<p>如果说 MQA/GQA 减少了每个 token 的 KV 大小，那么 PagedAttention 则从<strong>内存管理</strong>层面彻底革新了 KV Cache 的分配方式。</p>
+<p>传统系统中，KV Cache 需要预分配连续的显存空间，且大小按最大序列长度预留。这导致了严重的<strong>内存碎片化</strong>和<strong>内部浪费</strong>——实际序列可能只有 1000 个 token，但预分配了 2048 个 token 的空间，浪费率高达 50%。</p>
+<p>vLLM 借鉴了操作系统虚拟内存的经典思想，将 KV Cache 切分为固定大小的"页"（block），每页存储固定数量 token（如 16 个）的 KV 向量。这些页不需要连续存储，通过一个"块表"（block table）来映射逻辑关系。</p>
+<pre><code>传统方式: [====连续分配====][浪费][====连续分配====][浪费]
+PagedAttention: [页1][页3][页7][页2][页5]... → 块表映射逻辑顺序
+</code></pre>
+<p>PagedAttention 的效果是革命性的：
+- 内存浪费从 ~50% 降低到 &lt;4%（仅最后一页的内部碎片）
+- 同等显存下的吞吐量提升 2-4 倍
+- 支持动态的 copy-on-write，实现 beam search 和 parallel sampling 的高效 KV 共享</p>
+<p><strong>4. Multi-head Latent Attention (MLA) - DeepSeek 2024</strong></p>
+<p>DeepSeek-V2 提出的 MLA 是一种更加激进的压缩策略。它不是简单地减少 KV 头数，而是将 K 和 V 通过一个低秩联合压缩矩阵投影到一个更低维度的潜在空间中进行缓存：</p>
+<pre><code>压缩: c_t = W_DKV · h_t     # W_DKV ∈ R^{d_c × d_model}, d_c &lt;&lt; d_model
+解压: K_t = W_UK · c_t, V_t = W_UV · c_t   # 在需要计算注意力时解压
+</code></pre>
+<p>这使得 KV Cache 的大小进一步降低，DeepSeek-V2 报告 KV Cache 减少了约 93.3%，同时模型质量几乎无损。</p>
+<h3 id="2026">第四纪元：长上下文时代与 2026 现状</h3>
+<p>2025-2026 年，长上下文窗口成为大模型的标配能力。Claude 3.5 支持 200K 上下文，Gemini 1.5 Pro 支持 1M 上下文，GPT-4o 支持 128K。上下文长度的爆炸式增长让 KV Cache 问题变得更加尖锐。</p>
+<p><strong>2026 年 KV Cache 优化的主要方向</strong>：</p>
+<ol>
+<li>
+<p><strong>KV Cache 量化</strong>：将 KV Cache 从 FP16 量化到 INT8 甚至 INT4，直接减半或再减半内存占用。关键技术包括 KIVI、KVQuant 等。</p>
+</li>
+<li>
+<p><strong>KV Cache 驱逐策略</strong>：并非所有 token 的 KV 都同等重要。基于注意力分数的驱逐策略（如 H2O、Scissorhands、StreamingLLM）可以动态丢弃不重要的 KV 条目。</p>
+</li>
+<li>
+<p><strong>稀疏注意力 + KV Cache 协同</strong>：滑动窗口注意力、局部注意力等稀疏模式天然减少了需要缓存的 KV 数量，与 KV Cache 优化形成协同效应。</p>
+</li>
+<li>
+<p>** speculative decoding 与 KV Cache**：推测性解码中的 draft model 和 target model 之间的 KV Cache 复用和验证机制。</p>
+</li>
+<li>
+<p><strong>硬件协同设计</strong>：Groq 的 LPU、Cerebras 的 Wafer Scale Engine 等新型硬件从架构层面重新思考 KV Cache 的存储和访问模式。</p>
+</li>
+</ol>
+<hr />
+<h2 id="kv-cache_1">横轴：KV Cache 与关键变量的关系</h2>
+<h3 id="1-kv-cache">1. KV Cache 与模型规模</h3>
+<p>KV Cache 的大小与模型参数量的关系并非简单的线性关系，而是取决于架构选择：</p>
+<pre><code>KV_cache_total = batch_size × seq_len × 2 × L × n_kv × d_k × dtype_size
+</code></pre>
+<p>其中 n_kv 是 KV 头数（MHA 时等于注意力头数 h，GQA 时等于组数 g，MQA 时为 1）。</p>
+<p><strong>关键洞察</strong>：模型参数量增长主要影响的是"静态显存"（模型权重本身），而 KV Cache 影响的是"动态显存"。在推理服务中，动态显存往往是更大的瓶颈，因为它随并发请求数线性增长。</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>模型权重 (FP16)</th>
+<th>单请求 KV (128K, FP16)</th>
+<th>KV/权重比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLaMA-2 7B, MHA</td>
+<td>14 GB</td>
+<td>~20 GB</td>
+<td>1.43</td>
+</tr>
+<tr>
+<td>LLaMA-2 70B, GQA</td>
+<td>140 GB</td>
+<td>~41 GB</td>
+<td>0.29</td>
+</tr>
+<tr>
+<td>DeepSeek-V2, MLA</td>
+<td>42 GB (FP8)</td>
+<td>~2.8 GB</td>
+<td>0.07</td>
+</tr>
+</tbody>
+</table>
+<p>可以看到，GQA 和 MLA 等优化技术极大地改变了 KV Cache 与模型权重的比例关系。</p>
+<h3 id="2-kv-cache">2. KV Cache 与上下文长度</h3>
+<p>KV Cache 与上下文长度是严格的线性关系：</p>
+<pre><code>KV_cache ∝ seq_len
+</code></pre>
+<p>这意味着：
+- 4K → 128K：32 倍增长
+- 4K → 1M：256 倍增长</p>
+<p>在百万级上下文的场景下，单个请求的 KV Cache 就可能超过单卡显存。这推动了：
+- <strong>多卡 KV Cache 分布式存储</strong>：将 KV Cache 切分到多个 GPU 上
+- <strong>KV Cache offloading</strong>：将部分 KV Cache 卸载到 CPU 内存或 NVMe
+- <strong>分层 KV Cache</strong>：对不同层使用不同的缓存策略</p>
+<h3 id="3-kv-cache">3. KV Cache 与吞吐量</h3>
+<p>吞吐量（tokens/s）与 KV Cache 的关系通过显存容量约束来体现：</p>
+<pre><code>max_batch_size = (GPU_memory - model_weights) / (seq_len × per_token_kv)
+</code></pre>
+<p>在显存固定的情况下，KV Cache 越大，能同时处理的请求数越少，吞吐量越低。这就是为什么 KV Cache 优化本质上是一个<strong>吞吐量优化问题</strong>。</p>
+<p><strong>不同优化技术对吞吐量的影响</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>技术</th>
+<th>KV Cache 缩减比</th>
+<th>吞吐量提升</th>
+<th>质量影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MQA (h=32→1)</td>
+<td>32x</td>
+<td>~2.5x</td>
+<td>&lt;0.5% PPL 退化</td>
+</tr>
+<tr>
+<td>GQA (h=32→8)</td>
+<td>4x</td>
+<td>~1.8x</td>
+<td>&lt;0.1% PPL 退化</td>
+</tr>
+<tr>
+<td>MLA (DeepSeek)</td>
+<td>~15x</td>
+<td>~2.2x</td>
+<td>几乎无损</td>
+</tr>
+<tr>
+<td>PagedAttention</td>
+<td>~1.3x (利用率)</td>
+<td>~2-4x</td>
+<td>无损</td>
+</tr>
+<tr>
+<td>KV INT8 量化</td>
+<td>2x</td>
+<td>~1.5x</td>
+<td>&lt;0.3% PPL 退化</td>
+</tr>
+<tr>
+<td>StreamingLLM (窗口256)</td>
+<td>~500x (128K→256)</td>
+<td>~10x+</td>
+<td>任务相关</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-kv-cache">4. KV Cache 与延迟</h3>
+<p>KV Cache 不仅影响吞吐量，也影响延迟。在 decode 阶段，每一步都需要读取整个 KV Cache 来计算注意力：</p>
+<pre><code>decode_latency ∝ KV_cache_size / memory_bandwidth
+</code></pre>
+<p>这就是所谓的"内存墙"问题——GPU 的计算能力远超其内存带宽，导致 decode 阶段成为 memory-bound 操作。以 A100 为例：
+- FP16 算力：312 TFLOPS
+- HBM 带宽：2,039 GB/s
+- 读取 40 GB KV Cache 的时间：~20 ms
+- 对应的"有效算力"：仅约 2 TFLOPS（利用率的不到 1%）</p>
+<hr />
+<h2 id="kv-cache_2">核心矛盾：KV Cache 是推理阶段的"内存税"</h2>
+<h3 id="_1">矛盾的本质</h3>
+<p>KV Cache 的核心矛盾可以用一句话概括：<strong>它是 Transformer 自回归解码的"内存税"——你无法避免缴纳，只能通过架构优化来降低税率</strong>。</p>
+<p>这个矛盾的根源在于自回归生成的本质：每一步生成都依赖于之前所有步骤的输出。在 Transformer 中，这种依赖通过注意力机制实现，而注意力机制需要访问所有之前 token 的 K 和 V 向量。KV Cache 是避免重复计算这些 K/V 的唯一方式。</p>
+<h3 id="_2">矛盾的三个维度</h3>
+<p><strong>维度一：质量 vs 效率</strong>
+- 保留完整的 KV Cache → 模型质量最优，但内存消耗最大
+- 压缩/量化/驱逐 KV Cache → 节省内存，但可能损失质量
+- 最优平衡点取决于具体应用场景</p>
+<p><strong>维度二：延迟 vs 吞吐</strong>
+- 大 batch size → 高吞吐，但 KV Cache 总量增大，可能超出显存
+- 小 batch size → 低延迟，但 GPU 利用率低
+- Continuous batching（如 vLLM）通过动态调度来缓解这一矛盾</p>
+<p><strong>维度三：训练 vs 推理</strong>
+- 训练时 KV Cache 不是问题（可以并行计算所有位置）
+- 推理时 KV Cache 是核心瓶颈（必须自回归逐步生成）
+- 这导致训练和推理的最优架构选择可能不同</p>
+<h3 id="_3">破局方向</h3>
+<p>2026 年，几个方向正在从根本上挑战 KV Cache 的必要性：</p>
+<ol>
+<li>
+<p><strong>线性注意力（Linear Attention）</strong>：通过核方法或状态空间模型将注意力的 O(n^2) 复杂度降到 O(n)，从根源上消除 KV Cache 的需求。代表工作：Mamba、RWKV、RetNet。</p>
+</li>
+<li>
+<p><strong>无 KV Cache 架构</strong>：如 DeepSeek 的 DualPipe 等方案，通过重新设计注意力计算流程来减少或消除 KV Cache。</p>
+</li>
+<li>
+<p><strong>硬件革命</strong>：近存计算（Processing-in-Memory）、光计算等新技术可能从根本上改变内存带宽的约束。</p>
+</li>
+</ol>
+<hr />
+<h2 id="2026_1">2026 年现状总结</h2>
+<p>截至 2026 年，KV Cache 优化的格局如下：</p>
+<ol>
+<li><strong>GQA 已成为默认选择</strong>：几乎所有新发布的大模型都采用 GQA 或 MQA。</li>
+<li><strong>PagedAttention 是推理引擎的标配</strong>：vLLM、TensorRT-LLM、SGLang 等主流推理框架都实现了 PagedAttention。</li>
+<li><strong>KV Cache 量化正在普及</strong>：INT8 KV Cache 已经成为生产环境的常见配置。</li>
+<li><strong>长上下文推动新需求</strong>：100K+ 上下文窗口让 KV Cache 管理从"优化项"变为"核心挑战"。</li>
+<li><strong>SSM/线性注意力作为替代方案持续发展</strong>：Mamba-2、基于状态空间的方法在特定场景中展现出优势，但尚未撼动 Transformer 的主导地位。</li>
+</ol>
+<p>KV Cache 的故事，本质上是整个大模型推理优化的缩影——在算力、内存、延迟、质量的多维约束中寻找最优解。这个搜索过程远未结束。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

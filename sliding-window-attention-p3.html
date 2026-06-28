@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滑动窗口注意力 — 拆书分析 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="sliding-window-attention-p2.html">← 经典论文</a>
+        <span class="nav-title">滑动窗口注意力 — 拆书分析</span>
+        <a href="sliding-window-attention-p4.html">知识卡片 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="_1">滑动窗口注意力——不看完所有，只看附近</h1>
+<h2 id="_2">核心问题：长序列注意力的计算复杂度如何降低？</h2>
+<h3 id="_3">问题的提出</h3>
+<p>想象你在一本 1000 页的书中寻找某个信息的关联。全量注意力的做法是：把每一页都与其他所有页进行比较——这需要 1000 × 1000 = 1,000,000 次比较。滑动窗口注意力的做法是：每页只与前后 10 页比较——只需要 1000 × 10 = 10,000 次比较。计算量减少了 100 倍。</p>
+<p>但问题是：只看附近，会不会错过远处的关键信息？</p>
+<h3 id="_4">问题的本质</h3>
+<p>长序列注意力的核心矛盾是：<strong>信息的全局性与计算效率之间的冲突</strong>。</p>
+<ul>
+<li>全量注意力：每个位置都能看到所有其他位置 → 信息流通完美，但计算量 O(n^2)</li>
+<li>完全不关注：每个位置只看自己 → 计算量 O(n)，但丢失所有上下文</li>
+<li>滑动窗口注意力：每个位置看附近 w 个位置 → 计算量 O(n × w)，是两者的折中</li>
+</ul>
+<p>关键洞见是：<strong>在大多数自然序列中，局部信息比全局信息更重要</strong>。一个词的含义主要由其上下文（前后几个词）决定，而不是由文档中距离很远的内容决定。</p>
+<hr />
+<h2 id="_5">基础假设：局部上下文比全局上下文更重要</h2>
+<h3 id="_6">假设的内容</h3>
+<p>滑动窗口注意力的有效性建立在一个关键假设之上：<strong>在自然序列（文本、图像、音频等）中，相邻位置之间的相关性远高于远距离位置之间的相关性</strong>。</p>
+<p>这个假设有坚实的统计学基础：</p>
+<pre><code>自然语言中的距离-相关性关系:
+距离 1 (相邻词): 相关性 ~0.8-0.9
+距离 5: 相关性 ~0.5-0.6
+距离 20: 相关性 ~0.2-0.3
+距离 100: 相关性 ~0.05-0.1
+距离 1000+: 相关性 ~0.01
+
+注意力分数的衰减:
+Attention(i, j) ∝ exp(-α × |i-j|)  (近似指数衰减)
+
+当 |i-j| &gt; w 时，注意力分数通常接近零
+→ 这些位置的贡献可以忽略
+→ 只计算 |i-j| ≤ w 的位置是合理的
+</code></pre>
+<h3 id="_7">假设的语言学证据</h3>
+<pre><code>例 1: 局部依赖
+&quot;那只 [黑色的] 猫 坐在 [温暖的] 垫子上&quot;
+形容词 &quot;黑色的&quot; 修饰 &quot;猫&quot;，&quot;温暖的&quot; 修饰 &quot;垫子&quot;
+这些依赖关系都在局部窗口内 (距离 ≤ 3)
+
+例 2: 长距离依赖
+&quot;那个 [昨天在公园里遇到的] 穿红衣服的 女孩 说 她 [很喜欢] 冰淇淋&quot;
+&quot;女孩&quot; 和 &quot;很喜欢&quot; 之间有较长距离
+但这种长距离依赖在自然语言中的比例较低
+
+统计:
+- 句法依赖的平均距离: ~3-5 个词
+- 90% 的依赖关系在 20 个词以内
+- 只有 ~5% 的依赖关系超过 50 个词
+</code></pre>
+<h3 id="_8">假设何时被打破</h3>
+<p>长距离依赖在以下场景中变得重要：</p>
+<ol>
+<li><strong>指代消解</strong>："John went to the store. He bought milk." — "He" 指代 "John"，距离可能较远</li>
+<li><strong>文档级推理</strong>：需要综合文档不同部分的信息才能得出结论</li>
+<li><strong>代码理解</strong>：函数的定义和调用可能相距很远</li>
+<li><strong>数学证明</strong>：定理的引用可能在文档的其他位置</li>
+</ol>
+<p>对于这些场景，纯滑动窗口注意力不够，需要引入全局 token 或稀释注意力来补充长距离信息。</p>
+<hr />
+<h2 id="_9">分析框架：局部性 × 效率 × 感受野</h2>
+<h3 id="_10">三维分析框架</h3>
+<pre><code>                    感受野 (Receptive Field)
+                         ↑
+                         |
+                    全局 (n)
+                         |
+                         |
+                    局部 (w) ───────→ 效率 (Efficiency)
+                   /                  O(n × w) → O(n^2)
+                  /
+                 /
+            无信息
+</code></pre>
+<p><strong>维度 1：局部性</strong>
+- 滑动窗口注意力是"局部"的——每个位置只关注附近的 w 个位置
+- 局部性越强（w 越小），计算效率越高，但信息越不完整
+- 最优的 w 取决于任务和数据</p>
+<p><strong>维度 2：效率</strong>
+- 计算效率: O(n × w) vs O(n^2)
+- 内存效率: KV Cache O(w) vs O(n)
+- 硬件效率: 与 FlashAttention 完美兼容</p>
+<p><strong>维度 3：感受野</strong>
+- 单层感受野: w
+- L 层堆叠感受野: L × (w-1) + 1
+- 加上全局 token: 有效感受野 = 全局</p>
+<h3 id="w">窗口大小 w 的选择</h3>
+<pre><code>不同任务的推荐窗口大小:
+
+文本理解:
+- 句子级: w = 64-128 (覆盖大多数句子)
+- 段落级: w = 256-512 (覆盖大多数段落)
+- 文档级: w = 512-1024 + 全局 token
+
+代码理解:
+- 函数级: w = 256-512
+- 文件级: w = 1024-2048
+
+图像处理 (ViT):
+- 局部特征: w = 7×7 = 49 patches
+- 中等特征: w = 14×14 = 196 patches
+
+自动驾驶:
+- 短期时序: w = 3-10 帧
+- 中期时序: w = 10-30 帧
+
+Mistral 7B 的选择: w = 4096
+- 32 层堆叠后感受野: 32 × 4095 = 131,040 tokens
+- 覆盖了 128K 上下文窗口的绝大部分
+</code></pre>
+<hr />
+<h2 id="_11">核心结论：局部注意力是长序列处理的最优折中</h2>
+<h3 id="_12">为什么滑动窗口注意力是最优折中</h3>
+<p>在所有稀疏注意力方案中，滑动窗口注意力以其<strong>简洁性和高效性</strong>脱颖而出：</p>
+<pre><code>方案对比:
+1. 随机稀疏: 不可预测，硬件不友好
+2. 哈希稀疏 (Reformer): 需要额外计算哈希，硬件效率低
+3. 路由稀疏 (Routing): 需要负载均衡，实现复杂
+4. 滑动窗口: 固定模式，硬件极度友好 ✓
+5. 线性注意力: 改变了注意力的数学定义，质量有损
+
+滑动窗口注意力的优势:
+- 注意力模式固定 → 可以高度优化
+- 不需要额外计算 → 纯效率提升
+- 与 FlashAttention 完美兼容 → 硬件效率极高
+- KV Cache 固定大小 → 内存可预测
+- 多层堆叠扩大感受野 → 不损失长距离信息
+</code></pre>
+<h3 id="_13">数学证明的支撑</h3>
+<p>BigBird 的理论结果提供了坚实的数学基础：</p>
+<pre><code>定理: 滑动窗口 + 全局注意力 = Universal Approximator
+
+含义:
+- 理论上，滑动窗口注意力可以逼近任何全量注意力能表达的函数
+- 不需要随机连接（实践中）
+- 只需要少量全局 token
+
+这是一个非常强的结论:
+它意味着滑动窗口注意力不是&quot;妥协&quot;，而是&quot;等价&quot;
+唯一的代价是需要更多层来扩大感受野
+</code></pre>
+<hr />
+<h2 id="_14">精神内核："不看完所有，只看附近"</h2>
+<h3 id="_15">哲学内涵</h3>
+<p>滑动窗口注意力体现了一种深刻的认知哲学：<strong>你不需要看到所有事情才能做出好的决策</strong>。</p>
+<p>这与人类认知的方式惊人地相似：
+- 人类阅读时，眼睛每次只聚焦在一小段文字上（约 7-8 个字符）
+- 通过快速移动视线（saccade），我们有效地"滑动窗口"过整个文本
+- 我们的大脑通过多次"局部注视"构建了对整个文档的理解</p>
+<pre><code>人类阅读 vs 滑动窗口注意力:
+
+人类眼睛:
+- 每次注视 (fixation): ~200ms
+- 每次看到: ~7-8 个字符 (≈ &quot;窗口大小&quot;)
+- 通过 saccade 移动窗口
+- 大脑整合多次注视的信息
+
+滑动窗口注意力:
+- 每个位置: 关注 w 个邻居 (&quot;窗口大小&quot;)
+- 通过多层堆叠整合信息
+- 全局 token 类似人类的&quot;余光&quot;
+- 最终获得全局理解
+</code></pre>
+<h3 id="_16">工程哲学</h3>
+<p>在工程层面，滑动窗口注意力体现了"分而治之"的经典思想：</p>
+<pre><code>分而治之的三个层次:
+
+1. 空间分治: 将长序列分成局部窗口
+   - 每个窗口独立处理
+   - 减少计算量
+
+2. 时间分治: 多层堆叠逐步扩大感受野
+   - 第 1 层: 看到 w 个位置
+   - 第 2 层: 看到 2w 个位置
+   - 第 L 层: 看到 L×w 个位置
+
+3. 信息分治: 全局 token 传递跨窗口信息
+   - 局部窗口处理局部信息
+   - 全局 token 传递全局信息
+   - 两者互补
+</code></pre>
+<h3 id="_17">一句话总结</h3>
+<blockquote>
+<p>滑动窗口注意力的智慧在于：承认我们无法同时关注一切，但通过巧妙地组合局部观察，我们可以理解整体。这不是妥协，而是一种更高级的认知策略。</p>
+</blockquote>
+<hr />
+<h2 id="_18">实际案例分析</h2>
+<h3 id="mistral-7b">Mistral 7B 的滑动窗口设计</h3>
+<p>Mistral 7B 是第一个使用滑动窗口注意力的主流大语言模型，其设计选择值得深入分析：</p>
+<pre><code>Mistral 7B 配置:
+- 层数: 32
+- 窗口大小: 4096
+- 注意力头数: 32
+- head_dim: 128
+- 上下文长度: 8K (训练), 128K (推理)
+
+设计分析:
+1. 为什么 w=4096?
+   - 32 层 × 4096 = 131,072 感受野
+   - 覆盖了 128K 上下文窗口的绝大部分
+   - 每层的 KV Cache: 4096 × 2 × 32 × 128 × 2 = ~64 MB
+   - 总 KV Cache: 64 MB × 32 = ~2 GB (远小于全量的 ~16 GB)
+
+2. 为什么不用全量注意力?
+   - 全量 KV Cache (128K): ~16 GB
+   - 滑动窗口 KV Cache (w=4096): ~2 GB
+   - 缩减 8 倍，质量几乎无损
+
+3. 质量验证:
+   - Mistral 7B 在 MMLU 上达到 60.1%
+   - 同等规模的全量注意力模型: ~60-61%
+   - 差距 &lt; 1%，但内存节省 8 倍
+</code></pre>
+<h3 id="longformer">Longformer 在长文档中的应用</h3>
+<pre><code>场景: 法律文档分析 (平均长度 16K tokens)
+
+全量注意力:
+- 注意力矩阵: 16K × 16K = 256M → 需要 ~1 GB 内存
+- 在单 GPU 上勉强可行，但很紧张
+
+Longformer (w=512, 全局 token=16):
+- 注意力矩阵: 每行只有 512+16 = 528 个非零值
+- 总非零值: 16K × 528 = 8.4M → 只需 ~32 MB
+- 内存减少 32 倍
+- 速度提升 ~20 倍
+
+质量对比:
+- 全量注意力: F1 = 82.3%
+- Longformer: F1 = 80.1%
+- 差距 2.2%，但效率提升巨大
+</code></pre>
+<h3 id="mistral">Mistral 的设计对行业的启示</h3>
+<p>Mistral 7B 的成功证明了滑动窗口注意力在主流 LLM 中的可行性。此后，越来越多的模型开始采用类似的设计：
+- Mixtral 8x7B: 继承 Mistral 的滑动窗口设计
+- DeepSeek-V2: 在 MLA 基础上使用局部注意力
+- 多个开源模型在微调时默认启用滑动窗口注意力</p>
+<p>这一趋势表明，滑动窗口注意力正在从"长序列的特殊需求"变为"所有 Transformer 模型的默认选择"。</p>
+<h2 id="_19">附录：关键概念速查</h2>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>定义</th>
+<th>与滑动窗口的关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全量注意力</td>
+<td>每个位置关注所有位置</td>
+<td>滑动窗口的对比基线</td>
+</tr>
+<tr>
+<td>稀疏注意力</td>
+<td>只关注部分位置</td>
+<td>滑动窗口是其特例</td>
+</tr>
+<tr>
+<td>窗口大小 w</td>
+<td>每个位置关注的邻居数</td>
+<td>核心超参数</td>
+</tr>
+<tr>
+<td>感受野</td>
+<td>通过网络能"看到"的范围</td>
+<td>L 层后 = L × w</td>
+</tr>
+<tr>
+<td>全局 token</td>
+<td>关注所有位置的特殊 token</td>
+<td>弥补局部性的不足</td>
+</tr>
+<tr>
+<td>FlashAttention</td>
+<td>IO 感知的注意力实现</td>
+<td>与滑动窗口完美兼容</td>
+</tr>
+<tr>
+<td>KV Cache</td>
+<td>缓存已计算的 K/V</td>
+<td>滑动窗口下固定为 O(w)</td>
+</tr>
+<tr>
+<td>稀释注意力</td>
+<td>间隔采样扩大感受野</td>
+<td>滑动窗口的扩展</td>
+</tr>
+</tbody>
+</table>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

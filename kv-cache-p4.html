@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KV Cache — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="kv-cache-p3.html">← 拆书分析</a>
+        <span class="nav-title">KV Cache — 知识卡片</span>
+        <a href="kv-cache-p5.html">概念解剖 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="kv-cache">KV Cache 知识卡片集</h1>
+<h2 id="1kv-cache">卡片 1：原理卡——KV Cache 是什么？</h2>
+<h3 id="_1">正面：一句话定义</h3>
+<p>KV Cache（Key-Value 缓存）是 Transformer 模型在自回归推理过程中，将已计算过的 Key 和 Value 向量存储在 GPU 显存中，避免重复计算的数据结构。</p>
+<h3 id="_2">背面：核心原理</h3>
+<p><strong>为什么需要 KV Cache？</strong></p>
+<p>Transformer 的自回归解码是逐步进行的。在生成第 t 个 token 时，模型需要计算：</p>
+<pre><code>output_t = Attention(Q_t, K_{1:t}, V_{1:t})
+         = softmax(Q_t @ K_{1:t}^T / sqrt(d_k)) @ V_{1:t}
+</code></pre>
+<p>其中 K_{1:t} 和 V_{1:t} 包含了从位置 1 到 t 的所有 Key 和 Value 向量。</p>
+<p><strong>没有 KV Cache 的情况</strong>：
+- 生成 token 3 时，需要重新计算 token 1, 2 的 K, V
+- 生成 token 4 时，需要重新计算 token 1, 2, 3 的 K, V
+- 生成 token N 时，总计算量为 O(N^3)</p>
+<p><strong>有 KV Cache 的情况</strong>：
+- token 1 的 K, V 在第一步计算后缓存
+- token 2 的 K, V 在第二步计算后缓存
+- 生成 token N 时，只需计算 token N 的 K, V，然后与缓存的 K_{1:N-1}, V_{1:N-1} 拼接
+- 总计算量降为 O(N^2)</p>
+<p><strong>KV Cache 的存储结构</strong>：</p>
+<pre><code>KV Cache 结构示意:
+
+Layer 0:  K_cache = [K_1, K_2, ..., K_t]    # shape: [t, n_kv, d_k]
+          V_cache = [V_1, V_2, ..., V_t]    # shape: [t, n_kv, d_v]
+
+Layer 1:  K_cache = [K_1, K_2, ..., K_t]
+          V_cache = [V_1, V_2, ..., V_t]
+          ...
+
+Layer L-1: K_cache = [K_1, K_2, ..., K_t]
+           V_cache = [V_1, V_2, ..., V_t]
+</code></pre>
+<p><strong>关键约束</strong>：KV Cache 的正确性依赖于因果掩码——因为每个 token 只能看到它之前的 token，所以之前 token 的 K/V 不会随新 token 的加入而改变。</p>
+<hr />
+<h2 id="2kv-cache">卡片 2：公式卡——KV Cache 内存计算公式</h2>
+<h3 id="_3">核心公式</h3>
+<pre><code>KV Cache 总内存 = batch_size × seq_len × 2 × num_layers × num_kv_heads × head_dim × dtype_size
+</code></pre>
+<h3 id="_4">变量说明</h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>含义</th>
+<th>典型值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>batch_size</td>
+<td>并发请求数</td>
+<td>1-128</td>
+</tr>
+<tr>
+<td>seq_len</td>
+<td>序列长度（上下文 + 生成）</td>
+<td>512 - 1,000,000</td>
+</tr>
+<tr>
+<td>num_layers</td>
+<td>Transformer 层数</td>
+<td>32-128</td>
+</tr>
+<tr>
+<td>num_kv_heads</td>
+<td>KV 头数</td>
+<td>1 (MQA) / g (GQA) / h (MHA)</td>
+</tr>
+<tr>
+<td>head_dim</td>
+<td>每个头的维度</td>
+<td>64-256</td>
+</tr>
+<tr>
+<td>dtype_size</td>
+<td>数据类型字节数</td>
+<td>2 (FP16) / 1 (INT8) / 0.5 (INT4)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_5">速算表</h3>
+<p><strong>单请求、FP16 精度下的 KV Cache 大小</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>层数</th>
+<th>KV头数</th>
+<th>head_dim</th>
+<th>每 token KV</th>
+<th>4K 上下文</th>
+<th>32K 上下文</th>
+<th>128K 上下文</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLaMA-2 7B (MHA)</td>
+<td>32</td>
+<td>32</td>
+<td>128</td>
+<td>2 MB</td>
+<td>8 GB</td>
+<td>64 GB</td>
+<td>256 GB</td>
+</tr>
+<tr>
+<td>LLaMA-2 70B (GQA)</td>
+<td>80</td>
+<td>8</td>
+<td>128</td>
+<td>320 KB</td>
+<td>1.3 GB</td>
+<td>10 GB</td>
+<td>41 GB</td>
+</tr>
+<tr>
+<td>DeepSeek-V2 (MLA)</td>
+<td>60</td>
+<td>-</td>
+<td>d_c=512</td>
+<td>60 KB</td>
+<td>240 MB</td>
+<td>1.9 GB</td>
+<td>7.7 GB</td>
+</tr>
+<tr>
+<td>Mistral 7B (GQA)</td>
+<td>32</td>
+<td>8</td>
+<td>128</td>
+<td>128 KB</td>
+<td>512 MB</td>
+<td>4 GB</td>
+<td>16 GB</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_6">速算公式</h3>
+<pre><code>快速估算（FP16, 单请求）:
+
+KV Cache (GB) ≈ seq_len(K) × num_layers × num_kv_heads × head_dim × 4 / 1,000,000
+
+简化版:
+KV Cache (GB) ≈ seq_len(K) × per_token_KV (KB) / 1,000,000
+
+例: LLaMA-2 70B, 128K 上下文
+= 128,000 × 320 KB / 1,000,000
+= 40.96 GB ≈ 41 GB
+</code></pre>
+<h3 id="kv-cache_1">上下文长度与 KV Cache 的关系</h3>
+<pre><code>上下文长度    KV Cache (LLaMA-2 70B)    相当于
+4K           1.3 GB                     一部高清电影
+8K           2.6 GB                     一个 Chrome 浏览器
+32K          10 GB                      一个小型 LLM 的完整大小
+128K         41 GB                      一张 A100 显存的一半
+1M           328 GB                     4 张 A100 的总显存
+</code></pre>
+<hr />
+<h2 id="3">卡片 3：优化方案对比卡</h2>
+<h3 id="_7">方案全景对比</h3>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>类别</th>
+<th>KV Cache 缩减</th>
+<th>质量影响</th>
+<th>是否需要重训</th>
+<th>代表工作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MQA</td>
+<td>架构</td>
+<td>h 倍</td>
+<td>极小</td>
+<td>是</td>
+<td>Shazeer 2019, PaLM</td>
+</tr>
+<tr>
+<td>GQA</td>
+<td>架构</td>
+<td>h/g 倍</td>
+<td>极小</td>
+<td>是</td>
+<td>Ainslie 2023, LLaMA-2</td>
+</tr>
+<tr>
+<td>MLA</td>
+<td>架构</td>
+<td>~64 倍 (vs MHA)</td>
+<td>略有提升</td>
+<td>是</td>
+<td>DeepSeek 2024</td>
+</tr>
+<tr>
+<td>PagedAttention</td>
+<td>系统</td>
+<td>~1.3 倍 (利用率)</td>
+<td>无损</td>
+<td>否</td>
+<td>Kwon 2023, vLLM</td>
+</tr>
+<tr>
+<td>KV 量化 (INT8)</td>
+<td>压缩</td>
+<td>2 倍</td>
+<td>&lt;0.3% PPL</td>
+<td>否/微调</td>
+<td>KIVI 2024</td>
+</tr>
+<tr>
+<td>KV 量化 (INT4)</td>
+<td>压缩</td>
+<td>4 倍</td>
+<td>~1% PPL</td>
+<td>否/微调</td>
+<td>KVQuant 2024</td>
+</tr>
+<tr>
+<td>H2O 驱逐</td>
+<td>算法</td>
+<td>可变 (50-90%)</td>
+<td>任务相关</td>
+<td>否</td>
+<td>Zhang 2023</td>
+</tr>
+<tr>
+<td>StreamingLLM</td>
+<td>算法</td>
+<td>~500 倍</td>
+<td>任务相关</td>
+<td>否</td>
+<td>Xiao 2023</td>
+</tr>
+<tr>
+<td>FlashAttention</td>
+<td>系统</td>
+<td>不减少</td>
+<td>无损</td>
+<td>否</td>
+<td>Dao 2022</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mqa-vs-gqa-vs-mha">MQA vs GQA vs MHA 结构对比</h3>
+<pre><code>Multi-Head Attention (MHA):
+Q1 K1 V1    Q2 K2 V2    Q3 K3 V3    Q4 K4 V4
+ ↓   ↓  ↓    ↓   ↓  ↓    ↓   ↓  ↓    ↓   ↓  ↓
+head1       head2       head3       head4
+KV Cache = 4 × d_k (每层)
+
+Multi-Query Attention (MQA):
+Q1 K  V    Q2 K  V    Q3 K  V    Q4 K  V
+ ↓  ↓  ↓    ↓  ↓  ↓    ↓  ↓  ↓    ↓  ↓  ↓
+head1       head2       head3       head4
+KV Cache = 1 × d_k (每层)     # 所有头共享 K, V
+
+Grouped-Query Attention (GQA, g=2):
+Q1 Q2 K1 V1    Q3 Q4 K2 V2
+ ↓   ↓  ↓  ↓    ↓   ↓  ↓  ↓
+head1 head2    head3 head4
+KV Cache = 2 × d_k (每层)     # 每 2 个头共享一组 K, V
+</code></pre>
+<h3 id="_8">优化方案选择决策树</h3>
+<pre><code>你的场景是什么？
+│
+├── 从头训练新模型
+│   ├── 追求极致效率 → MLA (DeepSeek 方案)
+│   ├── 追求平衡 → GQA (g=8 或 g=4)
+│   └── 追求质量 → MHA 或大 g 值的 GQA
+│
+├── 使用已有模型做推理服务
+│   ├── 需要高并发 → PagedAttention (vLLM)
+│   ├── 需要低延迟 → FlashAttention + KV INT8
+│   └── 需要长上下文 → StreamingLLM 或 KV 驱逐
+│
+└── 在边缘设备部署
+    ├── 内存极度受限 → MQA + INT4 量化
+    ├── 需要流式处理 → StreamingLLM
+    └── 可以接受微调 → GQA + INT8 量化
+</code></pre>
+<hr />
+<h2 id="4-kv-cache">卡片 4：内存计算卡——实际场景的 KV Cache 预算</h2>
+<h3 id="1-llama-2-7b">场景 1：单卡部署 LLaMA-2 7B</h3>
+<pre><code>硬件: 1 × A100 80GB
+模型权重 (FP16): 14 GB
+框架开销: ~5 GB
+可用于 KV Cache: 80 - 14 - 5 = 61 GB
+
+每 token KV (MHA, 32 头): 2 MB
+最大总 token 数: 61 GB / 2 MB = 30,500 tokens
+
+配置方案:
+- 8 个并发请求 × 4K 上下文 = 32K tokens → 64 GB KV → 超出!
+- 4 个并发请求 × 4K 上下文 = 16K tokens → 32 GB KV → 可行 ✓
+- 16 个并发请求 × 2K 上下文 = 32K tokens → 64 GB KV → 超出!
+- 8 个并发请求 × 2K 上下文 = 16K tokens → 32 GB KV → 可行 ✓
+
+结论: 单 A100 部署 LLaMA-2 7B，最多支持 ~8 个并发短对话请求
+</code></pre>
+<h3 id="2-llama-2-70b">场景 2：多卡部署 LLaMA-2 70B</h3>
+<pre><code>硬件: 4 × A100 80GB = 320 GB 总显存
+模型权重 (FP16): 140 GB (张量并行分布在 4 卡)
+框架开销: ~20 GB
+可用于 KV Cache: 320 - 140 - 20 = 160 GB
+
+每 token KV (GQA, 8 头): 320 KB
+最大总 token 数: 160 GB / 320 KB = 500,000 tokens
+
+配置方案:
+- 4 个并发 × 32K 上下文 = 128K tokens → 41 GB → 轻松 ✓
+- 2 个并发 × 128K 上下文 = 256K tokens → 82 GB → 可行 ✓
+- 1 个并发 × 500K 上下文 = 500K tokens → 160 GB → 极限 ✓
+
+结论: 4 × A100 可以支持 1 个 500K 上下文的超长请求
+</code></pre>
+<h3 id="3_1">场景 3：百万上下文部署</h3>
+<pre><code>目标: 支持 1M 上下文, LLaMA-2 70B (GQA)
+单请求 KV Cache: 328 GB
+
+硬件需求:
+- 模型权重: 140 GB
+- KV Cache: 328 GB
+- 总计: 468 GB + 框架开销 ~20 GB = ~490 GB
+
+方案:
+- 8 × A100 80GB = 640 GB → 可行 ✓ (剩余 ~150 GB 用于其他请求)
+- 6 × A100 80GB = 480 GB → 极限 ✓ (几乎无余量)
+- 4 × A100 80GB = 320 GB → 不可行 ✗
+
+优化后 (MLA, DeepSeek 方案):
+- 单请求 KV Cache: ~7.7 GB (1M × 60 KB)
+- 总计: 140 + 7.7 + 20 = ~168 GB
+- 2 × A100 80GB = 160 GB → 接近极限
+- 4 × A100 80GB → 轻松 ✓
+
+结论: MLA 让百万上下文从&quot;需要 6-8 卡&quot;变为&quot;2-4 卡即可&quot;
+</code></pre>
+<h3 id="_9">不同数据类型的内存对比</h3>
+<pre><code>数据类型    每字节    精度    KV Cache (128K, 70B)    质量影响
+FP32       4 bytes  最高    82 GB                   基准
+FP16       2 bytes  高      41 GB                   ≈FP32
+BF16       2 bytes  高      41 GB                   ≈FP32
+INT8       1 byte   中      20.5 GB                 &lt;0.3% PPL
+INT4       0.5 byte 低      10.25 GB                ~1% PPL
+NF4        0.5 byte 低      10.25 GB                ~0.8% PPL
+</code></pre>
+<hr />
+<h2 id="5kv-cache">卡片 5：时间线卡——KV Cache 优化里程碑</h2>
+<pre><code>2017 ─── Vaswani et al. &quot;Attention Is All You Need&quot;
+         │ Transformer 诞生，KV Cache 隐含诞生
+         │ 序列长度 ~100，KV Cache 可忽略
+         │
+2019 ─── Shazeer &quot;Fast Transformer Decoding&quot;
+         │ 提出 MQA，首次系统性减少 KV Cache
+         │ KV Cache 减少 h 倍 (8x)
+         │
+2020 ─── GPT-3 (175B)
+         │ 模型规模爆炸，KV Cache 问题凸显
+         │ 单请求 4K KV Cache ≈ 48 GB
+         │
+2022 ─── PaLM (540B) + FlashAttention
+         │ PaLM 采用 MQA
+         │ FlashAttention 优化注意力计算的 IO 效率
+         │
+2023 ─── GQA + vLLM + StreamingLLM + H2O
+         │ GQA: MQA 的推广版本，成为新标准
+         │ vLLM: PagedAttention 革新内存管理
+         │ StreamingLLM: 注意力汇聚现象的发现
+         │ H2O: 基于重要性的 KV 驱逐策略
+         │
+2024 ─── DeepSeek-V2 (MLA) + KIVI + KVQuant
+         │ MLA: 低秩压缩 KV Cache，减少 93.3%
+         │ KIVI: 2-bit KV Cache 量化
+         │ KVQuant: 支持千万级上下文
+         │
+2025 ─── 长上下文成为标配 (128K-1M)
+         │ KV Cache 管理从&quot;优化项&quot;变为&quot;核心挑战&quot;
+         │ 推理引擎全面支持 PagedAttention + GQA
+         │
+2026 ─── 多模态 + 超长上下文 + 边缘部署
+         KV Cache 优化进入&quot;组合拳&quot;时代
+         架构 (MLA) + 系统 (PagedAttn) + 量化 (INT4) + 稀疏 (SWA)
+</code></pre>
+<hr />
+<h2 id="6kv-cache">卡片 6：代码卡——KV Cache 实现要点</h2>
+<h3 id="pytorch-kv-cache">PyTorch 原生 KV Cache 实现</h3>
+<pre><code class="language-python">import torch
+import torch.nn.functional as F
+
+class KVCache:
+    &quot;&quot;&quot;简单的 KV Cache 实现&quot;&quot;&quot;
+
+    def __init__(self, batch_size, max_seq_len, num_layers, num_kv_heads, head_dim, device):
+        # 预分配 KV Cache 空间
+        self.cache_k = torch.zeros(
+            num_layers, batch_size, max_seq_len, num_kv_heads, head_dim,
+            dtype=torch.float16, device=device
+        )
+        self.cache_v = torch.zeros(
+            num_layers, batch_size, max_seq_len, num_kv_heads, head_dim,
+            dtype=torch.float16, device=device
+        )
+        self.seq_lens = torch.zeros(batch_size, dtype=torch.long, device=device)
+
+    def update(self, layer_id, batch_ids, new_k, new_v):
+        &quot;&quot;&quot;在指定位置写入新的 KV&quot;&quot;&quot;
+        positions = self.seq_lens[batch_ids]
+        for i, (batch_id, pos) in enumerate(zip(batch_ids, positions)):
+            self.cache_k[layer_id, batch_id, pos] = new_k[i]
+            self.cache_v[layer_id, batch_id, pos] = new_v[i]
+
+    def get(self, layer_id, batch_id):
+        &quot;&quot;&quot;获取指定层和 batch 的完整 KV&quot;&quot;&quot;
+        seq_len = self.seq_lens[batch_id]
+        return self.cache_k[layer_id, batch_id, :seq_len], \
+               self.cache_v[layer_id, batch_id, :seq_len]
+
+    def increment(self, batch_ids):
+        &quot;&quot;&quot;序列长度 +1&quot;&quot;&quot;
+        self.seq_lens[batch_ids] += 1
+
+
+def attention_with_kv_cache(query, key_cache, value_cache, num_kv_heads, num_q_heads):
+    &quot;&quot;&quot;使用 KV Cache 的注意力计算（支持 GQA）&quot;&quot;&quot;
+    # query: [batch, 1, num_q_heads, head_dim]
+    # key_cache, value_cache: [batch, seq_len, num_kv_heads, head_dim]
+
+    batch_size, seq_len, _, head_dim = key_cache.shape
+    groups = num_q_heads // num_kv_heads
+
+    # GQA: 将 KV 头扩展以匹配 Q 头
+    if groups &gt; 1:
+        key_cache = key_cache.repeat_interleave(groups, dim=2)
+        value_cache = value_cache.repeat_interleave(groups, dim=2)
+
+    # 计算注意力分数
+    # query: [batch, 1, num_q_heads, head_dim] -&gt; [batch, num_q_heads, 1, head_dim]
+    q = query.squeeze(1).transpose(1, 2)  # [batch, num_q_heads, 1, head_dim]
+    k = key_cache.transpose(1, 2)         # [batch, num_q_heads, seq_len, head_dim]
+    v = value_cache.transpose(1, 2)       # [batch, num_q_heads, seq_len, head_dim]
+
+    # 缩放点积注意力
+    scores = torch.matmul(q, k.transpose(-2, -1)) / (head_dim ** 0.5)
+    attn_weights = F.softmax(scores, dim=-1)
+    output = torch.matmul(attn_weights, v)  # [batch, num_q_heads, 1, head_dim]
+
+    return output
+</code></pre>
+<h3 id="_10">关键实现要点</h3>
+<ol>
+<li>
+<p><strong>预分配 vs 动态分配</strong>：预分配避免运行时内存分配的开销，但可能造成浪费。PagedAttention 采用动态分配。</p>
+</li>
+<li>
+<p><strong>GQA 的 KV 扩展</strong>：KV 头数少于 Q 头数时，需要通过 repeat_interleave 将 KV 扩展以匹配 Q 头数。</p>
+</li>
+<li>
+<p><strong>RoPE 位置编码</strong>：使用 RoPE 时，K 和 Q 需要在计算注意力前应用旋转位置编码。缓存的 K 是已经应用了位置编码的版本。</p>
+</li>
+<li>
+<p><strong>内存连续性</strong>：KV Cache 的内存布局对性能影响很大。推荐使用 <code>[batch, seq_len, heads, dim]</code> 的布局，确保同一 token 的 KV 在内存中连续。</p>
+</li>
+</ol>
+<hr />
+<h2 id="7kv-cache">卡片 7：对比卡——KV Cache 在不同模型中的表现</h2>
+<h3 id="kv-cache_2">主流大模型的 KV Cache 配置对比</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>参数量</th>
+<th>注意力类型</th>
+<th>层数</th>
+<th>Q头数</th>
+<th>KV头数</th>
+<th>head_dim</th>
+<th>每token KV</th>
+<th>128K KV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LLaMA-2 7B</td>
+<td>7B</td>
+<td>MHA</td>
+<td>32</td>
+<td>32</td>
+<td>32</td>
+<td>128</td>
+<td>2 MB</td>
+<td>256 GB</td>
+</tr>
+<tr>
+<td>LLaMA-2 70B</td>
+<td>70B</td>
+<td>GQA</td>
+<td>80</td>
+<td>64</td>
+<td>8</td>
+<td>128</td>
+<td>320 KB</td>
+<td>41 GB</td>
+</tr>
+<tr>
+<td>LLaMA-3 8B</td>
+<td>8B</td>
+<td>GQA</td>
+<td>32</td>
+<td>32</td>
+<td>8</td>
+<td>128</td>
+<td>128 KB</td>
+<td>16 GB</td>
+</tr>
+<tr>
+<td>LLaMA-3 70B</td>
+<td>70B</td>
+<td>GQA</td>
+<td>80</td>
+<td>64</td>
+<td>8</td>
+<td>128</td>
+<td>320 KB</td>
+<td>41 GB</td>
+</tr>
+<tr>
+<td>Mistral 7B</td>
+<td>7B</td>
+<td>GQA</td>
+<td>32</td>
+<td>32</td>
+<td>8</td>
+<td>128</td>
+<td>128 KB</td>
+<td>16 GB</td>
+</tr>
+<tr>
+<td>Mixtral 8x7B</td>
+<td>47B</td>
+<td>GQA</td>
+<td>32</td>
+<td>32</td>
+<td>8</td>
+<td>128</td>
+<td>128 KB</td>
+<td>16 GB</td>
+</tr>
+<tr>
+<td>DeepSeek-V2</td>
+<td>164B (MoE)</td>
+<td>MLA</td>
+<td>60</td>
+<td>128</td>
+<td>d_c=512</td>
+<td>-</td>
+<td>60 KB</td>
+<td>7.7 GB</td>
+</tr>
+<tr>
+<td>Qwen-2 7B</td>
+<td>7B</td>
+<td>GQA</td>
+<td>28</td>
+<td>28</td>
+<td>4</td>
+<td>128</td>
+<td>56 KB</td>
+<td>7.2 GB</td>
+</tr>
+<tr>
+<td>Phi-3 Mini</td>
+<td>3.8B</td>
+<td>GQA</td>
+<td>32</td>
+<td>32</td>
+<td>4</td>
+<td>96</td>
+<td>48 KB</td>
+<td>6.1 GB</td>
+</tr>
+<tr>
+<td>Gemma 2B</td>
+<td>2B</td>
+<td>MHA</td>
+<td>18</td>
+<td>8</td>
+<td>8</td>
+<td>256</td>
+<td>576 KB</td>
+<td>73 GB</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_11">关键观察</h3>
+<ol>
+<li><strong>GQA 已成为绝对主流</strong>：2023 年后的模型几乎全部采用 GQA，KV 头数通常为 4-8。</li>
+<li><strong>MLA 是效率之王</strong>：DeepSeek-V2 的每 token KV 仅 60 KB，是 GQA 模型的 1/5 到 1/2。</li>
+<li><strong>head_dim 的变化</strong>：不同模型选择不同的 head_dim（64-256），直接影响每 token KV 大小。</li>
+<li><strong>模型大小不等于 KV Cache 大小</strong>：LLaMA-2 7B (MHA) 的 KV Cache 远大于 LLaMA-3 8B (GQA)，尽管参数量相近。</li>
+</ol>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

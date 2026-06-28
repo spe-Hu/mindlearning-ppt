@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内存墙 — 拆书分析 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="memory-wall-p2.html">← 经典论文</a>
+        <span class="nav-title">内存墙 — 拆书分析</span>
+        <a href="memory-wall-p4.html">知识卡片 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="title">+TITLE: 拆书：《内存墙》</h1>
+<h1 id="subtitle-wulf-mckee-williams-hooktitle">+SUBTITLE: Wulf &amp; McKee / Williams / Hook#+TITLE: 拆书：《内存墙》</h1>
+<h1 id="subtitle-wulf-mckee-williams-hook-title">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 |#+TITLE: 拆书：《内存墙》</h1>
+<h1 id="subtitle-wulf-mckee-williams-hook">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetagtitle">+FILETAG#+TITLE: 拆书：《内存墙》</h1>
+<h1 id="subtitle-wulf-mckee-williams-hook_1">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_1">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心#+TITLE: 拆书：《内存墙》</li>
+</ul>
+<h1 id="subtitle-wulf-mckee-williams-hook_2">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_2">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_1">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_1">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_3">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_3">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_2">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_2">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_4">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_4">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_3">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_3">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_5">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_5">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_4">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_4">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_6">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_6">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_5">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_5">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 98#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_7">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_7">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_6">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_6">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_8">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_8">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_7">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_7">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_9">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_9">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_8">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_8">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_10">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_10">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_9">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_9">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_11">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_11">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_10">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_10">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<h1 id="title_1">+TITLE: 拆书：《内存墙》</h1>
+<h1 id="subtitle-wulf-mckee-williams-hook_12">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_12">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_11">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_11">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_13">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_13">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_12">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_12">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_14">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_14">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_13">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_13">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_15">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_15">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_14">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_14">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_16">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_16">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_15">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_15">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_17">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_17">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_16">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_16">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p>**补充#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_18">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_18">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_17">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_17">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_19">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_19">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_18">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_18">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_20">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_20">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_19">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_19">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_21">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_21">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_20">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_20">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_22">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_22">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_21">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_21">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_23">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_23">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_22">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_22">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_24">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_24">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_23">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_23">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_25">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_25">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_24">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_24">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_26">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_26">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_25">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_25">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_27">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_27">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_26">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_26">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存墙不可能单靠 HBM 演进来根本解决——需要架构级创新。</p>
+<ul>
+<li>3 分析框架</li>
+</ul>
+<p>内存墙的取景框是#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_28">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_28">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_27">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_27">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存墙不可能单靠 HBM 演进来根本解决——需要架构级创新。</p>
+<ul>
+<li>3 分析框架</li>
+</ul>
+<p>内存墙的取景框是 Roofline 模型：实际性能 = min(峰值算力, 内存带宽 x 计算访存比)。</p>
+<p>框架里有几件独占的东西：</p>
+<p>计算访存比（CMR）#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_29">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_29">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_28">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_28">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存墙不可能单靠 HBM 演进来根本解决——需要架构级创新。</p>
+<ul>
+<li>3 分析框架</li>
+</ul>
+<p>内存墙的取景框是 Roofline 模型：实际性能 = min(峰值算力, 内存带宽 x 计算访存比)。</p>
+<p>框架里有几件独占的东西：</p>
+<p>计算访存比（CMR）——这是判定 memory-bound vs compute-bound 的核心指标。CMR = 计算量（FLOPs）/ 数据搬运量（Bytes）。当 CMR &lt; 拐点（峰值算力 / 内存带宽），系统是 memory-bound；当 CMR &gt; 拐点，系统是 compute-bound。以 H100 为例：拐点 = 989T / 3.35T =#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_30">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_30">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_29">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_29">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存墙不可能单靠 HBM 演进来根本解决——需要架构级创新。</p>
+<ul>
+<li>3 分析框架</li>
+</ul>
+<p>内存墙的取景框是 Roofline 模型：实际性能 = min(峰值算力, 内存带宽 x 计算访存比)。</p>
+<p>框架里有几件独占的东西：</p>
+<p>计算访存比（CMR）——这是判定 memory-bound vs compute-bound 的核心指标。CMR = 计算量（FLOPs）/ 数据搬运量（Bytes）。当 CMR &lt; 拐点（峰值算力 / 内存带宽），系统是 memory-bound；当 CMR &gt; 拐点，系统是 compute-bound。以 H100 为例：拐点 = 989T / 3.35T = 295#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_31">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_31">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_30">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_30">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存墙不可能单靠 HBM 演进来根本解决——需要架构级创新。</p>
+<ul>
+<li>3 分析框架</li>
+</ul>
+<p>内存墙的取景框是 Roofline 模型：实际性能 = min(峰值算力, 内存带宽 x 计算访存比)。</p>
+<p>框架里有几件独占的东西：</p>
+<p>计算访存比（CMR）——这是判定 memory-bound vs compute-bound 的核心指标。CMR = 计算量（FLOPs）/ 数据搬运量（Bytes）。当 CMR &lt; 拐点（峰值算力 / 内存带宽），系统是 memory-bound；当 CMR &gt; 拐点，系统是 compute-bound。以 H100 为例：拐点 = 989T / 3.35T = 295 FLOP/Byte。自回归解码的 CMR 约 2 FLOP/Byte，远低于拐点——深度 memory-bound。</p>
+<p>三维内存墙分析——延迟墙（#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_32">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_32">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_31">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_31">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存墙不可能单靠 HBM 演进来根本解决——需要架构级创新。</p>
+<ul>
+<li>3 分析框架</li>
+</ul>
+<p>内存墙的取景框是 Roofline 模型：实际性能 = min(峰值算力, 内存带宽 x 计算访存比)。</p>
+<p>框架里有几件独占的东西：</p>
+<p>计算访存比（CMR）——这是判定 memory-bound vs compute-bound 的核心指标。CMR = 计算量（FLOPs）/ 数据搬运量（Bytes）。当 CMR &lt; 拐点（峰值算力 / 内存带宽），系统是 memory-bound；当 CMR &gt; 拐点，系统是 compute-bound。以 H100 为例：拐点 = 989T / 3.35T = 295 FLOP/Byte。自回归解码的 CMR 约 2 FLOP/Byte，远低于拐点——深度 memory-bound。</p>
+<p>三维内存墙分析——延迟墙（单次访问太慢）、带宽墙（单位时间搬运量不够）、容量墙（总内存不够用）。在 AI 推理中，三个维度都有体现：HBM#+TITLE: 拆书：《内存墙》</p>
+<h1 id="subtitle-wulf-mckee-williams-hook_33">+SUBTITLE: Wulf &amp; McKee / Williams / Hook 等 | 算得快不如搬得快——三十年计算史的第一瓶颈</h1>
+<h1 id="date-2026-06-28-wed-1000_33">+DATE: [2026-06-28 Wed 10:00]</h1>
+<h1 id="filetags-bookcomputer-architectureai_32">+FILETAGS: :book:computer-architecture:ai:</h1>
+<h1 id="identifier-20260628t100000_32">+IDENTIFIER: 20260628T100000</h1>
+<ul>
+<li>1 核心问题 + 挠痒处</li>
+</ul>
+<p>内存墙在答一个问题：为什么算力越来越强，AI 还是跑不快？</p>
+<p>更精确地说：为什么 GPU 的计算单元利用率在推理时通常只有 1%-40%，其余 60%-99% 的时间都在空转等待？答案不是"计算不够快"，而是"数据搬不过来"。处理器（或 GPU）的计算能力增长速度远远超过内存系统的数据供给能力，导致大量计算资源因等待数据而闲置。这就是内存墙。</p>
+<p>挠痒处：2024-2026 年，AI 推理需求爆发，所有人都在讨论算力——谁的 GPU 多、谁的 TFLOPS 高、谁的训练集群大。但真正卡脖子的不是算力，是内存带宽。自回归解码时，H100 的 989 TFLOPS 算力只有不到 1% 被利用，99% 在等 HBM 搬数据。这个事实反直觉到令人不安：你花 $40,000 买了一块 H100，结果 99% 的时间它在发呆。</p>
+<p>他不满意的是"算力崇拜"。他要告诉行业：卡点是内存墙，不是算力。推测解码的本质不是"用更多算力"，而是"用内存带宽换算力"——把 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证，让闲置的算力真正干活。</p>
+<p>不写会怎样？行业会继续盲目堆 GPU，以为算力是瓶颈，花几十亿美元买更多 H100，结果发现推理速度几乎没提升——因为内存带宽没变。</p>
+<p><strong>补充：为什么这个问题在 2026 年如此紧迫？</strong></p>
+<p>上下文长度从 4K 拉到 128K，KV Cache 空间涨 32 倍。单用户的内存占用从 MB 级增长到 GB 级。并发用户数急剧下降。HBM 需求不降反增。全球 HBM 供不应求，SK Hynix 产能被提前预订至 2027 年。内存墙已经从学术概念变成了产业瓶颈，从工程问题变成了经济问题。</p>
+<p>更紧迫的是，AI 推理的成本结构正在发生根本性变化。训练是一次性投入，推理是持续性支出。当 AI 服务规模化部署时，推理成本占总 TCO（Total Cost of Ownership）的 60-80%。而推理成本的核心驱动因素就是内存带宽——HBM 占 AI 加速器 BOM 的 30-50%，内存墙导致的性能损失占推理吞吐的 60-99%。</p>
+<p><strong>补充：跨领域类比——餐厅厨房的瓶颈</strong></p>
+<p>想象一家餐厅。厨师（GPU 计算单元）的刀工越来越快，从每分钟切 10 刀提升到 1000 刀。但传菜员（内存带宽）还是每分钟只能端 5 盘菜。结果是什么？厨师 99% 的时间在等传菜员端来食材，真正切菜的时间不到 1%。你花大价钱请了更快的厨师，但出菜速度几乎没变——因为瓶颈在传菜员，不在厨师。这就是内存墙。</p>
+<p>解决方案不是请更快的厨师（堆算力），而是：(1) 让传菜员一次端更多菜（增大带宽，如 HBM3e）；(2) 让厨师在等食材的时候同时处理多道菜（推测解码，批量验证）；(3) 把食材提前放到厨师手边（缓存优化，数据预取）；(4) 让厨师直接在仓库里切菜（Processing-in-Memory，消除数据搬运）。</p>
+<ul>
+<li>2 基础假设</li>
+</ul>
+<p>内存墙立在三条不证之物上。</p>
+<p>第一条：计算速度增长远快于内存带宽增长。Wulf 和 McKee（1995）的核心观察：CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%。这个差距在过去三十年里持续扩大。从 V100 到 B200，FP16 算力增长了 20 倍（125 TFLOPS → 2500 TFLOPS），HBM 带宽仅增长了 8.9 倍（900 GB/s → 8 TB/s）。算力-带宽的差距从 139x 扩大到 313x。这条假设今天仍然成立——而且随着 AI 芯片算力的加速增长，差距还在继续扩大。</p>
+<p>第二条：存在 memory-bound 和 compute-bound 的根本区分。Roofline 模型（Williams et al., 2009）的核心框架：当应用的计算访存比（CMR）低于硬件拐点时，性能受内存带宽限制；高于拐点时，性能受计算能力限制。这个二分法看似简单，实则深刻。它意味着不同的计算操作有根本不同的性能特征——矩阵乘法是 compute-bound 的，自回归解码是 memory-bound 的。你不能简单地用"加更多算力"来解决 memory-bound 的问题。</p>
+<p>第三条：GPU 利用率低是因为内存等待，不是因为算法不好。这是一个经验性的假设。在自回归解码中，每次只生成一个 token，需要对整个 KV Cache 做 attention 计算。这是矩阵向量乘法（GEMV），计算访存比极低（1-10 FLOP/Byte）。GPU 的计算单元大部分时间在等待 HBM 数据到达，而非执行计算。这个假设的验证方式是：如果增加内存带宽，推理速度线性提升；如果增加算力，推理速度几乎不变。大量实验数据支持这一假设。</p>
+<p>还有一条隐含的：内存带宽的提升速度有物理极限。HBM 通过 TSV（硅通孔）3D 堆叠来提升带宽，但 TSV 的数量、尺寸、间距都受物理定律限制。HBM4 的目标是 800 GB/s per stack，但再往上，散热、良率、成本都会成为限制因素。这意味着内存墙不可能单靠 HBM 演进来根本解决——需要架构级创新。</p>
+<ul>
+<li>3 分析框架</li>
+</ul>
+<p>内存墙的取景框是 Roofline 模型：实际性能 = min(峰值算力, 内存带宽 x 计算访存比)。</p>
+<p>框架里有几件独占的东西：</p>
+<p>计算访存比（CMR）——这是判定 memory-bound vs compute-bound 的核心指标。CMR = 计算量（FLOPs）/ 数据搬运量（Bytes）。当 CMR &lt; 拐点（峰值算力 / 内存带宽），系统是 memory-bound；当 CMR &gt; 拐点，系统是 compute-bound。以 H100 为例：拐点 = 989T / 3.35T = 295 FLOP/Byte。自回归解码的 CMR 约 2 FLOP/Byte，远低于拐点——深度 memory-bound。</p>
+<p>三维内存墙分析——延迟墙（单次访问太慢）、带宽墙（单位时间搬运量不够）、容量墙（总内存不够用）。在 AI 推理中，三个维度都有体现：HBM 延迟 ~400-600 时钟周期（延迟墙）；自回归解码需要 TB/s 级带宽但 HBM 只有几 TB/s（带宽</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

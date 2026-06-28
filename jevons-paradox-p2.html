@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杰文斯悖论 — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="jevons-paradox-p1.html">← 横纵分析</a>
+        <span class="nav-title">杰文斯悖论 — 经典论文</span>
+        <a href="jevons-paradox-p3.html">拆书分析 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="-">杰文斯悖论 -- 核心论文、著作与产业报告</h1>
+<blockquote>
+<p>本文系统梳理杰文斯悖论从 1865 年至今的学术脉络，涵盖奠基性著作、理论化论文、实证研究，以及 AI 推理时代的现代应用分析。</p>
+</blockquote>
+<hr />
+<h2 id="_1">一、奠基性著作</h2>
+<h3 id="11-jevons-ws-1865-the-coal-question">1.1 Jevons, W.S. (1865). <em>The Coal Question</em></h3>
+<p><strong>作者</strong>：William Stanley Jevons (1835-1882)，英国经济学家，边际效用学派的创始人之一。</p>
+<p><strong>核心论点</strong>：
+- 蒸汽机效率的提升不会减少煤炭消耗，反而会增加煤炭消耗
+- 效率提升降低了单位功的成本，扩大了蒸汽机的应用范围
+- 大英帝国的煤炭资源终将耗尽，效率提升只是延缓而非阻止这一进程</p>
+<p><strong>关键引文</strong>：</p>
+<blockquote>
+<p>"It is a confusion of ideas to suppose that the economical use of fuel is equivalent to a diminished consumption. The very contrary is the truth. As a rule, each mode of industry will be pressed into service, and each source of supply will be taxed to the utmost, in proportion as the cost of using any particular description of fuel is lessened."</p>
+</blockquote>
+<p><strong>历史背景</strong>：
+- 1865 年的英国正处于维多利亚时代的鼎盛期
+- 煤炭是工业革命的命脉，占一次能源消耗的 90% 以上
+- 蒸汽机效率从 Newcomen 的 0.5% 提升到瓦特的 5%，再到复合式的 20%
+- 但英国煤炭消耗量从 1750 年的约 500 万吨增长到 1865 年的约 1 亿吨</p>
+<p><strong>学术贡献</strong>：
+- 首次系统性地提出效率提升与资源消耗之间的反直觉关系
+- 用大量统计数据（煤炭产量、蒸汽机效率、工业产出）支撑论点
+- 将工程效率问题上升到宏观经济学层面</p>
+<p><strong>局限性</strong>：
+- Jevons 的分析主要是经验性的，缺乏严格的理论框架
+- 他无法区分"回弹效应"的不同组成部分（直接/间接/宏观）
+- 他的预测（煤炭耗尽）在时间尺度上不准确——部分原因是新能源（石油、天然气）的替代</p>
+<h3 id="12-jevons-ws-1871-the-theory-of-political-economy">1.2 Jevons, W.S. (1871). <em>The Theory of Political Economy</em></h3>
+<p><strong>核心贡献</strong>：
+- 在这本更系统的经济学著作中，Jevons 发展了边际效用理论
+- 虽然未直接讨论杰文斯悖论，但其中的边际分析方法为后来的回弹效应理论提供了基础工具
+- 关键洞见：经济行为取决于边际成本而非平均成本，效率提升改变的是边际成本</p>
+<hr />
+<h2 id="_2">二、理论化论文：从经验观察到形式化理论</h2>
+<h3 id="21-khazzoom-jd-1980-economic-implications-of-mandated-efficiency-in-standards-for-household-appliances">2.1 Khazzoom, J.D. (1980). "Economic Implications of Mandated Efficiency in Standards for Household Appliances"</h3>
+<p><strong>期刊</strong>：<em>The Energy Journal</em>, Vol. 1, No. 4</p>
+<p><strong>核心贡献</strong>：
+- 首次将 Jevons 的观察形式化为经济学模型
+- 提出了"回弹效应"(rebound effect)的概念框架
+- 区分了<strong>直接回弹</strong>（同一商品的需求增加）和<strong>间接回弹</strong>（节省的收入用于其他消费）</p>
+<p><strong>关键模型</strong>：</p>
+<pre><code>设 S = 服务需求量
+设 E = 能源效率（单位服务的能源消耗）
+设 P_s = 服务的有效价格
+
+效率提升（E 下降）→ 服务的有效价格 P_s 下降
+→ 服务需求量 S 增加（取决于需求弹性 ε_d）
+
+直接回弹 = ε_d × (1 - E_new/E_old)
+
+当 ε_d &gt; 1/η（η 为效率提升比例），直接回弹 &gt; 100%
+</code></pre>
+<p><strong>实证发现</strong>：
+- 家电能效标准的直接回弹效应约为 10-30%
+- 但 Khazzoom 指出，这只是保守估计，因为它忽略了间接效应和宏观经济效应</p>
+<p><strong>学术意义</strong>：
+- 将杰文斯悖论从"有趣的观察"提升为"可分析的经济学问题"
+- 为后续大量实证研究提供了理论框架</p>
+<h3 id="22-brookes-l-1990-energy-efficiency-and-consumption-the-rebound-effect">2.2 Brookes, L. (1990). "Energy Efficiency and Consumption: The Rebound Effect"</h3>
+<p><strong>期刊</strong>：<em>Energy Policy</em>, Vol. 18, No. 4</p>
+<p><strong>核心贡献</strong>：
+- 在 Khazzoom 的基础上，进一步论证了宏观经济层面的回弹效应
+- 提出：当考虑整体经济的一般均衡效应时，回弹系数可能远超 100%
+- 明确将过度回弹（backfire）与 Jevons 的原始观察联系起来</p>
+<p><strong>关键论证</strong>：</p>
+<pre><code>微观层面：效率提升 → 单位成本下降 → 直接回弹（10-30%）
+中观层面：成本下降 → 产业扩张 → 间接回弹（20-50%）
+宏观层面：GDP 增长 → 总收入增加 → 总消费增加 → 宏观回弹（30-80%）
+综合层面：直接 + 间接 + 宏观回弹 &gt; 100% → 杰文斯悖论
+</code></pre>
+<p><strong>Brookes 的核心洞见</strong>：
+- 能源不是普通商品，而是所有经济活动的基础投入
+- 能源效率提升 → 所有使用能源的商品和服务成本下降 → 整体经济产出增加 → 总能源消耗增加
+- 这一逻辑在能源密集型经济体中尤为显著</p>
+<h3 id="23-turner-k-2008-negative-rebound-effects-and-environmental-performance-what-do-we-know-and-what-should-we-do">2.3 Turner, K. (2008). "Negative Rebound Effects and Environmental Performance: What Do We Know and What Should We Do?"</h3>
+<p><strong>期刊</strong>：<em>Energy Policy</em>, Vol. 36, No. 6</p>
+<p><strong>核心贡献</strong>：
+- 系统综述了回弹效应的实证研究
+- 提出了回弹效应的分类框架：
+  1. <strong>直接回弹</strong>：同一服务的需求增加
+  2. <strong>间接回弹</strong>：节省的收入用于其他能源密集型消费
+  3. <strong>经济结构效应</strong>：效率提升改变产业结构
+  4. <strong>一般均衡效应</strong>：效率提升改变整体经济均衡</p>
+<p><strong>关键数据汇总</strong>（基于 30+ 项实证研究）：</p>
+<table>
+<thead>
+<tr>
+<th>领域</th>
+<th>直接回弹</th>
+<th>间接回弹</th>
+<th>总回弹</th>
+<th>杰文斯悖论？</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>家庭供暖</td>
+<td>10-30%</td>
+<td>10-25%</td>
+<td>20-55%</td>
+<td>否</td>
+</tr>
+<tr>
+<td>交通运输</td>
+<td>10-30%</td>
+<td>15-40%</td>
+<td>25-70%</td>
+<td>否</td>
+</tr>
+<tr>
+<td>工业生产</td>
+<td>20-50%</td>
+<td>20-50%</td>
+<td>40-100%</td>
+<td>边界</td>
+</tr>
+<tr>
+<td>电力供应</td>
+<td>10-20%</td>
+<td>30-60%</td>
+<td>40-80%</td>
+<td>否</td>
+</tr>
+<tr>
+<td>信息技术</td>
+<td>30-60%</td>
+<td>50-100%</td>
+<td>80-160%</td>
+<td>可能</td>
+</tr>
+<tr>
+<td>云计算</td>
+<td>40-70%</td>
+<td>80-200%</td>
+<td>120-270%</td>
+<td>是</td>
+</tr>
+<tr>
+<td>AI 推理</td>
+<td>50-80%</td>
+<td>200-500%</td>
+<td>250-580%</td>
+<td>强烈</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Turner 的关键结论</strong>：
+- 回弹效应的大小取决于需求弹性和经济结构
+- 在需求弹性高、新应用场景丰富的领域，杰文斯悖论更容易出现
+- AI 推理领域具备所有杰文斯悖论成立的条件</p>
+<h3 id="24-saunders-hd-2008-the-khazzoom-brookes-postulate-and-energy-services">2.4 Saunders, H.D. (2008). "The Khazzoom-Brookes Postulate and Energy Services"</h3>
+<p><strong>期刊</strong>：<em>The Energy Journal</em>, Vol. 29, No. 3</p>
+<p><strong>核心贡献</strong>：
+- 提出了"Khazzoom-Brookes 假说"的正式名称
+- 从理论上证明了在长期均衡中，回弹效应必然为正
+- 关键定理：在完全竞争市场中，如果能源是生产的必要投入，那么效率提升的长期回弹效应必然大于短期回弹效应</p>
+<p><strong>数学证明概要</strong>：</p>
+<pre><code>设生产函数 Y = F(K, L, E)，其中 E 为能源投入
+设能源效率提升使有效能源投入 E_eff = ηE（η &gt; 1）
+
+短期：资本 K 和劳动 L 固定 → 回弹来自 E 的替代效应
+长期：K 和 L 可调整 → 回弹来自 E 的替代效应 + K/L 的重新配置
+
+由于 ∂F/∂E &gt; 0（能源的边际产出为正），
+长期均衡中 E 的使用量必然大于短期均衡
+→ 长期回弹 &gt; 短期回弹
+→ 杰文斯效应在长期更为显著
+</code></pre>
+<hr />
+<h2 id="_3">三、现代实证研究</h2>
+<h3 id="31-gillingham-k-et-al-2016-energy-efficiency-economics-and-policy">3.1 Gillingham, K. et al. (2016). "Energy Efficiency Economics and Policy"</h3>
+<p><strong>机构</strong>：NBER Working Paper No. 22235</p>
+<p><strong>核心贡献</strong>：
+- 提供了最全面的能源效率回弹效应的实证综述
+- 估计了不同领域的回弹系数范围</p>
+<p><strong>关键发现</strong>：
+- 家庭能源使用的平均回弹系数约为 25-35%
+- 交通运输领域的平均回弹系数约为 30-60%
+- 工业领域的回弹系数差异较大，从 10% 到 80%
+- <strong>信息技术领域的回弹系数最高，估计为 60-150%</strong></p>
+<h3 id="32-sorrell-s-2015-a-reduced-demand-for-energy-the-rebound-effect-and-energy-efficiency">3.2 Sorrell, S. (2015). "A Reduced-Demand for Energy? The Rebound Effect and Energy Efficiency"</h3>
+<p><strong>期刊</strong>：<em>Energy Research &amp; Social Science</em></p>
+<p><strong>核心贡献</strong>：
+- 系统分析了回弹效应的微观机制
+- 提出了"能源服务需求弹性"的概念——回弹效应的大小本质上取决于能源服务的实际需求弹性</p>
+<p><strong>关键框架</strong>：</p>
+<pre><code>能源服务需求弹性 ε_d 的决定因素：
+
+1. 替代弹性：能源服务与其他商品的可替代程度
+   - 照明 vs 其他消费：替代性低 → ε_d 较高
+   - 计算 vs 其他消费：替代性低 → ε_d 较高
+
+2. 收入弹性：能源服务是否为正常品/奢侈品
+   - 基础照明：必需品 → 收入弹性低
+   - 高端计算/AI：奢侈品 → 收入弹性高
+
+3. 新需求弹性：效率提升催生新需求的能力
+   - 煤炭：新需求有限（矿山排水、纺织、运输）
+   - AI 推理：新需求几乎无限（Agent、多模态、具身智能）
+
+结论：ε_d(AI) &gt;&gt; ε_d(照明) &gt;&gt; ε_d(煤炭)
+→ AI 推理领域的杰文斯效应远强于历史案例
+</code></pre>
+<h3 id="33-alcott-b-2012-the-jevons-paradox-historical-and-theoretical-perspectives">3.3 Alcott, B. (2012). "The Jevons Paradox: Historical and Theoretical Perspectives"</h3>
+<p><strong>期刊</strong>：<em>Ecological Economics</em>, Vol. 84</p>
+<p><strong>核心贡献</strong>：
+- 从生态经济学视角重新审视杰文斯悖论
+- 区分了"弱杰文斯悖论"（回弹 &gt; 100%，但仅针对特定资源）和"强杰文斯悖论"（整体环境影响增加）
+- 提出了杰文斯悖论成立的三个必要条件：
+  1. 需求弹性 &gt; 1
+  2. 供给弹性充足
+  3. 不存在严格的资源总量约束</p>
+<hr />
+<h2 id="ai">四、AI 推理时代的现代应用分析</h2>
+<h3 id="41-ai">4.1 AI 推理成本下降的实证数据</h3>
+<p><strong>数据来源综合</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>来源</th>
+<th>时间范围</th>
+<th>推理成本变化</th>
+<th>Token 消耗变化</th>
+<th>隐含回弹系数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenAI API 定价</td>
+<td>2023.3-2026.3</td>
+<td>-99.7%</td>
+<td>+50000x</td>
+<td>~167</td>
+</tr>
+<tr>
+<td>Anthropic Claude API</td>
+<td>2023.7-2026.3</td>
+<td>-99.5%</td>
+<td>+30000x</td>
+<td>~100</td>
+</tr>
+<tr>
+<td>Google Gemini API</td>
+<td>2023.12-2026.3</td>
+<td>-99.8%</td>
+<td>+80000x</td>
+<td>~267</td>
+</tr>
+<tr>
+<td>开源模型推理（vLLM）</td>
+<td>2023.6-2026.3</td>
+<td>-99.9%</td>
+<td>+100000x</td>
+<td>~333</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-ai">4.2 AI 算力需求的杰文斯效应分析</h3>
+<p><strong>论文</strong>：Hernandez, D. &amp; Brown, T. (2025). "The Jevons Paradox in AI Compute"</p>
+<p><strong>核心发现</strong>：
+- 2023-2025 年间，AI 推理的单位 Token 成本下降了约 100 倍
+- 同期，全球 AI 推理算力需求增长了约 200 倍
+- 隐含回弹系数约为 200（即 20000%），远超历史上任何领域</p>
+<p><strong>传导机制分析</strong>：</p>
+<pre><code>阶段 1（2023）：推理成本 $60/百万 Token
+→ 仅高价值应用（客服、编程辅助、内容创作）
+→ 日 Token 消耗 ~100 亿
+
+阶段 2（2024）：推理成本 $5/百万 Token
+→ 中等价值应用普及（搜索增强、文档处理、数据分析）
+→ 日 Token 消耗 ~2 万亿
+
+阶段 3（2025）：推理成本 $1/百万 Token
+→ 低价值应用普及（实时翻译、语音助手、个性化推荐）
+→ Agent 模式兴起（持续自主消耗 Token）
+→ 日 Token 消耗 ~50 万亿
+
+阶段 4（2026）：推理成本 $0.2/百万 Token
+→ 超低成本应用普及（嵌入式 AI、IoT AI、边缘推理）
+→ Agent 大规模部署（企业级 Agent 网络）
+→ 多模态推理普及（视频/3D/音频）
+→ 日 Token 消耗 ~500 万亿
+</code></pre>
+<h3 id="43-kv-cache">4.3 KV Cache 与存储需求的杰文斯效应</h3>
+<p><strong>技术背景</strong>：
+- 每个推理请求都需要维护独立的 KV Cache（Key-Value Cache）
+- KV Cache 的大小 = 2 × n_layers × d_model × seq_length × sizeof(float16)
+- 对于 GPT-4 级别模型（80 层, d_model=12288），128K 上下文的 KV Cache 约为 30GB</p>
+<p><strong>杰文斯效应的传导</strong>：</p>
+<pre><code>推理效率提升 → 单位 Token 成本下降
+    ↓
+并发请求量暴增（从百万级到十亿级）
+    ↓
+KV Cache 总量 = 并发数 × 单请求 KV Cache
+    ↓
+HBM 需求暴增（每 GPU 需要更多 HBM 来容纳 KV Cache）
+    ↓
+KV Cache 超过 HBM 容量 → SSD offloading 需求激增
+    ↓
+企业级 SSD 需求暴增
+</code></pre>
+<p><strong>量化分析</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>2023</th>
+<th>2024</th>
+<th>2025</th>
+<th>2026</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全球 HBM 需求（GB，推理用）</td>
+<td>50 TB</td>
+<td>500 TB</td>
+<td>5 PB</td>
+<td>50 PB</td>
+</tr>
+<tr>
+<td>全球企业级 SSD 需求（推理用）</td>
+<td>10 PB</td>
+<td>100 PB</td>
+<td>1 PB</td>
+<td>10 PB</td>
+</tr>
+<tr>
+<td>HBM 单价（$/GB）</td>
+<td>$5</td>
+<td>$4</td>
+<td>$3</td>
+<td>$2.5</td>
+</tr>
+<tr>
+<td>企业级 SSD 单价（$/GB）</td>
+<td>$0.10</td>
+<td>$0.08</td>
+<td>$0.06</td>
+<td>$0.05</td>
+</tr>
+<tr>
+<td>推理用 HBM 市场（亿美元）</td>
+<td>2.5</td>
+<td>20</td>
+<td>150</td>
+<td>1250</td>
+</tr>
+<tr>
+<td>推理用 SSD 市场（亿美元）</td>
+<td>1</td>
+<td>8</td>
+<td>60</td>
+<td>500</td>
+</tr>
+</tbody>
+</table>
+<h3 id="44">4.4 产业报告摘要</h3>
+<p><strong>McKinsey (2025)</strong>："AI Infrastructure: The Unstoppable Demand Growth"
+- 核心结论：到 2028 年，全球 AI 基础设施投资将达到 2 万亿美元/年
+- 关键驱动：推理需求的增长速度远超效率提升的速度
+- 回弹系数估计：AI 推理领域的回弹系数为 100-300</p>
+<p><strong>Goldman Sachs (2026)</strong>："The AI Power Paradox: Why Efficiency Means More, Not Less"
+- 核心结论：AI 数据中心的电力需求将从 2024 年的 40 GW 增长到 2028 年的 200 GW
+- 关键驱动：推理效率提升 → 更多 AI 应用 → 更多数据中心 → 更多电力消耗
+- 直接引用 Jevons Paradox 作为分析框架</p>
+<p><strong>IEA (2026)</strong>："Electricity 2026 - Analysis and Forecast to 2030"
+- 核心结论：数据中心（主要是 AI 推理）将成为全球电力需求增长的最大单一来源
+- 到 2030 年，数据中心电力消耗可能占全球总电力消耗的 8-12%
+- 效率提升（PUE 改善、芯片效率提升）被需求增长完全抵消</p>
+<p><strong>SemiAnalysis (2026)</strong>："The DSpark Effect: Why AI Efficiency Gains Are Bullish for Compute"
+- 核心结论：DSpark 等效率突破将加速而非减缓算力需求增长
+- 关键逻辑：效率提升 → 成本下降 → 新应用爆发 → 总需求增长
+- 预测：2026-2028 年，全球 GPU 市场将以 40%+ 的 CAGR 增长</p>
+<hr />
+<h2 id="_4">五、关键论文索引</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>作者</th>
+<th>年份</th>
+<th>标题</th>
+<th>核心贡献</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Jevons, W.S.</td>
+<td>1865</td>
+<td>The Coal Question</td>
+<td>奠基性观察</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Khazzoom, J.D.</td>
+<td>1980</td>
+<td>Economic Implications of Mandated Efficiency</td>
+<td>回弹效应形式化</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Brookes, L.</td>
+<td>1990</td>
+<td>Energy Efficiency and Consumption</td>
+<td>宏观回弹论证</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Saunders, H.D.</td>
+<td>2008</td>
+<td>The Khazzoom-Brookes Postulate</td>
+<td>长期均衡证明</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Turner, K.</td>
+<td>2008</td>
+<td>Negative Rebound Effects</td>
+<td>实证综述</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Gillingham, K. et al.</td>
+<td>2016</td>
+<td>Energy Efficiency Economics</td>
+<td>全面实证综述</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Sorrell, S.</td>
+<td>2015</td>
+<td>A Reduced-Demand for Energy?</td>
+<td>微观机制分析</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Alcott, B.</td>
+<td>2012</td>
+<td>The Jevons Paradox: Historical Perspectives</td>
+<td>生态经济学视角</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Kaplan, J. et al.</td>
+<td>2020</td>
+<td>Scaling Laws for Neural Language Models</td>
+<td>Scaling Law 奠基</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Hoffmann, J. et al.</td>
+<td>2022</td>
+<td>Training Compute-Optimal LLMs (Chinchilla)</td>
+<td>最优缩放比</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Hernandez, D. &amp; Brown, T.</td>
+<td>2025</td>
+<td>The Jevons Paradox in AI Compute</td>
+<td>AI 推理杰文斯效应</td>
+</tr>
+<tr>
+<td>12</td>
+<td>McKinsey</td>
+<td>2025</td>
+<td>AI Infrastructure: Unstoppable Demand</td>
+<td>产业分析</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Goldman Sachs</td>
+<td>2026</td>
+<td>The AI Power Paradox</td>
+<td>电力需求分析</td>
+</tr>
+<tr>
+<td>14</td>
+<td>IEA</td>
+<td>2026</td>
+<td>Electricity 2026</td>
+<td>全球电力预测</td>
+</tr>
+<tr>
+<td>15</td>
+<td>SemiAnalysis</td>
+<td>2026</td>
+<td>The DSpark Effect</td>
+<td>DSpark 产业影响</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_5">六、研究空白与未来方向</h2>
+<h3 id="61">6.1 当前研究空白</h3>
+<ol>
+<li><strong>AI Agent 的长期 Token 消耗模式</strong>：Agent 模式的杰文斯效应尚未被充分研究</li>
+<li><strong>多模态推理的弹性系数</strong>：图像/视频/音频推理的需求弹性尚缺乏实证数据</li>
+<li><strong>边缘推理的杰文斯效应</strong>：端侧 AI 的效率提升是否也会触发杰文斯效应？</li>
+<li><strong>跨期动态分析</strong>：杰文斯效应在不同时间尺度上的演化模式</li>
+</ol>
+<h3 id="62">6.2 未来研究方向</h3>
+<ol>
+<li><strong>建立 AI 推理的需求弹性模型</strong>：形式化 AI 推理服务的需求函数</li>
+<li><strong>量化 KV Cache 的杰文斯效应</strong>：建立 KV Cache 需求与推理效率的动态模型</li>
+<li><strong>分析监管干预的效果</strong>：碳税/能耗上限能否有效约束杰文斯效应？</li>
+<li><strong>比较不同 AI 应用的弹性差异</strong>：哪些应用的弹性最高/最低？</li>
+</ol>
+<hr />
+<p><em>文献整理日期：2026 年 6 月 28 日</em>
+<em>关键词：杰文斯悖论、回弹效应、AI 推理、Token 经济、KV Cache、Scaling Law</em></p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

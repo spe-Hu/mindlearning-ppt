@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推测解码 — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="speculative-decoding-p3.html">← 拆书分析</a>
+        <span class="nav-title">推测解码 — 知识卡片</span>
+        <a href="speculative-decoding-p5.html">概念解剖 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="speculative-decoding">推测解码 (Speculative Decoding) 视觉卡片</h1>
+<blockquote>
+<p>模具：长图（-l）| 色调：技术/工程（#F5F7FA + #3D5A80）
+生成时间：2026-06-28</p>
+</blockquote>
+<hr />
+<h2 id="1">卡片 1：核心定义卡</h2>
+<p>标题：推测解码 Speculative Decoding
+副标题：用廉价的猜测换昂贵的验证</p>
+<p><strong>定义</strong>：推测解码是大语言模型推理加速的核心技术。它用一个轻量级"草稿模型"快速生成多个候选 token，再用目标大模型一次性并行验证这些 token 的正确性——接受正确的、拒绝错误的——从而在数学上保证输出分布与原始模型完全一致的前提下，实现 2-5 倍的推理加速。</p>
+<p><strong>核心公式</strong>：</p>
+<pre><code>接受概率 = min(1, p_target(x) / p_draft(x))
+理论加速比 = 1 / (1 - alpha)，alpha = 接受率
+最优草稿长度 K* ≈ -1 / ln(alpha)
+</code></pre>
+<p><strong>关键洞见</strong>：推测解码是"免费午餐"——它不牺牲任何输出质量，纯粹利用 GPU 自回归解码时 99% 闲置的算力。前提是草稿模型的预测要足够准确。</p>
+<p><strong>一句话记忆</strong>：小模型快速猜，大模型一次验；猜对了白赚，猜错了不亏。</p>
+<hr />
+<h2 id="2">卡片 2：原理卡</h2>
+<p>标题：推测解码工作原理
+副标题：草稿-验证的两阶段博弈</p>
+<p><strong>标准自回归解码</strong>：</p>
+<pre><code>Step 1: 输入 → 模型前向传播 → token_1 → 输出
+Step 2: 输入+token_1 → 模型前向传播 → token_2 → 输出
+Step 3: 输入+token_1+token_2 → 模型前向传播 → token_3 → 输出
+...
+每步都需要一次完整的前向传播，每次前向传播都要读取整个模型权重
+</code></pre>
+<p><strong>推测解码</strong>：</p>
+<pre><code>草稿阶段：草稿模型自回归生成 K=5 个候选 token: [t1, t2, t3, t4, t5]
+验证阶段：目标模型一次前向传播，并行验证所有 5 个 token
+接受/拒绝：t1 接受 ✓, t2 接受 ✓, t3 接受 ✓, t4 拒绝 ✗
+结果：一次前向传播产出 3 个 token（而非 1 个），加速 3x
+从 t4 位置重新开始下一轮推测
+</code></pre>
+<p><strong>为什么验证 K 个 token 的成本 ≈ 生成 1 个 token 的成本？</strong>
+因为瓶颈是内存搬运（读取模型权重），不是计算。验证 5 个 token 和验证 1 个 token 都需要读取相同的模型权重（几十 GB），额外的矩阵乘法计算在内存搬运时间内就能完成。</p>
+<p><strong>GPU 利用率分析</strong>：</p>
+<pre><code>自回归解码时 GPU 时间分布：
+├── 内存搬运（读权重）：~99%
+└── 矩阵乘法（实际计算）：~1%
+推测解码利用的就是这 99% 时间里闲置的 1% 算力
+</code></pre>
+<hr />
+<h2 id="3">卡片 3：公式卡</h2>
+<p>标题：推测解码核心公式
+副标题：从接受率到加速比</p>
+<p><strong>加速比公式</strong>：</p>
+<pre><code>speedup = 1 / (1 - alpha)
+其中 alpha = 平均接受率
+
+alpha = 0.5 → speedup = 2x
+alpha = 0.7 → speedup = 3.3x
+alpha = 0.8 → speedup = 5x
+alpha = 0.9 → speedup = 10x
+alpha = 0.95 → speedup = 20x
+</code></pre>
+<p><strong>最优草稿长度</strong>：</p>
+<pre><code>K* = -1 / ln(alpha)
+alpha = 0.8 → K* ≈ 5
+alpha = 0.5 → K* ≈ 1
+alpha = 0.9 → K* ≈ 10
+</code></pre>
+<p><strong>接受准则</strong>：</p>
+<pre><code>对于草稿模型生成的 token x_i：
+  接受概率 = min(1, p_target(x_i) / p_draft(x_i))
+
+直觉理解：
+- 如果 p_target &gt;&gt; p_draft（目标模型比草稿模型更认可这个 token）→ 必定接受
+- 如果 p_target ≈ p_draft（两者一致）→ 大概率接受
+- 如果 p_target &lt;&lt; p_draft（目标模型不认可草稿的猜测）→ 大概率拒绝
+</code></pre>
+<p><strong>加速比推导</strong>：</p>
+<pre><code>每轮推测的成本 = 1 次草稿生成（K 步，小模型） + 1 次验证（大模型）
+每轮推测的期望产出 = sum_{i=1}^{K} alpha^i ≈ alpha / (1-alpha)
+当 K 足够大时，每轮产出 ≈ 1/(1-alpha) 个 token
+每轮成本 ≈ 2 次大模型前向传播（草稿模型成本忽略）
+标准解码产出 1 个 token 需 1 次前向传播
+加速比 = (1/(1-alpha)) / 2 ≈ 1/(1-alpha)（忽略草稿模型成本时）
+</code></pre>
+<hr />
+<h2 id="4">卡片 4：方法对比卡</h2>
+<p>标题：推测解码方法演化
+副标题：从独立草稿到训练时集成</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>年份</th>
+<th>草稿来源</th>
+<th>加速比</th>
+<th>核心创新</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blockwise Parallel</td>
+<td>2018</td>
+<td>浅层辅助模型</td>
+<td>~1.5-2x</td>
+<td>并行解码思想</td>
+</tr>
+<tr>
+<td>Leviathan</td>
+<td>2022</td>
+<td>独立小模型</td>
+<td>2-3x</td>
+<td>形式化框架+无损保证</td>
+</tr>
+<tr>
+<td>Medusa</td>
+<td>2024</td>
+<td>目标模型解码头</td>
+<td>2.2-2.5x</td>
+<td>消除独立草稿</td>
+</tr>
+<tr>
+<td>EAGLE</td>
+<td>2024</td>
+<td>特征空间预测</td>
+<td>2.8-3.0x</td>
+<td>特征空间推测</td>
+</tr>
+<tr>
+<td>EAGLE-2</td>
+<td>2024</td>
+<td>中间层特征</td>
+<td>3.5-4.0x</td>
+<td>上下文自适应</td>
+</tr>
+<tr>
+<td>DSpark/MTP</td>
+<td>2025</td>
+<td>训练时集成</td>
+<td>1.3-1.85x</td>
+<td>训练-推理协同</td>
+</tr>
+</tbody>
+</table>
+<p><strong>三次范式转换</strong>：</p>
+<pre><code>1. 独立草稿 → 自草稿（Medusa 2024）
+   消除了草稿模型的额外内存开销
+
+2. Token 空间 → 特征空间（EAGLE 2024）
+   特征空间更连续、更平滑、更可预测
+
+3. 推理时优化 → 训练时优化（DSpark 2025）
+   从根本上提升推测能力，MTP 成为模型有机组成
+</code></pre>
+<hr />
+<h2 id="5dspark">卡片 5：DSpark 深度卡</h2>
+<p>标题：DSpark — 工业级推测解码
+副标题：DeepSeek / 梁文锋 / 北京大学</p>
+<p><strong>核心创新</strong>：
+1. MTP 模块：在预训练阶段就加入多 token 预测目标
+2. 跨模型通用：DeepSeek-V4 +85%, Qwen3 +30%
+3. 动态调度：高熵区域保守，低熵区域激进
+4. 内存优化：深入分析 GPU 内存墙，优化内存访问模式</p>
+<p><strong>性能数据</strong>：</p>
+<pre><code>| 模型              | 场景     | 基线速度  | DSpark速度 | 提升  |
+|-------------------|----------|-----------|------------|-------|
+| DeepSeek-V4-Flash | 通用对话 | 100 tok/s | 185 tok/s  | +85%  |
+| DeepSeek-V4-Pro   | 代码生成 | 60 tok/s  | 99 tok/s   | +65%  |
+| Qwen3-32B         | 通用对话 | 80 tok/s  | 104 tok/s  | +30%  |
+</code></pre>
+<p><strong>为什么 DSpark 是里程碑？</strong>
+- 首次将推测解码从"推理时后处理"提升为"训练时深度优化"
+- 首次在工业级模型上验证跨模型通用性
+- 首次系统性解决推测解码的工程部署问题</p>
+<hr />
+<h2 id="6mtp">卡片 6：MTP 卡</h2>
+<p>标题：Multi-Token Prediction (MTP)
+副标题：训练时就学会"一次看到多个未来"</p>
+<p><strong>标准训练 vs MTP 训练</strong>：</p>
+<pre><code>标准训练：
+输入: [token_1, token_2, token_3]
+目标: [token_2, token_3, token_4]
+每次只预测下一个 token
+
+MTP 训练：
+输入: [token_1, token_2, token_3]
+目标 1: [token_2]              (预测第 1 个未来 token)
+目标 2: [token_2, token_3]     (预测第 1-2 个未来 token)
+目标 3: [token_2, token_3, token_4]  (预测第 1-3 个未来 token)
+同时预测多个未来 token
+</code></pre>
+<p><strong>MTP 在推测解码中的角色</strong>：</p>
+<pre><code>推理时：
+MTP 模块直接作为草稿生成器
+无需额外的草稿模型
+MTP 模块与主模型共享特征表示 → 接受率极高
+</code></pre>
+<p><strong>MTP 的深层意义</strong>：
+- 改变了"先训练再优化"的范式 → "训练时就为推理做准备"
+- MTP 不是外挂，是内建 → 推测能力成为模型的一部分
+- 训练-推理协同设计的开端</p>
+<hr />
+<h2 id="7">卡片 7：产业影响卡</h2>
+<p>标题：推测解码的产业影响
+副标题：从学术到标配</p>
+<p><strong>对推理服务商</strong>：
+- 相同 GPU 资源服务更多请求 → 有效吞吐量翻倍
+- 用户感知延迟降低 → 体验提升
+- 每百万 token 推理成本降低 30-50%</p>
+<p><strong>对模型设计</strong>：
+- 训练时就要考虑推理效率
+- MTP 模块成为架构的一部分
+- 草稿模型和目标模型联合优化</p>
+<p><strong>对硬件设计</strong>：
+- 揭示了 GPU 推理的核心瓶颈：内存墙
+- 算力（TFLOPS）不是瓶颈，内存带宽（GB/s）才是
+- HBM 容量和带宽成为关键指标</p>
+<p><strong>推理引擎生态</strong>：</p>
+<pre><code>vLLM        → 内置推测解码支持 (v0.5+)
+TensorRT-LLM → 集成 Medusa/EAGLE 风格推测
+SGLang      → jump-forward 推测解码
+DeepSeek    → DSpark 工业级部署
+</code></pre>
+<hr />
+<h2 id="8">卡片 8：与自动驾驶关联卡</h2>
+<p>标题：推测解码 × 自动驾驶
+副标题：实时推理的生死时速</p>
+<p><strong>为什么自动驾驶需要推测解码？</strong>
+- 端到端模型的推理延迟问题：从传感器输入到控制输出，要求 &lt;50ms
+- 车端 GPU 资源有限：Orin/Thor 的算力和内存都远小于云端
+- 多传感器融合推理：摄像头 + 激光雷达 + 毫米波雷达的联合推理</p>
+<p><strong>自动驾驶场景的特殊性</strong>：</p>
+<pre><code>云端推理：延迟容忍度高（秒级），关注吞吐量
+车端推理：延迟容忍度极低（&lt;50ms），关注确定性
+云端：batch size 大，推测解码加速比可能下降
+车端：batch size = 1，推测解码加速比最大化
+</code></pre>
+<p><strong>数据飞轮 + 推测解码</strong>：
+- 数据飞轮持续产生训练数据 → 模型持续更新
+- 推测解码确保每次更新的模型都能高效推理
+- MTP 训练使车端模型天生具备推测能力</p>
+<p><strong>车端部署约束</strong>：</p>
+<pre><code>功耗：车端 GPU 功耗受限（&lt;100W）
+温度：车规级温度要求（-40°C ~ 125°C）
+内存：车载 GPU 内存有限（16-64GB）
+实时性：硬实时要求，不能容忍偶发延迟
+</code></pre>
+<hr />
+<h2 id="9">卡片 9：推测解码代码示例卡</h2>
+<p>标题：推测解码伪代码
+副标题：从原理到实现</p>
+<p><strong>核心算法</strong>：</p>
+<pre><code class="language-python">def speculative_decoding(target_model, draft_model, prompt, K=5):
+    &quot;&quot;&quot;
+    target_model: 目标大模型
+    draft_model: 草稿小模型
+    K: 草稿长度
+    &quot;&quot;&quot;
+    tokens = tokenize(prompt)
+
+    while not done:
+        # 草稿阶段：小模型自回归生成 K 个候选 token
+        draft_tokens = []
+        for i in range(K):
+            p_draft = draft_model(tokens)
+            x_i = sample(p_draft)
+            draft_tokens.append(x_i)
+            tokens.append(x_i)
+
+        # 验证阶段：大模型一次性前向传播验证所有 K 个 token
+        p_target_all = target_model(tokens[:-K])  # 并行计算
+
+        # 接受-拒绝采样
+        accepted = 0
+        for i in range(K):
+            p_t = p_target_all[i][draft_tokens[i]]
+            p_d = draft_model_prob[i][draft_tokens[i]]
+            accept_prob = min(1.0, p_t / p_d)
+            if random() &lt; accept_prob:
+                accepted += 1
+            else:
+                # 拒绝：从修正分布中重新采样
+                new_token = sample(corrected_distribution(p_t, p_d))
+                tokens = tokens[:len(tokens)-K+i] + [new_token]
+                break
+
+        # 输出已接受的 token
+        output(tokens[-accepted:])
+</code></pre>
+<p><strong>关键实现细节</strong>：
+- 草稿模型的 KV Cache 可以复用（增量更新）
+- 目标模型的验证是一次前向传播（并行处理 K 个位置）
+- 接受-拒绝采样保证输出分布与原始模型完全一致</p>
+<hr />
+<h2 id="10">卡片 10：推测解码接受率分析卡</h2>
+<p>标题：接受率的决定因素
+副标题：为什么有的场景接受率高，有的低？</p>
+<p><strong>影响接受率的三大因素</strong>：</p>
+<pre><code>1. 草稿模型质量
+   - 草稿模型越接近目标模型 → 接受率越高
+   - MTP 模块（共享表示）&gt; 蒸馏模型 &gt; 同系列小模型 &gt; 不同系列小模型
+
+2. 草稿长度 K
+   - K 越大 → 后续 token 预测越不准 → 接受率越低
+   - 最优 K ≈ -1/ln(alpha)
+
+3. 输入文本特性
+   - 低熵文本（自然语言续写）→ 接受率高（80-90%）
+   - 高熵文本（代码/数学/创意写作）→ 接受率低（50-70%）
+</code></pre>
+<p><strong>接受率实测数据</strong>：</p>
+<pre><code>| 草稿来源          | 自然语言 | 代码  | 数学  |
+|-------------------|----------|-------|-------|
+| 同系列小模型      | 65%      | 50%   | 40%   |
+| Medusa 解码头     | 75%      | 60%   | 50%   |
+| EAGLE 特征空间    | 82%      | 70%   | 58%   |
+| MTP 模块          | 88%      | 78%   | 65%   |
+</code></pre>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

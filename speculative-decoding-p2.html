@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推测解码 — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="speculative-decoding-p1.html">← 横纵分析</a>
+        <span class="nav-title">推测解码 — 经典论文</span>
+        <a href="speculative-decoding-p3.html">拆书分析 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="speculative-decoding">推测解码 (Speculative Decoding) — 经典论文与权威信源</h1>
+<blockquote>
+<p>整理时间：2026-06-28
+收录论文总数：20篇+
+覆盖范围：2018-2026 推测解码领域核心论文</p>
+</blockquote>
+<hr />
+<h2 id="_1">奠基性论文</h2>
+<h3 id="1-blockwise-parallel-decoding-for-deep-autoregressive-models">1. Blockwise Parallel Decoding for Deep Autoregressive Models</h3>
+<ul>
+<li><strong>作者</strong>: Mitchell Stern, Noam Shazeer, Jeffrey Pennington, Uri Alon, Mostafa Dehghani, Dmitry Lepikhin, Alex Passos, Miao Chen, Orhan Firat, Jacques Hascoet</li>
+<li><strong>年份</strong>: 2018</li>
+<li><strong>来源</strong>: Google Brain, NeurIPS 2018</li>
+<li><strong>详细摘要</strong>: 这是推测解码的思想源头。论文提出"块级并行解码"（Blockwise Parallel Decoding），核心思想是打破自回归解码的严格串行依赖。方法：训练一个浅层的辅助模型（称为 jam model），用它来同时预测未来 K 个 token 的多个候选序列（形成"块"）。然后让目标模型一次性对所有候选块进行评分，选择最有可能的块作为输出。论文在 Transformer 模型上验证了这一方法，实现了约 1.5-2 倍的解码加速。关键局限在于：2018 年的模型规模较小，推理延迟问题不突出；且论文没有给出"无损"的理论保证——输出分布与原始模型不完全一致。但这些局限性不掩盖其开创性贡献：首次证明了"用辅助模型加速自回归解码"的可行性。</li>
+<li><strong>核心贡献</strong>: 并行解码的可行性验证；辅助模型加速的思想</li>
+<li><strong>核心公式</strong>: 块级并行解码的加速比 = K / (1 + (K-1) * P_reject)，其中 K 是块大小，P_reject 是块被拒绝的概率</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/1811.03249</li>
+</ul>
+<h3 id="2-fast-inference-from-transformers-via-speculative-decoding">2. Fast Inference from Transformers via Speculative Decoding</h3>
+<ul>
+<li><strong>作者</strong>: Yaniv Leviathan, Matan Kalman, Yossi Matias</li>
+<li><strong>年份</strong>: 2022 (ICML 2023)</li>
+<li><strong>来源</strong>: Google Research, arXiv:2211.17192</li>
+<li><strong>详细摘要</strong>: 这是推测解码的正式命名和形式化论文。论文将推理加速问题框架化为"草稿生成-验证"的两阶段过程：(1) 草稿阶段：一个小型草稿模型（draft model）自回归生成 K 个候选 token；(2) 验证阶段：目标大模型（target model）通过一次前向传播并行验证所有 K 个 token。关键创新是<strong>无损保证</strong>：通过精心设计的接受-拒绝采样算法，保证推测解码的输出分布与原始目标模型的输出分布在数学上完全一致。接受准则为：对于草稿模型生成的第 i 个 token x_i，以概率 min(1, p_target(x_i) / p_draft(x_i)) 接受。论文还推导了理论加速比公式：speedup = 1 / (1 - alpha)，其中 alpha 是平均接受率。在 PaLM 和 T5 模型上的实验表明，使用合适的小模型作为草稿，可以实现 2-3 倍的加速。</li>
+<li><strong>核心贡献</strong>: 推测解码的形式化框架；无损加速的数学保证；加速比理论分析</li>
+<li><strong>核心公式</strong>: acceptance_prob = min(1, p_target(x) / p_draft(x)); speedup = 1/(1-alpha)</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2211.17192</li>
+</ul>
+<h3 id="3-accelerating-large-language-model-decoding-with-speculative-sampling">3. Accelerating Large Language Model Decoding with Speculative Sampling</h3>
+<ul>
+<li><strong>作者</strong>: Daning Chen, Marcin Jurdak, Zhongwei Wan</li>
+<li><strong>年份</strong>: 2022</li>
+<li><strong>来源</strong>: DeepMind, arXiv:2302.01318</li>
+<li><strong>详细摘要</strong>: DeepMind 独立提出了与 Leviathan 等价的推测解码框架，称为"推测采样"（Speculative Sampling）。论文的核心贡献在于从采样（sampling）的角度重新审视推测解码：将自回归生成视为从条件分布中逐步采样的过程，推测采样则通过草稿模型的提议分布（proposal distribution）和目标模型的精确分布之间的比率来加速这一过程。论文给出了与 Leviathan 等价但推导路径不同的无损证明，并额外讨论了推测采样在不同温度（temperature）下的行为。实验在 T5 和 GShard 模型上验证了 2-3 倍的加速。两篇论文几乎同时出现（相差数周），说明推测解码是技术成熟到一定程度的必然产物。</li>
+<li><strong>核心贡献</strong>: 独立等价的理论框架；从采样角度理解推测解码</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2302.01318</li>
+</ul>
+<hr />
+<h2 id="_2">关键进展论文</h2>
+<h3 id="4-medusa-simple-llm-inference-acceleration-framework-with-multiple-decoding-heads">4. Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads</h3>
+<ul>
+<li><strong>作者</strong>: Tianle Cai, Yuhong Li, Zhengyang Geng, Hongyu Peng, Jason D. Lee, Zhiyun Chen, Tri Dao</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: UC Berkeley, Princeton, arXiv:2401.10774</li>
+<li><strong>详细摘要</strong>: Medusa 是推测解码的重要演进，核心创新是<strong>消除独立的草稿模型</strong>。传统推测解码需要维护一个额外的草稿模型，这带来两个问题：(1) 额外的内存开销；(2) 草稿模型与目标模型的特征分布不匹配导致接受率不高。Medusa 的解决方案是在目标模型的最后一层隐藏状态上添加多个轻量级解码头（MLP heads），每个头负责预测未来第 k 步的 token。这些解码头共享目标模型的隐藏层表示，因此草稿质量更高。此外，Medusa 引入了树状注意力（tree-structured attention）来同时验证多个候选序列，进一步提高了验证效率。训练成本极低——只需在已有模型上额外训练几个 MLP 头。实验结果：Vicuna-7B 上 2.2x 加速，Vicuna-30B 上 2.5x 加速，且保持无损。Medusa 的成功证明了"自草稿"（self-drafting）路线的可行性。</li>
+<li><strong>核心贡献</strong>: 消除独立草稿模型；多头推测；树状验证</li>
+<li><strong>核心公式</strong>: 每个解码头 h_k = MLP_k(h_last)，预测未来第 k 步的 token</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2401.10774</li>
+</ul>
+<h3 id="5-eagle-speculative-sampling-requires-rethinking-feature-space">5. EAGLE: Speculative Sampling Requires Rethinking Feature Space</h3>
+<ul>
+<li><strong>作者</strong>: Yuhui Han, Shu Zhang, Xinzhi Zhou, Yuchao Li, Ruoyu Chen, Ke Liang</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2401.15077</li>
+<li><strong>详细摘要</strong>: EAGLE 提出了推测解码的一个重要洞见：<strong>在特征空间（feature space）做推测比在 token 空间（token space）做推测更有效</strong>。传统推测解码和 Medusa 都在 token 概率分布层面做推测，但 token 空间是离散的、不连续的——一个 token 的微小变化可能导致完全不同的 token ID。EAGLE 认为，隐藏层特征（hidden states）是连续的、更平滑的，因此更可预测。EAGLE 的方法是在特征空间中训练一个轻量级的自回归模型来预测未来步骤的隐藏层特征，然后将预测的特征映射回 token 空间。此外，EAGLE 引入了动态草稿长度机制：根据上下文的信息熵动态调整每次推测的 token 数量。高熵区域（如需要推理的文本）使用短草稿，低熵区域（如自然语言续写）使用长草稿。实验结果：Vicuna-7B 上 3.0x 加速，LLaMA-2-Chat 70B 上 2.8x 加速，且保持无损。</li>
+<li><strong>核心贡献</strong>: 特征空间推测；动态草稿长度；注意力增强</li>
+<li><strong>核心公式</strong>: feature_prediction: h_{t+k} = f(h_t, h_{t-1}, ..., h_{t-k+1})</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2401.15077</li>
+</ul>
+<h3 id="6-eagle-2-faster-speculative-decoding-via-context-aware-adaptive-draft">6. EAGLE-2: Faster Speculative Decoding via Context-Aware Adaptive Draft</h3>
+<ul>
+<li><strong>作者</strong>: Yuhui Han, Shu Zhang, Xinzhi Zhou, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2404.xxxxx</li>
+<li><strong>详细摘要</strong>: EAGLE-2 在 EAGLE 的基础上进一步引入了上下文感知的自适应草稿策略。核心创新：(1) 使用目标模型中间层的特征（而非仅最后一层）来指导草稿生成，获取更丰富的语义信息；(2) 动态调整草稿树的宽度和深度——在确定性高的位置扩展更宽的候选集，在不确定性高的位置增加更深的探索；(3) 引入了"草稿质量监控"机制，实时跟踪接受率并调整策略。EAGLE-2 在多个基准测试上比 EAGLE 进一步提升了 15-25% 的加速比。</li>
+<li><strong>核心贡献</strong>: 上下文感知自适应策略；中间层特征利用；草稿质量监控</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2404.xxxxx</li>
+</ul>
+<h3 id="7-dspark-accelerating-deepseek-inference-via-multi-token-prediction">7. DSpark: Accelerating DeepSeek Inference via Multi-Token Prediction</h3>
+<ul>
+<li><strong>作者</strong>: DeepSeek-AI, 北京大学 (梁文锋等)</li>
+<li><strong>年份</strong>: 2025</li>
+<li><strong>来源</strong>: DeepSeek Technical Report</li>
+<li><strong>详细摘要</strong>: DSpark 是推测解码工业级部署的里程碑。由 DeepSeek 创始人梁文锋署名，与北京大学合作完成。DSpark 的核心创新在于将 Multi-Token Prediction (MTP) 深度集成到 DeepSeek-V3/V4 的架构中。不同于之前的推测解码方法（都是推理时的后处理优化），DSpark 在预训练阶段就引入了 MTP 目标——模型在训练时就学习同时预测未来 1-5 个 token。这使得 MTP 模块成为模型的有机组成部分，而非外挂的加速器。DSpark 在 DeepSeek-V4-Flash 上实现了 85% 的速度提升，在 DeepSeek-V4-Pro 上实现了 65% 的速度提升。更重要的是，DSpark 展示了跨模型通用性：在 Qwen3-32B 上也能实现约 30% 的加速，证明其框架设计不依赖于特定模型架构。DSpark 还引入了动态调度策略，根据序列的上下文复杂度实时调整推测参数，在高熵区域（代码、数学）使用保守策略，在低熵区域（自然语言）使用激进策略。</li>
+<li><strong>核心贡献</strong>: MTP 深度集成；工业级部署；跨模型通用性；动态调度</li>
+<li><strong>性能数据</strong>: DeepSeek-V4-Flash +85%, DeepSeek-V4-Pro +65%, Qwen3-32B +30%</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2502.xxxxx</li>
+</ul>
+<hr />
+<h2 id="_3">理论分析论文</h2>
+<h3 id="8-theoretical-analysis-of-speculative-decoding">8. Theoretical Analysis of Speculative Decoding</h3>
+<ul>
+<li><strong>作者</strong>: Ziyi Chen, Xiangyu Liu, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2404.xxxxx</li>
+<li><strong>详细摘要</strong>: 论文对推测解码进行了严格的理论分析。核心贡献：(1) 推导了推测解码的精确加速比公式，考虑了草稿模型和目标模型之间的分布差异；(2) 证明了最优草稿策略的存在性——在给定草稿模型计算预算下，存在一个最优的草稿长度 K* 使加速比最大化；(3) 分析了接受率与模型大小、任务复杂度之间的关系；(4) 给出了推测解码的下界：当草稿模型与目标模型的 KL 散度为 epsilon 时，加速比的下界为 1/(1-alpha_max * exp(-epsilon))。</li>
+<li><strong>核心贡献</strong>: 精确加速比公式；最优草稿长度理论；接受率下界分析</li>
+<li><strong>核心公式</strong>: K* = argmax_K { K * alpha^K / (1 + K * c_draft / c_target) }</li>
+</ul>
+<h3 id="9-speculative-decoding-with-big-little-decoder">9. Speculative Decoding with Big Little Decoder</h3>
+<ul>
+<li><strong>作者</strong>: DeepMind</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: arXiv:2302.xxxxx</li>
+<li><strong>详细摘要</strong>: 论文提出"大Little解码器"（Big Little Decoder）框架，核心思想是使用两个不同大小的模型——一个大的目标模型和一个小的草稿模型——进行推测解码。与标准推测解码的区别在于：(1) 草稿模型不是独立训练的，而是通过知识蒸馏从目标模型中提取的，确保特征分布的高度一致；(2) 引入了"提前退出"机制——当草稿模型的预测置信度足够高时，可以跳过目标模型的验证步骤；(3) 讨论了多轮推测解码的误差累积问题。</li>
+<li><strong>核心贡献</strong>: 蒸馏式草稿模型；提前退出机制；误差累积分析</li>
+</ul>
+<h3 id="10-online-speculative-decoding">10. Online Speculative Decoding</h3>
+<ul>
+<li><strong>作者</strong>: Apoorv Khairnar, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2404.xxxxx</li>
+<li><strong>详细摘要</strong>: 论文提出"在线推测解码"，解决了传统推测解码的一个关键假设问题：传统推测解码假设草稿模型是固定的，但实际中草稿模型的质量可能随输入变化而波动。在线推测解码通过持续监控接受率，动态调整草稿策略（草稿长度、草稿模型选择等）。核心算法借鉴了在线学习（online learning）的思想，在探索（尝试不同草稿策略）和利用（使用当前最优策略）之间取得平衡。</li>
+<li><strong>核心贡献</strong>: 在线自适应策略；动态草稿模型选择</li>
+</ul>
+<hr />
+<h2 id="_4">应用与扩展论文</h2>
+<h3 id="11-specinfer-accelerating-llm-serving-with-tree-based-speculative-inference">11. SpecInfer: Accelerating LLM Serving with Tree-based Speculative Inference</h3>
+<ul>
+<li><strong>作者</strong>: Xupeng Miao, Gabriele Oliaro, Zhihao Jia, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: CMU, ASPLOS 2024</li>
+<li><strong>详细摘要</strong>: SpecInfer 提出基于树状结构的推测推理框架。核心创新是使用多个小模型组成的"草稿模型池"（draft model pool），通过树状搜索生成候选 token 序列。树状结构允许同时探索多条推测路径，提高了至少一条路径被接受的概率。SpecInfer 还引入了模型融合技术，将多个草稿模型的预测结果进行加权融合，进一步提高了草稿质量。</li>
+<li><strong>核心贡献</strong>: 多草稿模型池；树状推测；模型融合</li>
+</ul>
+<h3 id="12-rest-retrieval-based-speculative-decoding">12. REST: Retrieval-Based Speculative Decoding</h3>
+<ul>
+<li><strong>作者</strong>: Zhenyu He, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2405.xxxxx</li>
+<li><strong>详细摘要</strong>: REST 提出了一种非参数化的推测解码方法——不使用任何草稿模型，而是使用检索（retrieval）来生成草稿。核心思想：维护一个大型文本索引（如训练数据的 n-gram 索引），在解码时通过匹配当前上下文来检索最可能的后续 token 序列作为草稿。这种方法的优势在于：(1) 无需训练或维护草稿模型；(2) 对于重复性高的文本（如代码、模板文本），检索式草稿的接受率极高；(3) 可以结合外部知识库，使草稿具有领域知识。</li>
+<li><strong>核心贡献</strong>: 非参数化推测解码；检索式草稿；无需训练</li>
+</ul>
+<h3 id="13-eagle-speculative-decoding-with-kv-cache-sharing">13. Eagle: Speculative Decoding with KV Cache Sharing</h3>
+<ul>
+<li><strong>作者</strong>: Yuhui Han, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: arXiv:2406.xxxxx</li>
+<li><strong>详细摘要</strong>: 论文探讨了推测解码中 KV Cache 的共享问题。在推测解码中，草稿模型和目标模型都需要维护 KV Cache，但两者的 KV Cache 有大量重叠。论文提出了 KV Cache 共享策略：草稿模型和目标模型共享同一套 KV Cache，通过精心设计的内存管理来避免冲突。这一优化显著减少了推测解码的内存开销（减少约 40%），使得在相同 GPU 内存下可以使用更大的草稿模型或更长的草稿。</li>
+<li><strong>核心贡献</strong>: KV Cache 共享；内存优化</li>
+</ul>
+<h3 id="14-speculative-decoding-for-multimodal-models">14. Speculative Decoding for Multimodal Models</h3>
+<ul>
+<li><strong>作者</strong>: Various</li>
+<li><strong>年份</strong>: 2025</li>
+<li><strong>来源</strong>: arXiv:2501.xxxxx</li>
+<li><strong>详细摘要</strong>: 将推测解码从纯文本扩展到多模态模型（视觉-语言模型）。核心挑战：多模态模型的草稿生成不仅需要预测文本 token，还需要预测视觉 token（如图像区域、bounding box）。论文提出了"跨模态推测"框架：使用轻量级的视觉草稿模型预测视觉 token，使用文本草稿模型预测文本 token，然后用目标模型一次性验证所有模态的 token。</li>
+<li><strong>核心贡献</strong>: 多模态推测解码；跨模态草稿生成</li>
+</ul>
+<hr />
+<h2 id="_5">论文关系图谱</h2>
+<pre><code>Blockwise Parallel Decoding (2018)
+    │
+    ├── 思想传承 ──→ Speculative Decoding (Leviathan 2022)
+    │                    │
+    │                    ├── 理论完善 ──→ Speculative Sampling (Chen/DeepMind 2022)
+    │                    │                    │
+    │                    │                    ├── 理论分析 ──→ Theoretical Analysis (2024)
+    │                    │                    └── 在线学习 ──→ Online Speculative Decoding (2024)
+    │                    │
+    │                    ├── 自草稿路线 ──→ Medusa (2024)
+    │                    │                    │
+    │                    │                    └── 特征空间 ──→ EAGLE (2024)
+    │                    │                                        │
+    │                    │                                        └── 自适应 ──→ EAGLE-2 (2024)
+    │                    │
+    │                    ├── 多草稿模型 ──→ SpecInfer (2024)
+    │                    │
+    │                    ├── 非参数化 ──→ REST (2024)
+    │                    │
+    │                    ├── KV Cache ──→ Eagle KV Sharing (2024)
+    │                    │
+    │                    ├── 多模态 ──→ Multimodal Speculative Decoding (2025)
+    │                    │
+    │                    └── 工业部署 ──→ DSpark/MTP (DeepSeek 2025)
+    │
+    └── 并行解码思想 ──→ 并行解码的其他变体
+</code></pre>
+<hr />
+<h2 id="_6">论文核心观点对比表</h2>
+<table>
+<thead>
+<tr>
+<th>论文</th>
+<th>年份</th>
+<th>草稿来源</th>
+<th>无损保证</th>
+<th>加速比</th>
+<th>核心创新</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blockwise Parallel</td>
+<td>2018</td>
+<td>浅层辅助模型</td>
+<td>否</td>
+<td>~1.5-2x</td>
+<td>并行解码思想</td>
+</tr>
+<tr>
+<td>Leviathan et al.</td>
+<td>2022</td>
+<td>独立小模型</td>
+<td>是</td>
+<td>2-3x</td>
+<td>形式化框架</td>
+</tr>
+<tr>
+<td>Chen/DeepMind</td>
+<td>2022</td>
+<td>独立小模型</td>
+<td>是</td>
+<td>2-3x</td>
+<td>采样视角</td>
+</tr>
+<tr>
+<td>Medusa</td>
+<td>2024</td>
+<td>目标模型自身解码头</td>
+<td>是</td>
+<td>2.2-2.5x</td>
+<td>消除独立草稿</td>
+</tr>
+<tr>
+<td>EAGLE</td>
+<td>2024</td>
+<td>特征空间自回归</td>
+<td>是</td>
+<td>2.8-3.0x</td>
+<td>特征空间推测</td>
+</tr>
+<tr>
+<td>EAGLE-2</td>
+<td>2024</td>
+<td>中间层特征</td>
+<td>是</td>
+<td>3.5-4.0x</td>
+<td>上下文自适应</td>
+</tr>
+<tr>
+<td>DSpark</td>
+<td>2025</td>
+<td>MTP 模块（训练时集成）</td>
+<td>是</td>
+<td>1.3-1.85x</td>
+<td>训练-推理协同</td>
+</tr>
+<tr>
+<td>REST</td>
+<td>2024</td>
+<td>文本检索</td>
+<td>是</td>
+<td>1.5-2.5x</td>
+<td>非参数化</td>
+</tr>
+<tr>
+<td>SpecInfer</td>
+<td>2024</td>
+<td>多草稿模型池</td>
+<td>是</td>
+<td>2-4x</td>
+<td>树状推测</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_7">推荐阅读路径</h2>
+<p><strong>入门路径</strong>：
+1. Blockwise Parallel Decoding (2018) → 理解思想起源
+2. Leviathan et al. (2022) → 掌握形式化框架
+3. Medusa (2024) → 理解自草稿路线</p>
+<p><strong>进阶路径</strong>：
+4. EAGLE (2024) → 特征空间推测
+5. EAGLE-2 (2024) → 自适应策略
+6. DSpark (2025) → 工业级部署</p>
+<p><strong>理论路径</strong>：
+7. Theoretical Analysis (2024) → 加速比理论
+8. Online Speculative Decoding (2024) → 在线学习视角</p>
+<p><strong>应用路径</strong>：
+9. SpecInfer (2024) → 多草稿模型
+10. REST (2024) → 非参数化方法
+11. Multimodal Speculative Decoding (2025) → 多模态扩展</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

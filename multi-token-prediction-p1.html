@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多Token预测 — 横纵分析 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="index-multi-token-prediction.html">← 首页</a>
+        <span class="nav-title">多Token预测 — 横纵分析</span>
+        <a href="multi-token-prediction-p2.html">经典论文 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="token-multi-token-prediction-mtp">多Token预测 (Multi-Token Prediction / MTP) 横纵分析报告</h1>
+<blockquote>
+<p>研究时间：2026-06-28 | 所属领域：AI/模型训练与推理 | 研究对象类型：技术概念
+关键词：Multi-Token Prediction, MTP, Next-Token Prediction, DSpark, Training-Inference Co-design</p>
+</blockquote>
+<hr />
+<h2 id="_1">一、一句话定义</h2>
+<p>多Token预测（Multi-Token Prediction, MTP）是大语言模型训练和推理的范式革新：<strong>在训练阶段，模型不仅学习预测下一个 token，还同时学习预测未来第 2、3、...、N 个 token；在推理阶段，这些额外的预测头可以直接作为推测解码的草稿生成器，实现训练-推理的协同优化。</strong> 其本质是"从逐步猜测到批量预知"——将模型的视野从"只看下一步"扩展为"同时看到多个未来"。从标准 next-token prediction（1990s 语言模型的原点），到 DeepSeek-V3 首次在工业级模型中集成 MTP 模块（2024），到 DSpark 在 DeepSeek-V4 上实现 60-85% 推理加速（2025），MTP 正在改变大模型"训练时不想推理、推理时不管训练"的割裂状态。</p>
+<hr />
+<h2 id="next-token-multi-token1990s-2026">二、纵向分析：从 next-token 到 multi-token（1990s-2026）</h2>
+<h3 id="21-next-token-prediction1990s-2023">2.1 标准范式：Next-Token Prediction（1990s-2023）</h3>
+<p>自语言模型诞生以来，标准训练目标就是 next-token prediction（NTP）：给定前面的 token 序列，预测下一个 token。</p>
+<pre><code>标准 NTP：
+输入: [token_1, token_2, ..., token_t]
+目标: 最大化 P(token_{t+1} | token_1, ..., token_t)
+每步只预测一个未来 token
+</code></pre>
+<p>这个范式极其成功——从 n-gram 语言模型（1990s）到 RNN/LSTM（2000s）到 Transformer（2017）到 GPT/BERT/LLaMA（2020s），所有模型都在优化同一个目标：预测下一个 token。</p>
+<p>但 NTP 有一个根本性的低效：每次前向传播只产出 1 个 token 的监督信号。模型的第 t 步前向传播计算了所有层的隐藏状态，但只用了最后一个隐藏状态来预测 token_{t+1}。中间层的计算结果没有被充分利用。</p>
+<h3 id="22-multi-step-prediction2018-2022">2.2 早期探索：Multi-Step Prediction（2018-2022）</h3>
+<p>学术界很早就注意到了 NTP 的低效，并探索了多步预测的变体。</p>
+<p><strong>Teacher Forcing 的局限</strong>：标准训练中，模型在每一步都使用真实的 token 作为输入（teacher forcing）。但推理时，模型使用自己生成的 token（auto-regressive）。这种训练-推理不匹配（exposure bias）导致误差累积。多步预测可以缓解这个问题——如果模型能预测未来多个 token，它对自身生成的误差就更鲁棒。</p>
+<p><strong>Scheduled Sampling</strong>（Bengio et al., 2015）：在训练时随机选择使用真实 token 或模型自己生成的 token 作为输入，缓解 exposure bias。这可以看作多步预测的早期形式。</p>
+<p><strong>Blockwise Parallel Decoding</strong>（Stern et al., 2018）：训练浅层辅助模型并行预测多个 token，然后用目标模型验证。这是推测解码的前身，也是多步预测在推理加速中的首次应用。</p>
+<p>但这些早期工作都没有将多步预测深度集成到模型训练目标中——它们要么是训练策略的调整（Scheduled Sampling），要么是推理时的外挂模块（Blockwise Parallel）。</p>
+<h3 id="23-deepseek-v3mtp-2024">2.3 DeepSeek-V3：MTP 的工业级首次集成（2024）</h3>
+<p><strong>2024 年底</strong>，DeepSeek-V3 技术报告首次公开了 Multi-Token Prediction 在工业级模型中的集成。</p>
+<p>DeepSeek-V3 的 MTP 设计：
+1. <strong>训练目标扩展</strong>：在标准 NTP 损失之外，增加了对未来第 2、3、...、N 个 token 的预测损失。
+2. <strong>模块化设计</strong>：MTP 模块是模型的附加组件，不影响主模型的架构。训练时，MTP 模块与主模型联合训练；推理时，MTP 模块可以选择性启用。
+3. <strong>损失加权</strong>：MTP 损失与 NTP 损失通过加权系数 alpha 组合：L_total = L_NTP + alpha * L_MTP。alpha 的选择影响 MTP 模块的预测质量。</p>
+<p>DeepSeek-V3 的 MTP 模块在推测解码中作为草稿生成器使用，为后续的 DSpark 奠定了基础。</p>
+<h3 id="24-dsparkmtp-2025">2.4 DSpark：MTP 驱动的推理加速（2025）</h3>
+<p><strong>2025 年初</strong>，DeepSeek 发布 DSpark 推理加速框架（梁文锋署名 + 北京大学合作），这是 MTP 从训练优化到推理加速的关键跨越。</p>
+<p>DSpark 的核心创新在于将 MTP 模块深度集成到推理流程中：
+1. <strong>MTP 作为草稿生成器</strong>：推理时，MTP 模块直接利用主模型的隐藏状态来预测未来多个 token，无需独立的草稿模型。
+2. <strong>动态推测深度</strong>：根据上下文的复杂度动态调整 MTP 的预测深度（预测几个未来 token）。简单文本用深推测（5+ token），复杂文本用浅推测（1-2 token）。
+3. <strong>跨模型通用性</strong>：DSpark 的框架设计不依赖于 DeepSeek 的特定架构，在 Qwen3 等第三方模型上也能实现约 30% 的加速。</p>
+<p>性能数据：
+| 模型 | 场景 | 基线速度 | DSpark 速度 | 提升 |
+|------|------|----------|-------------|------|
+| DeepSeek-V4-Flash | 通用对话 | 100 tok/s | 185 tok/s | 85% |
+| DeepSeek-V4-Pro | 代码生成 | 60 tok/s | 99 tok/s | 65% |
+| Qwen3-32B | 通用对话 | 80 tok/s | 104 tok/s | 30% |</p>
+<h3 id="25-mtp-2025-2026">2.5 MTP 的理论基础（2025-2026）</h3>
+<p>2025-2026 年，学术界开始系统性地研究 MTP 的理论基础。</p>
+<p><strong>为什么 MTP 有效？</strong>
+1. <strong>信息共享</strong>：预测未来第 k 个 token 和预测未来第 1 个 token 共享大量的中间计算。如果模型已经计算了第 1 个 token 的隐藏状态，预测第 2 个 token 的额外成本很低。
+2. <strong>表示学习</strong>：多步预测迫使模型学习更丰富的表示——不仅要理解当前上下文，还要理解上下文的未来演化。这提高了模型的泛化能力。
+3. <strong>推测加速</strong>：训练时学会的多步预测能力，在推理时可以直接用于推测解码——MTP 模块生成的草稿质量远高于独立草稿模型，因为 MTP 模块与主模型共享表示。</p>
+<p><strong>MTP 的最优深度</strong>：
+理论上，MTP 应该预测到未来多远？这取决于 token 之间的条件互信息。如果未来第 k 个 token 与当前 token 的条件互信息为零（给定中间 token），则预测第 k 个 token 没有额外价值。实际中，自然语言的 token 之间存在长程依赖，MTP 深度通常为 3-5 个 token。</p>
+<h3 id="26-2026">2.6 现状与趋势（2026）</h3>
+<p>截至 2026 年中，MTP 正在成为大模型训练的标配组件：</p>
+<ul>
+<li><strong>DeepSeek-V4</strong> 全系列集成 MTP 模块</li>
+<li><strong>Qwen3</strong> 在最新版本中引入了 MTP 训练</li>
+<li><strong>LLaMA 4</strong> 探索了 MTP 与 MoE 的结合</li>
+<li><strong>开源社区</strong> 的推理引擎（vLLM、SGLang）已支持 MTP 驱动的推测解码</li>
+</ul>
+<p>技术趋势：
+1. <strong>MTP + MoE</strong>：MTP 模块与 MoE 架构的结合——MTP 模块只激活部分专家，减少额外计算成本
+2. <strong>自适应 MTP 深度</strong>：根据输入复杂度自动调整 MTP 深度
+3. <strong>MTP 与推理时 Scaling 的结合</strong>：MTP 预测多个未来 token，推理时 Scaling 在多个候选中选择最优——两者协同
+4. <strong>多模态 MTP</strong>：将 MTP 从文本扩展到视觉、语音等多模态</p>
+<hr />
+<h2 id="mtp-vs-vs">三、横向分析：MTP vs 推测解码 vs 并行解码</h2>
+<h3 id="31">3.1 核心对比</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>MTP</th>
+<th>推测解码 (SD)</th>
+<th>并行解码 (PD)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>优化阶段</td>
+<td>训练+推理</td>
+<td>仅推理</td>
+<td>仅推理</td>
+</tr>
+<tr>
+<td>草稿来源</td>
+<td>模型自身 MTP 模块</td>
+<td>独立草稿模型</td>
+<td>辅助模型</td>
+</tr>
+<tr>
+<td>是否需要额外训练</td>
+<td>是（MTP 训练目标）</td>
+<td>否（或微调解码头）</td>
+<td>否</td>
+</tr>
+<tr>
+<td>草稿质量</td>
+<td>高（共享表示）</td>
+<td>中（独立模型）</td>
+<td>中-低</td>
+</tr>
+<tr>
+<td>额外内存开销</td>
+<td>小（MTP 模块轻量）</td>
+<td>大（独立草稿模型）</td>
+<td>中</td>
+</tr>
+<tr>
+<td>与目标模型的一致性</td>
+<td>高（同一模型）</td>
+<td>中（不同模型）</td>
+<td>中</td>
+</tr>
+<tr>
+<td>代表工作</td>
+<td>DSpark, DeepSeek-V3/V4</td>
+<td>Leviathan, Medusa, EAGLE</td>
+<td>Stern 2018</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-mtp-vs">3.2 MTP vs 推测解码</h3>
+<p>MTP 和推测解码不是竞争关系，而是互补关系：
+- <strong>推测解码</strong>是一个框架——定义了"草稿生成+验证"的两阶段流程
+- <strong>MTP</strong>是一种草稿生成方法——用模型自身的多步预测能力生成草稿
+- MTP 是推测解码的一种"高级实现"——草稿质量更高，因为草稿生成器和验证器共享表示</p>
+<p>类比：推测解码是"用秘书起草+老板审批"的流程。MTP 相当于"老板自己先快速想一遍"——因为老板最了解自己的审批标准，所以草稿质量更高。</p>
+<h3 id="33-mtp-vs">3.3 MTP vs 并行解码</h3>
+<p>并行解码（Stern 2018）也预测多个 token，但关键区别：
+- 并行解码的辅助模型是独立训练的浅层模型
+- MTP 的预测模块与主模型深度集成，共享表示
+- MTP 的预测质量更高，因为利用了主模型的深层表示</p>
+<h3 id="34-mtp-vs-medusa">3.4 MTP vs Medusa</h3>
+<p>Medusa（2024）在目标模型上添加多个解码头，与 MTP 有相似之处：
+- 两者都在目标模型上添加额外的预测头
+- 区别：Medusa 的解码头是在已有模型上微调的（推理时优化），MTP 的预测模块是在预训练时联合训练的（训练时优化）
+- MTP 的预测质量更高，因为从预训练开始就学习多步预测</p>
+<h3 id="35-mtp-">3.5 MTP 的深层意义：训练-推理协同设计</h3>
+<p>MTP 最重要的意义不在于推理加速本身，而在于它开创了"训练-推理协同设计"的范式：</p>
+<pre><code>传统范式：
+训练 → 模型 → 推理 → 各种优化（量化/蒸馏/推测解码）
+训练和推理是割裂的——训练时不考虑推理优化
+
+MTP 范式：
+训练（含 MTP 目标）→ 模型（含 MTP 模块）→ 推理（MTP 直接用于推测解码）
+训练和推理是一体的——训练时就为推理做准备
+</code></pre>
+<p>这种范式可以推广到其他推理优化：
+- 训练时加入量化感知（Quantization-Aware Training）→ 推理时量化损失更小
+- 训练时加入蒸馏目标 → 推理时可以更早退出
+- 训练时加入推测目标（MTP）→ 推理时推测解码更快</p>
+<hr />
+<h2 id="_2">四、关键里程碑</h2>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>事件</th>
+<th>意义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1990s</td>
+<td>N-gram 语言模型</td>
+<td>Next-token prediction 的起源</td>
+</tr>
+<tr>
+<td>2015</td>
+<td>Scheduled Sampling (Bengio)</td>
+<td>缓解 exposure bias 的早期尝试</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>Blockwise Parallel Decoding (Stern)</td>
+<td>多步预测用于推理加速的首次尝试</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>Speculative Decoding (Leviathan)</td>
+<td>推测解码形式化，多步预测成为推理框架</td>
+</tr>
+<tr>
+<td>2024.04</td>
+<td>Medusa (Cai et al.)</td>
+<td>目标模型自身的多步预测解码头</td>
+</tr>
+<tr>
+<td>2024.12</td>
+<td>DeepSeek-V3</td>
+<td>首次在工业级模型中集成 MTP 训练目标</td>
+</tr>
+<tr>
+<td>2025.02</td>
+<td>DSpark (DeepSeek + 北大)</td>
+<td>MTP 驱动的工业级推理加速</td>
+</tr>
+<tr>
+<td>2025.06</td>
+<td>Qwen3 引入 MTP</td>
+<td>MTP 从 DeepSeek 扩展到开源社区</td>
+</tr>
+<tr>
+<td>2026.01</td>
+<td>MTP + MoE 结合</td>
+<td>MTP 与稀疏激活架构的融合</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_3">五、产业影响</h2>
+<h3 id="51">5.1 对模型训练的影响</h3>
+<p>MTP 改变了模型训练的目标函数：
+- 从单一的 NTP 损失 → NTP + MTP 联合损失
+- 训练成本略有增加（多步预测的额外计算），但推理效率大幅提升
+- 训练时需要额外的超参数调优（MTP 深度、损失加权系数）</p>
+<h3 id="52">5.2 对推理效率的影响</h3>
+<p>MTP 是推测解码的最优草稿来源：
+- 独立草稿模型：接受率 60-70%
+- Medusa 解码头：接受率 70-80%
+- MTP 模块：接受率 80-90%（因为与主模型共享表示）
+- 更高的接受率 → 更大的加速比</p>
+<h3 id="53">5.3 对模型设计的影响</h3>
+<p>MTP 推动了"训练-推理协同设计"的范式：
+- 模型架构不再只考虑训练效率，还要考虑推理效率
+- MTP 模块成为模型架构的一部分
+- 未来的模型可能在训练时就集成多种推理优化（量化感知、蒸馏目标、推测模块）</p>
+<h3 id="54">5.4 核心洞见：从"逐步猜测"到"批量预知"</h3>
+<p>MTP 的深层意义在于改变了模型"看未来"的方式：
+- NTP：每次只看一步，像走迷宫时每走一步都要停下来看地图
+- MTP：一次看多步，像走迷宫时提前规划好几步的路线</p>
+<p>这种"批量预知"的能力不仅加速了推理，还可能提高模型的质量——因为模型在训练时就学会了考虑更长远的依赖关系。</p>
+<hr />
+<h2 id="_4">六、总结</h2>
+<p>多Token预测（MTP）代表了大模型训练和推理的范式转变——从"训练时不想推理"到"训练时就为推理做准备"。DeepSeek 的 DSpark 首次在工业级模型上验证了 MTP 的价值：在 DeepSeek-V4-Flash/Pro 上实现 60-85% 的推理加速，在 Qwen3 上也实现了 30% 的加速。</p>
+<p>MTP 的核心价值不在于某种具体的算法实现，而在于一个更深层的理念：训练和推理不应该是割裂的两个阶段，而应该是协同设计的统一体。训练时的每一个决策（目标函数、架构设计、损失加权）都应该考虑推理时的影响。</p>
+<p>从更宏观的视角看，MTP 是"训练-推理协同设计"大趋势的开端。未来，我们可能会看到更多这样的协同设计：训练时集成量化感知、训练时集成蒸馏目标、训练时集成推测模块。每一次协同设计，都是训练效率和推理效率的双重提升。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

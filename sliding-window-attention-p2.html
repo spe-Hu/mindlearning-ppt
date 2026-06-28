@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滑动窗口注意力 — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="sliding-window-attention-p1.html">← 横纵分析</a>
+        <span class="nav-title">滑动窗口注意力 — 经典论文</span>
+        <a href="sliding-window-attention-p3.html">拆书分析 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="_1">滑动窗口注意力核心论文深度解读</h1>
+<h2 id="1longformer-the-long-document-transformer-beltagy-et-al-2020">论文 1：Longformer: The Long-Document Transformer (Beltagy et al., 2020)</h2>
+<h3 id="_2">基本信息</h3>
+<ul>
+<li><strong>标题</strong>：Longformer: The Long-Document Transformer</li>
+<li><strong>作者</strong>：Iz Beltagy, Matthew E. Peters, Arman Cohan</li>
+<li><strong>发表</strong>：arXiv:2004.05150</li>
+<li><strong>意义</strong>：滑动窗口注意力的奠基之作，提出了局部+全局的混合注意力模式</li>
+</ul>
+<h3 id="_3">论文核心内容</h3>
+<p>Longformer 的核心贡献是提出了一种高效的注意力机制，使 Transformer 能够处理长达数千乃至数万个 token 的文档。</p>
+<p><strong>核心设计</strong>：</p>
+<p>Longformer 的注意力由两个部分组成：</p>
+<pre><code>1. 滑动窗口注意力 (Sliding Window Attention):
+   每个位置 i 只关注 [i-w, i+w] 范围内的 token
+   其中 w 是窗口大小（半宽）
+
+   数学表达:
+   A_i = Attention(Q_i, K_{max(0,i-w):min(n,i+w+1)}, V_{max(0,i-w):min(n,i+w+1)})
+
+   计算复杂度: O(n × w) 每层
+   内存复杂度: O(n × w) 每层
+
+2. 全局注意力 (Global Attention):
+   选定的全局 token 关注所有位置，所有位置也关注这些全局 token
+
+   全局 token 的选择:
+   - [CLS] token (用于分类任务)
+   - 段落分隔符 (用于文档理解)
+   - 问题 token (用于 QA 任务)
+
+   计算复杂度: O(n × g) 每层 (g 为全局 token 数)
+</code></pre>
+<p><strong>信息流分析</strong>：</p>
+<pre><code>单层: 每个 token 只能看到 w 个邻居
+两层: 感受野扩展到 2w
+L 层: 感受野扩展到 L × w
+
+全局 token 的作用:
+- 全局 token 在每一层都能看到所有位置
+- 其他 token 通过全局 token 间接获取远距离信息
+- 信息流路径: token_i → 全局token → token_j (2 跳即可传递全局信息)
+</code></pre>
+<p><strong>稀疏注意力矩阵的可视化</strong>：</p>
+<pre><code>全量注意力矩阵 (n × n):
+████████████████
+████████████████
+████████████████
+████████████████
+
+Longformer 注意力矩阵:
+█▓▓█...............   █ = 滑动窗口 + 全局
+▓██▓█..............   ▓ = 滑动窗口
+.▓██▓█.............   . = 不计算 (零)
+..▓██▓█............
+...▓██▓█...........
+..................█
+...............█▓██
+..............█▓██▓
+.............█▓██▓.
+............█▓██▓..
+
+最后一列和某些行是全局 token
+</code></pre>
+<h3 id="_4">实验结果</h3>
+<p>Longformer 在多个长文档任务上进行了评测：</p>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>序列长度</th>
+<th>BERT (512)</th>
+<th>RoBERTa (512)</th>
+<th>Longformer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文档分类 (IMDb)</td>
+<td>4096</td>
+<td>51.2</td>
+<td>53.8</td>
+<td>56.4</td>
+</tr>
+<tr>
+<td>QA (Natural Questions)</td>
+<td>4096</td>
+<td>52.8</td>
+<td>57.2</td>
+<td>59.8</td>
+</tr>
+<tr>
+<td>核心ference resolution</td>
+<td>4096</td>
+<td>-</td>
+<td>-</td>
+<td>SOTA</td>
+</tr>
+</tbody>
+</table>
+<p>关键发现：
+- Longformer 在 4096 长度下比 BERT 提升 5-7 个点
+- 内存使用减少了约 10 倍（相比全量注意力）
+- 速度提升了约 6 倍</p>
+<h3 id="_5">代码示例</h3>
+<pre><code class="language-python">import torch
+import torch.nn.functional as F
+
+def sliding_window_attention(Q, K, V, window_size):
+    &quot;&quot;&quot;
+    滑动窗口注意力的简化实现
+    Q, K, V: [batch, seq_len, heads, dim]
+    window_size: 半窗口宽度 w
+    &quot;&quot;&quot;
+    batch, n, heads, dim = Q.shape
+
+    # 创建滑动窗口掩码
+    # mask[i, j] = True if |i - j| &lt;= window_size
+    indices = torch.arange(n, device=Q.device)
+    mask = (indices.unsqueeze(0) - indices.unsqueeze(1)).abs() &lt;= window_size
+    # mask: [n, n] 的布尔矩阵
+
+    # 计算注意力分数
+    # Q: [batch, n, heads, dim] -&gt; [batch, heads, n, dim]
+    q = Q.permute(0, 2, 1, 3)
+    k = K.permute(0, 2, 1, 3)
+    v = V.permute(0, 2, 1, 3)
+
+    scores = torch.matmul(q, k.transpose(-2, -1)) / (dim ** 0.5)
+    # scores: [batch, heads, n, n]
+
+    # 应用滑动窗口掩码
+    scores = scores.masked_fill(~mask.unsqueeze(0).unsqueeze(0), float('-inf'))
+
+    # Softmax
+    attn_weights = F.softmax(scores, dim=-1)
+
+    # 输出
+    output = torch.matmul(attn_weights, v)
+    # output: [batch, heads, n, dim]
+
+    return output.permute(0, 2, 1, 3)
+</code></pre>
+<h3 id="_6">深远影响</h3>
+<p>Longformer 的影响远超长文档处理：
+1. 确立了滑动窗口注意力作为高效注意力的标准方案
+2. 启发了 BigBird、BigBird-Pegasus 等后续工作
+3. 其稀疏注意力模式被 FlashAttention 原生支持
+4. 成为 Mistral、DeepSeek 等模型中滑动窗口注意力的理论源头</p>
+<hr />
+<h2 id="2big-bird-transformers-for-longer-sequences-zaheer-et-al-2020">论文 2：Big Bird: Transformers for Longer Sequences (Zaheer et al., 2020)</h2>
+<h3 id="_7">基本信息</h3>
+<ul>
+<li><strong>标题</strong>：Big Bird: Transformers for Longer Sequences</li>
+<li><strong>作者</strong>：Manzil Zaheer, Guru Guruganesh, Avinava Dubey, et al. (Google Research)</li>
+<li><strong>发表</strong>：NeurIPS 2020</li>
+<li><strong>意义</strong>：为滑动窗口注意力提供了理论基础</li>
+</ul>
+<h3 id="_8">论文核心内容</h3>
+<p>BigBird 的核心贡献在于从<strong>理论角度</strong>证明了稀疏注意力的有效性。</p>
+<p><strong>BigBird 的注意力模式</strong>：</p>
+<pre><code>BigBird 结合了三种注意力:
+1. 滑动窗口 (Sliding): 每个 token 关注 w 个邻居
+2. 全局 (Global): 少数 token 关注所有位置
+3. 随机 (Random): 每个 token 随机关注 c 个其他位置
+
+总注意力: A = A_sliding + A_global + A_random
+每行非零元素数: w + g + c (远小于 n)
+</code></pre>
+<p><strong>理论贡献</strong>：</p>
+<p>BigBird 论文最重要的贡献是以下定理：</p>
+<pre><code>定理 (Zaheer et al., 2020):
+设 G 是一个注意力图，如果 G 包含:
+(a) 滑动窗口连接 (每个节点连接 w 个邻居)
+(b) 全局连接 (g 个节点连接所有其他节点)
+(c) 随机连接 (每个节点随机连接 c 个其他节点)
+
+则基于 G 的稀疏注意力是 universal approximator:
+对于任意连续函数 f 和 ε &gt; 0，存在一个基于 G 的 Transformer
+使得 |Transformer(x) - f(x)| &lt; ε
+
+关键参数选择:
+- w = O(1) (常数窗口大小即可)
+- g = O(1) (常数个全局 token 即可)
+- c = O(log n) (随机连接数只需对数级)
+
+这意味着: 稀疏注意力在理论上与全量注意力等价!
+</code></pre>
+<p><strong>实践中的简化</strong>：</p>
+<pre><code>实际应用中，随机连接通常被省略:
+- BigBird (完整版): 滑动 + 全局 + 随机 → 理论最优
+- BigBird (简化版): 滑动 + 全局 → 实践中效果接近
+- Longformer: 滑动 + 全局 → 与简化版 BigBird 等价
+
+随机连接的价值:
+- 理论上: 保证 universal approximation
+- 实践中: 提升 &lt; 1%，但增加了实现的复杂性
+- 结论: 大多数应用中使用滑动 + 全局即可
+</code></pre>
+<h3 id="_9">实验结果</h3>
+<p>BigBird 在多个长序列任务上进行了评测：</p>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>序列长度</th>
+<th>BERT</th>
+<th>Longformer</th>
+<th>BigBird</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>摘要 (arXiv)</td>
+<td>4096</td>
+<td>29.1</td>
+<td>30.4</td>
+<td>31.2</td>
+</tr>
+<tr>
+<td>QA (QASper)</td>
+<td>4096</td>
+<td>42.3</td>
+<td>45.8</td>
+<td>47.1</td>
+</tr>
+<tr>
+<td>分类 (AG News)</td>
+<td>4096</td>
+<td>91.2</td>
+<td>91.5</td>
+<td>91.8</td>
+</tr>
+<tr>
+<td>基因组序列</td>
+<td>8192</td>
+<td>OOM</td>
+<td>可行</td>
+<td>可行</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_10">深远影响</h3>
+<p>BigBird 的理论贡献为整个稀疏注意力领域提供了信心：
+1. 证明了稀疏注意力不是"退而求其次"，而是理论上等价
+2. 指导了注意力模式的设计（哪些连接是必要的）
+3. 启发了后续对注意力稀疏性的更深入理解</p>
+<hr />
+<h2 id="3flashattention-fast-and-memory-efficient-exact-attention-with-io-awareness-dao-et-al-2022">论文 3：FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness (Dao et al., 2022)</h2>
+<h3 id="_11">基本信息</h3>
+<ul>
+<li><strong>标题</strong>：FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</li>
+<li><strong>作者</strong>：Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré</li>
+<li><strong>发表</strong>：NeurIPS 2022</li>
+<li><strong>意义</strong>：通过 IO 感知的 GPU 优化，使注意力计算（包括滑动窗口）在硬件上高效执行</li>
+</ul>
+<h3 id="_12">论文核心内容</h3>
+<p>FlashAttention 的核心洞察是：<strong>注意力计算的瓶颈不是计算量，而是内存访问（IO）</strong>。</p>
+<p><strong>GPU 内存层次</strong>：</p>
+<pre><code>SRAM (片上缓存):
+- 容量: ~20 MB (A100)
+- 带宽: ~19 TB/s
+- 延迟: ~ns
+
+HBM (高带宽内存):
+- 容量: 40-80 GB
+- 带宽: ~2 TB/s
+- 延迟: ~100ns
+
+关键观察:
+- SRAM 带宽是 HBM 的 ~10000 倍
+- 但 SRAM 容量远小于 HBM
+- 传统实现在 HBM 中做计算 → 带宽瓶颈
+- FlashAttention 在 SRAM 中做计算 → 利用高带宽
+</code></pre>
+<p><strong>Tiling 算法</strong>：</p>
+<pre><code>传统注意力实现:
+1. 在 HBM 中加载 Q, K, V
+2. 在 HBM 中计算 S = QK^T (n × n 矩阵)
+3. 在 HBM 中计算 P = softmax(S)
+4. 在 HBM 中计算 O = PV
+5. 需要存储 n × n 的中间矩阵 → 内存 O(n^2)
+
+FlashAttention:
+1. 将 Q, K, V 分成块 (tiles)，每块大小 B_r × B_c
+2. 每次加载一个 tile 到 SRAM
+3. 在 SRAM 中计算局部注意力
+4. 使用 online softmax 技巧累积结果
+5. 不需要存储完整的 n × n 矩阵 → 内存 O(n)
+</code></pre>
+<p><strong>FlashAttention + 滑动窗口</strong>：</p>
+<p>FlashAttention 2/3 原生支持滑动窗口注意力：</p>
+<pre><code>在 tiling 过程中:
+- 对于位置 i 的 tile，只需要加载 [i-w, i+w] 范围内的 K, V tiles
+- 跳过窗口外的 tiles → 直接减少计算和内存访问
+- 实际加速: 与 w/n 成正比
+
+性能对比 (n=32K, w=256):
+全量注意力 + FlashAttention: ~12 ms
+滑动窗口 + FlashAttention: ~0.1 ms
+加速比: ~120x
+</code></pre>
+<h3 id="_13">实验结果</h3>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>全量注意力</th>
+<th>FlashAttention</th>
+<th>加速比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>n=2K, BF16</td>
+<td>基准</td>
+<td>1.5x</td>
+<td>1.5x</td>
+</tr>
+<tr>
+<td>n=8K, BF16</td>
+<td>基准</td>
+<td>3x</td>
+<td>3x</td>
+</tr>
+<tr>
+<td>n=32K, BF16</td>
+<td>OOM</td>
+<td>可行</td>
+<td>-</td>
+</tr>
+<tr>
+<td>n=128K, BF16</td>
+<td>OOM</td>
+<td>可行</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>滑动窗口模式下的额外加速：</p>
+<table>
+<thead>
+<tr>
+<th>n</th>
+<th>w</th>
+<th>全量 Flash</th>
+<th>SW+Flash</th>
+<th>加速比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8K</td>
+<td>256</td>
+<td>基准</td>
+<td>基准</td>
+<td>32x</td>
+</tr>
+<tr>
+<td>32K</td>
+<td>256</td>
+<td>OOM</td>
+<td>可行</td>
+<td>-</td>
+</tr>
+<tr>
+<td>128K</td>
+<td>512</td>
+<td>OOM</td>
+<td>可行</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_14">深远影响</h3>
+<p>FlashAttention 改变了整个注意力计算的实现范式：
+1. 使长序列 Transformer 训练和推理成为可能
+2. 原生支持滑动窗口注意力，两者协同效果极佳
+3. 被几乎所有主流框架（PyTorch、DeepSpeed、Megatron）采用
+4. 启发了 FlashAttention-2（2x 加速）和 FlashAttention-3（Hopper 优化）</p>
+<hr />
+<h2 id="4deepseek-dspark-deepseek-2025">论文 4：DeepSeek DSpark (DeepSeek, 2025)</h2>
+<h3 id="_15">基本信息</h3>
+<ul>
+<li><strong>标题</strong>：DeepSeek DSpark: Efficient Parallel Backbone for Long-Context Processing</li>
+<li><strong>作者</strong>：DeepSeek-AI</li>
+<li><strong>发表</strong>：2025 (技术报告)</li>
+<li><strong>意义</strong>：将滑动窗口注意力作为并行主干的核心，实现高效长上下文处理</li>
+</ul>
+<h3 id="_16">论文核心内容</h3>
+<p>DSpark 是 DeepSeek 在长上下文处理方面的重要创新。其核心思想是将滑动窗口注意力与 MLA 结合，构建一个高效的并行主干。</p>
+<p><strong>架构设计</strong>：</p>
+<pre><code>DSpark 架构:
+1. 输入分块: 将长序列分成多个块 (chunks)
+2. 并行处理: 每个块独立通过滑动窗口注意力处理
+3. 跨块通信: 通过全局 token 或交叉注意力传递信息
+4. 合并输出: 将所有块的输出合并
+
+关键创新:
+- 滑动窗口注意力作为&quot;局部处理器&quot;
+- 全局 token 作为&quot;信息中继站&quot;
+- MLA 压缩 KV Cache
+- 三者协同，实现高效长上下文处理
+</code></pre>
+<p><strong>与 MLA 的协同</strong>：</p>
+<pre><code>MLA 压缩 KV: 每 token 的 KV 从 2 × h × d_k 压缩到 d_c
+滑动窗口: KV Cache 从 n 个 token 减少到 w 个 token
+
+两者叠加:
+KV Cache = w × d_c × L × dtype_size
+
+例: w = 256, d_c = 512, L = 60, FP16
+KV Cache = 256 × 512 × 60 × 2 = ~15.7 MB
+
+对比全量注意力 + MHA:
+KV Cache = 128K × 2 × 128 × 128 × 80 × 2 = ~41 GB
+
+缩减比: ~2600x!
+</code></pre>
+<h3 id="_17">深远影响</h3>
+<p>DSpark 代表了滑动窗口注意力的最新应用范式：
+1. 滑动窗口注意力不再是"妥协"，而是"设计选择"
+2. 与 MLA 的协同展示了多种优化技术的叠加效应
+3. 为未来高效长上下文模型的设计提供了蓝图</p>
+<hr />
+<h2 id="_18">论文对比总结</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Longformer 2020</th>
+<th>BigBird 2020</th>
+<th>FlashAttention 2022</th>
+<th style="text-align: right;">DSpark 2025</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>核心贡献</td>
+<td>滑动窗口注意力</td>
+<td>理论基础</td>
+<td>IO 感知优化</td>
+<td style="text-align: right;">并行主干架构</td>
+</tr>
+<tr>
+<td>优化层面</td>
+<td>算法 (稀疏模式)</td>
+<td>理论 (等价性)</td>
+<td>系统 (GPU 优化)</td>
+<td style="text-align: right;">架构 (端到端)</td>
+</tr>
+<tr>
+<td>复杂度</td>
+<td>O(n × w)</td>
+<td>O(n × (w+g+c))</td>
+<td>不改变</td>
+<td style="text-align: right;">O(n × w)</td>
+</tr>
+<tr>
+<td>KV Cache</td>
+<td>O(w)</td>
+<td>O(w+g+c)</td>
+<td>不改变</td>
+<td style="text-align: right;">O(w) × MLA</td>
+</tr>
+<tr>
+<td>质量影响</td>
+<td>接近全量</td>
+<td>理论等价</td>
+<td>无损</td>
+<td style="text-align: right;">接近全量</td>
+</tr>
+<tr>
+<td>硬件效率</td>
+<td>中</td>
+<td>中</td>
+<td>极高</td>
+<td style="text-align: right;">极高</td>
+</tr>
+</tbody>
+</table>
+<p>这四篇论文构成了滑动窗口注意力的完整演进链：从算法设计（Longformer），到理论证明（BigBird），到硬件优化（FlashAttention），再到架构创新（DSpark）。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滑动窗口注意力 — 概念解剖 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="sliding-window-attention-p4.html">← 知识卡片</a>
+        <span class="nav-title">滑动窗口注意力 — 概念解剖</span>
+        <span></span>
+    </nav>
+    <div class="content">
+        <h1 id="_1">滑动窗口注意力 八维概念解剖</h1>
+<h2 id="history">维度一：历史（History）——从全连接到局部的认知演进</h2>
+<h3 id="_2">注意力的"全连接"执念</h3>
+<p>2017 年 Transformer 诞生时，自注意力的设计哲学是"全连接"——每个位置都能看到所有其他位置。这反映了当时 NLP 领域对长距离依赖的极度渴望：RNN/LSTM 的遗忘问题让研究者痛苦不堪，全量注意力是对此的彻底反动。</p>
+<p>在序列长度 ~100 的时代，全连接没有任何问题。但当序列长度增长到 10K、100K 乃至 1M 时，O(n^2) 的复杂度成为不可逾越的障碍。</p>
+<h3 id="_3">稀疏注意力的觉醒</h3>
+<p>2019-2020 年，研究者开始反思：真的需要全连接吗？</p>
+<pre><code>认知演进:
+阶段 1 (2017): &quot;每个位置都要看到所有位置&quot; → 全量注意力
+阶段 2 (2019): &quot;也许不需要全连接&quot; → Sparse Transformer
+阶段 3 (2020): &quot;只看附近就够了&quot; → Longformer/BigBird
+阶段 4 (2022): &quot;局部注意力可以极致优化&quot; → FlashAttention
+阶段 5 (2023-26): &quot;局部注意力是设计选择，不是妥协&quot; → Mistral/DSpark
+</code></pre>
+<h3 id="_4">关键里程碑</h3>
+<p>滑动窗口注意力的历史是一部"做减法"的历史：
+- 从"看所有"到"看附近"：减少计算范围
+- 从"复杂稀疏"到"简单窗口"：减少实现复杂度
+- 从"理论可行"到"硬件极致"：减少实际开销</p>
+<hr />
+<h2 id="dialectics">维度二：辩证（Dialectics）——局部与全局的正反合</h2>
+<h3 id="_5">正题：全量注意力是完美的</h3>
+<p>每个位置都能看到所有位置 → 信息流通完美 → 模型质量最优。</p>
+<h3 id="_6">反题：全量注意力是不可行的</h3>
+<p>O(n^2) 的复杂度 → 长序列不可行 → 必须寻找替代方案。</p>
+<h3 id="_7">合题：局部注意力 + 多层堆叠 = 全局理解</h3>
+<pre><code>正题: 全量注意力 (信息完美但不可行)
+反题: 局部注意力 (可行但信息有限)
+合题: 局部注意力 + 多层堆叠 + 全局 token
+
+具体方案:
+- 每层使用滑动窗口 (O(n × w))
+- 堆叠 L 层 → 感受野 L × w
+- 加入全局 token → 保证信息流通
+- 结果: 理论上等价于全量注意力 (BigBird 定理)
+</code></pre>
+<hr />
+<h2 id="phenomenology">维度三：现象学（Phenomenology）——滑动窗口在体验中呈现为什么？</h2>
+<h3 id="_8">对开发者而言</h3>
+<p>滑动窗口注意力呈现为一个<strong>超参数选择问题</strong>："w 应该设多大？"</p>
+<pre><code>开发者的内心独白:
+&quot;w 设太小，模型看不到足够的上下文&quot;
+&quot;w 设太大，计算量太大，KV Cache 也太大&quot;
+&quot;Mistral 用了 4096，我也用 4096？&quot;
+&quot;但我的模型只有 12 层，感受野只有 12 × 4096 ≈ 50K&quot;
+&quot;如果我要支持 128K 上下文，需要 w = 128K/12 ≈ 10K&quot;
+&quot;但 w = 10K 的 KV Cache 是 w = 4K 的 2.5 倍...&quot;
+</code></pre>
+<h3 id="_9">对用户而言</h3>
+<p>滑动窗口注意力呈现为<strong>响应速度和上下文长度的平衡</strong>。</p>
+<pre><code>用户体验:
+- 短对话: 快速响应 (滑动窗口内计算量小)
+- 长文档: 也能处理 (感受野通过多层堆叠覆盖)
+- 超长上下文: 可能丢失远距离信息 (如果感受野不够)
+</code></pre>
+<hr />
+<h2 id="linguistics">维度四：语言学（Linguistics）——"窗口"的隐喻</h2>
+<h3 id="_10">窗口隐喻</h3>
+<p>"滑动窗口"这个术语本身就是一个精妙的隐喻：</p>
+<pre><code>物理窗口: 你通过窗户看外面的世界
+- 窗户大小固定 (w)
+- 你可以滑动窗户看不同的风景
+- 每次只能看到一部分
+- 但通过滑动，你可以看到全景
+
+注意力窗口: 模型通过窗口看序列
+- 窗口大小固定 (w)
+- 每个位置有自己的窗口
+- 每次只看到 w 个位置
+- 但通过多层堆叠，可以理解整个序列
+</code></pre>
+<h3 id="_11">相关术语</h3>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>含义</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>滑动窗口</td>
+<td>固定大小的局部关注范围</td>
+<td>信号处理</td>
+</tr>
+<tr>
+<td>感受野</td>
+<td>通过网络能看到的全部范围</td>
+<td>神经科学/计算机视觉</td>
+</tr>
+<tr>
+<td>稀疏注意力</td>
+<td>只计算部分位置的注意力</td>
+<td>稀疏矩阵</td>
+</tr>
+<tr>
+<td>局部注意力</td>
+<td>只关注附近的注意力</td>
+<td>图像处理</td>
+</tr>
+<tr>
+<td>全局 token</td>
+<td>关注所有位置的特殊 token</td>
+<td>Longformer</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="formalization">维度五：形式化（Formalization）——滑动窗口的数学本质</h2>
+<h3 id="_12">形式化定义</h3>
+<pre><code>定义 (滑动窗口注意力):
+设序列长度为 n，窗口大小为 w。
+滑动窗口注意力定义注意力矩阵 A ∈ R^{n×n}，其中:
+
+A_{ij} = softmax(Q_i K_j^T / √d)  如果 |i-j| ≤ w
+A_{ij} = 0                          如果 |i-j| &gt; w
+
+等价地，A 是一个带宽为 2w+1 的带状矩阵 (banded matrix)。
+</code></pre>
+<h3 id="_13">图论视角</h3>
+<pre><code>将注意力模式视为图 G = (V, E):
+V = {1, 2, ..., n} (序列位置)
+E = {(i, j) : |i-j| ≤ w} (边)
+
+这是一个&quot;区间图&quot; (interval graph)
+性质:
+- 最大度: 2w
+- 直径: ⌈n/w⌉
+- 连通性: w-连通
+
+多层堆叠等价于图的幂:
+G^L 的直径 = ⌈n/(Lw)⌉
+当 Lw ≥ n 时，G^L 接近完全图 → 全局信息流通
+</code></pre>
+<h3 id="_14">复杂度定理</h3>
+<pre><code>定理: 滑动窗口注意力的计算复杂度为 O(n × w × d)
+证明:
+- 每行有最多 2w+1 个非零元素
+- 每行的计算量: O(w × d)
+- 共 n 行
+- 总计算量: O(n × w × d)
+□
+
+推论: 当 w = O(1) 时，复杂度为 O(n × d) = O(n)
+推论: 当 w = O(n) 时，复杂度为 O(n^2 × d) (退化为全量)
+推论: 当 w = O(√n) 时，复杂度为 O(n^{1.5} × d)
+</code></pre>
+<hr />
+<h2 id="existentialism-ai">维度六：存在主义（Existentialism）——滑动窗口如何改变了 AI 的面貌？</h2>
+<h3 id="_15">对模型设计的影响</h3>
+<p>滑动窗口注意力使以下成为可能：
+- 128K 上下文窗口（Mistral、DeepSeek）
+- 百万级上下文的探索
+- 高效的长文档理解和代码生成</p>
+<h3 id="_16">对硬件设计的影响</h3>
+<p>滑动窗口注意力的固定稀疏模式启发了硬件优化：
+- FlashAttention 原生支持滑动窗口
+- NVIDIA Hopper 架构的注意力优化
+- 定制 ASIC 的稀疏计算单元</p>
+<hr />
+<h2 id="aesthetics">维度七：美学（Aesthetics）——局部之美</h2>
+<h3 id="_17">简洁之美</h3>
+<p>滑动窗口注意力的规则极其简洁：<strong>只看附近 w 个位置</strong>。一句话就能说清楚，一行代码就能实现。但这一条简单的规则，通过多层堆叠，可以产生全局的理解能力。</p>
+<h3 id="_18">涌现之美</h3>
+<p>单层滑动窗口只能看到局部。但多层堆叠后，全局理解"涌现"出来。这是一种典型的涌现现象——简单规则的复杂组合产生了超越个体的能力。</p>
+<pre><code>第 1 层: 看到 w 个位置 → 局部模式 (词组、短语)
+第 2 层: 看到 2w 个位置 → 句子级理解
+第 4 层: 看到 4w 个位置 → 段落级理解
+第 L 层: 看到 Lw 个位置 → 文档级理解
+
+从局部到全局的涌现，是滑动窗口注意力最美的特性
+</code></pre>
+<hr />
+<h2 id="_19">维度七（续）：滑动窗口注意力的工程美学</h2>
+<h3 id="_20">代码之美</h3>
+<p>滑动窗口注意力的实现可以用极其简洁的代码表达：</p>
+<pre><code class="language-python"># 滑动窗口注意力的核心：一行掩码
+mask = abs(i - j) &lt;= w  # 就这么简单
+
+# 但这一行代码背后:
+# 1. 将 O(n^2) 的注意力变为 O(n × w)
+# 2. 将 KV Cache 从 O(n) 变为 O(w)
+# 3. 使 FlashAttention 的 tiling 更加高效
+# 4. 使内存使用完全可预测
+</code></pre>
+<h3 id="_21">架构之美</h3>
+<p>滑动窗口注意力在 Transformer 架构中的位置体现了"最小侵入"的设计原则：
+- 不改变 Transformer 的整体架构
+- 只改变注意力矩阵的计算范围
+- 其他组件（FFN、LayerNorm、位置编码）完全不变
+- 可以无缝替换全量注意力</p>
+<hr />
+<h2 id="meta-philosophy">维度八：元哲学（Meta-Philosophy）——局部认知的智慧</h2>
+<h3 id="_22">有限理性的认知模型</h3>
+<p>滑动窗口注意力与赫伯特·西蒙的"有限理性"（Bounded Rationality）理论高度契合：</p>
+<pre><code>有限理性: 人类在决策时不会考虑所有可能性
+          而是在有限的信息范围内做出&quot;足够好&quot;的决策
+
+滑动窗口注意力: 每个位置不会关注所有其他位置
+               而是在有限的窗口内做出&quot;足够好&quot;的注意力分配
+
+两者的共同智慧:
+- 不追求完美（全局最优），而是追求&quot;足够好&quot;（局部最优）
+- 通过多次迭代（多层堆叠）逐步接近全局最优
+- 用有限的资源获得最大的收益
+</code></pre>
+<h3 id="_23">工程中的有限理性</h3>
+<p>在实际工程中，滑动窗口注意力的"有限理性"体现在以下方面：</p>
+<pre><code>1. 窗口大小的选择:
+   - 不是越大越好（计算成本增加）
+   - 不是越小越好（信息丢失）
+   - 而是&quot;恰到好处&quot;——覆盖大多数依赖关系的距离
+
+2. 全局 token 的数量:
+   - 不是越多越好（计算成本增加）
+   - 不是越少越好（信息流通不足）
+   - 而是&quot;恰到好处&quot;——保证必要的跨窗口信息传递
+
+3. 层数的选择:
+   - 不是越深越好（训练困难，过拟合）
+   - 不是越浅越好（感受野不足）
+   - 而是&quot;恰到好处&quot;——使感受野覆盖目标序列长度
+</code></pre>
+<h3 id="_24">与其他"有限理性"设计的类比</h3>
+<pre><code>滑动窗口注意力 ≈ 人类阅读 (每次注视一小段)
+滑动窗口注意力 ≈ 卷积神经网络 (局部感受野)
+滑动窗口注意力 ≈ 数据库索引 (不扫描全表，只查索引)
+滑动窗口注意力 ≈ 分治算法 (大问题分解为小问题)
+滑动窗口注意力 ≈ 缓存策略 (不存储所有数据，只缓存热点)
+
+共同主题:
+- 接受局部的、有限的视角
+- 通过结构化的方式组合局部视角
+- 以有限的资源获得&quot;足够好&quot;的全局理解
+</code></pre>
+<h3 id="_25">一句话总结</h3>
+<blockquote>
+<p>滑动窗口注意力的智慧在于：承认认知的有限性，但通过层次的叠加，从局部中涌现出全局。这不是退而求其次，而是认知的本质。在工程实践中，这意味着选择"恰到好处"的窗口大小、全局 token 数量和层数，在计算效率和信息完整性之间取得最优平衡。</p>
+</blockquote>
+<h3 id="ai">从滑动窗口看 AI 的发展方向</h3>
+<p>滑动窗口注意力的成功暗示了 AI 发展的一个重要方向：<strong>不是追求理论上的完美（全量注意力），而是在实际约束下找到最优解</strong>。这与人类智能的运作方式高度一致——人脑也不是"全连接"的，而是通过局部连接和层次化处理来实现智能。也许，真正的智能不在于"看到所有"，而在于"知道该看什么"。这种"有选择地关注"的能力，正是滑动窗口注意力所体现的核心智慧，也是未来 AI 系统设计的重要指导原则。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

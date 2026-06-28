@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滑动窗口注意力 — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="sliding-window-attention-p3.html">← 拆书分析</a>
+        <span class="nav-title">滑动窗口注意力 — 知识卡片</span>
+        <a href="sliding-window-attention-p5.html">概念解剖 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="_1">滑动窗口注意力 知识卡片集</h1>
+<h2 id="1">卡片 1：原理卡——什么是滑动窗口注意力？</h2>
+<h3 id="_2">正面：一句话定义</h3>
+<p>滑动窗口注意力（Sliding Window Attention）是一种稀疏注意力机制，其中序列中的每个位置只关注其前后固定窗口大小 w 内的位置，将注意力复杂度从 O(n^2) 降低到 O(n × w)。</p>
+<h3 id="_3">背面：核心原理</h3>
+<p><strong>全量注意力 vs 滑动窗口注意力</strong>：</p>
+<pre><code>全量注意力 (n=8, 每个位置关注所有 8 个位置):
+  1 2 3 4 5 6 7 8
+1 ● ● ● ● ● ● ● ●
+2 ● ● ● ● ● ● ● ●
+3 ● ● ● ● ● ● ● ●
+4 ● ● ● ● ● ● ● ●
+5 ● ● ● ● ● ● ● ●
+6 ● ● ● ● ● ● ● ●
+7 ● ● ● ● ● ● ● ●
+8 ● ● ● ● ● ● ● ●
+计算量: 8 × 8 = 64
+
+滑动窗口注意力 (w=2, 每个位置关注前后 2 个位置):
+  1 2 3 4 5 6 7 8
+1 ● ● ● . . . . .
+2 ● ● ● ● . . . .
+3 ● ● ● ● ● . . .
+4 . ● ● ● ● ● . .
+5 . . ● ● ● ● ● .
+6 . . . ● ● ● ● ●
+7 . . . . ● ● ● ●
+8 . . . . . ● ● ●
+计算量: ~24 (减少了 63%)
+</code></pre>
+<p><strong>关键特性</strong>：
+- 窗口大小 w 是超参数（通常 256-4096）
+- L 层堆叠后感受野 = L × w
+- KV Cache 大小固定为 w，不随序列长度增长
+- 与 FlashAttention 完美兼容</p>
+<hr />
+<h2 id="2">卡片 2：公式卡——复杂度计算</h2>
+<h3 id="_4">核心公式</h3>
+<pre><code>计算复杂度: O(n × w × d) 每层
+内存复杂度: O(n × w) 每层 (注意力矩阵)
+KV Cache:   O(w × L × d) 每请求 (固定大小!)
+
+其中:
+n = 序列长度
+w = 窗口大小
+d = 模型维度
+L = 层数
+</code></pre>
+<h3 id="_5">复杂度对比表</h3>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>计算</th>
+<th>内存</th>
+<th>KV Cache</th>
+<th>n=128K 时的计算量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全量注意力</td>
+<td>O(n^2 d)</td>
+<td>O(n^2)</td>
+<td>O(n L d)</td>
+<td>16.8T × d</td>
+</tr>
+<tr>
+<td>滑动窗口</td>
+<td>O(nwd)</td>
+<td>O(nw)</td>
+<td>O(w L d)</td>
+<td>128K × w × d</td>
+</tr>
+<tr>
+<td>线性注意力</td>
+<td>O(nd)</td>
+<td>O(n)</td>
+<td>O(d)</td>
+<td>128K × d</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_6">实际加速比</h3>
+<pre><code>n = 128K, w = 256:
+全量: 128K^2 = 16.8G 次运算/头/层
+滑动: 128K × 256 = 32.7M 次运算/头/层
+加速比: 16.8G / 32.7M = 512x
+
+n = 32K, w = 512:
+全量: 32K^2 = 1.07G
+滑动: 32K × 512 = 16.4M
+加速比: 65x
+</code></pre>
+<hr />
+<h2 id="3">卡片 3：感受野卡——多层堆叠的效果</h2>
+<h3 id="_7">感受野计算公式</h3>
+<pre><code>单层: RF = w
+两层: RF = 2w - 1
+L 层: RF = L(w-1) + 1
+
+近似: RF ≈ L × w (当 w &gt;&gt; 1)
+</code></pre>
+<h3 id="_8">不同配置的感受野</h3>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>层数 L</th>
+<th>窗口 w</th>
+<th>感受野</th>
+<th>覆盖范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Longformer</td>
+<td>12</td>
+<td>256</td>
+<td>3,049</td>
+<td>~3K tokens</td>
+</tr>
+<tr>
+<td>BigBird</td>
+<td>12</td>
+<td>64</td>
+<td>757</td>
+<td>~750 tokens</td>
+</tr>
+<tr>
+<td>Mistral 7B</td>
+<td>32</td>
+<td>4096</td>
+<td>131,041</td>
+<td>~128K tokens</td>
+</tr>
+<tr>
+<td>LLaMA-2 (假设)</td>
+<td>32</td>
+<td>512</td>
+<td>16,353</td>
+<td>~16K tokens</td>
+</tr>
+<tr>
+<td>DSpark</td>
+<td>60</td>
+<td>1024</td>
+<td>61,381</td>
+<td>~60K tokens</td>
+</tr>
+</tbody>
+</table>
+<h3 id="vs">感受野 vs 序列长度</h3>
+<pre><code>Mistral 7B (L=32, w=4096):
+序列长度 4K:  感受野 131K &gt;&gt; 4K → 完全覆盖 ✓
+序列长度 32K: 感受野 131K &gt;&gt; 32K → 完全覆盖 ✓
+序列长度 128K: 感受野 131K ≈ 128K → 基本覆盖 ✓
+
+结论: Mistral 的滑动窗口配置足以覆盖 128K 上下文
+</code></pre>
+<hr />
+<h2 id="4kv-cache">卡片 4：KV Cache 卡——滑动窗口对内存的影响</h2>
+<h3 id="kv-cache">KV Cache 对比</h3>
+<pre><code>全量注意力 KV Cache:
+大小 = n × 2 × L × n_kv × d_k × dtype
+n=128K, L=80, GQA(g=8), FP16:
+= 128,000 × 2 × 80 × 8 × 128 × 2 = ~41 GB
+
+滑动窗口注意力 KV Cache:
+大小 = w × 2 × L × n_kv × d_k × dtype
+w=4096, L=80, GQA(g=8), FP16:
+= 4,096 × 2 × 80 × 8 × 128 × 2 = ~1.3 GB
+
+缩减比: 41 / 1.3 = ~32x (仅因为窗口化)
+</code></pre>
+<h3 id="_9">叠加优化效果</h3>
+<pre><code>全量注意力 + MHA:
+KV Cache = 128K × 2 × 80 × 32 × 128 × 2 = ~164 GB
+
+滑动窗口 + GQA + MLA:
+KV Cache = w × d_c × L × dtype
+= 4096 × 512 × 60 × 2 = ~252 MB
+
+缩减比: 164 GB / 252 MB = ~650x!
+</code></pre>
+<h3 id="kv-cache_1">不同窗口大小的 KV Cache</h3>
+<pre><code>窗口 w    KV Cache (GQA, 80层)    相当于
+64        20 MB                   一张小图片
+256       82 MB                   一张照片
+512       164 MB                  一张高分辨率图片
+1024      328 MB                  一个小模型
+2048      655 MB                  一个 Chrome 标签
+4096      1.3 GB                  一个小 LLM 的权重
+8192      2.6 GB                  一个 LLM 的权重
+</code></pre>
+<hr />
+<h2 id="5">卡片 5：对比卡——各种注意力方案</h2>
+<h3 id="_10">注意力方案全景对比</h3>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>计算</th>
+<th>内存</th>
+<th>KV Cache</th>
+<th>质量</th>
+<th>硬件效率</th>
+<th>实现难度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全量</td>
+<td>O(n^2)</td>
+<td>O(n^2)</td>
+<td>O(n)</td>
+<td>最优</td>
+<td>中</td>
+<td>低</td>
+</tr>
+<tr>
+<td>滑动窗口</td>
+<td>O(nw)</td>
+<td>O(nw)</td>
+<td>O(w)</td>
+<td>接近最优</td>
+<td>极高</td>
+<td>低</td>
+</tr>
+<tr>
+<td>Longformer</td>
+<td>O(nw)</td>
+<td>O(nw)</td>
+<td>O(w+g)</td>
+<td>接近最优</td>
+<td>高</td>
+<td>中</td>
+</tr>
+<tr>
+<td>BigBird</td>
+<td>O(n(w+c+g))</td>
+<td>O(n(w+c+g))</td>
+<td>O(w+c+g)</td>
+<td>理论等价</td>
+<td>高</td>
+<td>中</td>
+</tr>
+<tr>
+<td>Reformer</td>
+<td>O(n log n)</td>
+<td>O(n)</td>
+<td>O(1)</td>
+<td>近似</td>
+<td>低</td>
+<td>高</td>
+</tr>
+<tr>
+<td>Linear Attn</td>
+<td>O(n)</td>
+<td>O(n)</td>
+<td>O(1)</td>
+<td>有损</td>
+<td>高</td>
+<td>中</td>
+</tr>
+<tr>
+<td>Mamba/SSM</td>
+<td>O(n)</td>
+<td>O(n)</td>
+<td>O(1)</td>
+<td>接近最优</td>
+<td>高</td>
+<td>中</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_11">选择决策树</h3>
+<pre><code>你的序列有多长?
+│
+├── &lt; 4K → 全量注意力 (简单、最优)
+│
+├── 4K-32K → 滑动窗口 (w=1024-4096)
+│           或全量 + FlashAttention
+│
+├── 32K-128K → 滑动窗口 (w=2048-4096)
+│             + FlashAttention
+│             + GQA
+│
+└── &gt; 128K → 滑动窗口 + 全局 token
+            或 SSM/Mamba
+            或混合架构
+</code></pre>
+<hr />
+<h2 id="6">卡片 6：代码卡——高效实现</h2>
+<h3 id="flashattention">使用 FlashAttention 的滑动窗口</h3>
+<pre><code class="language-python">from flash_attn import flash_attn_varlen_func
+
+def sliding_window_attention_flash(q, k, v, cu_seqlens, max_seqlen, window_size):
+    &quot;&quot;&quot;
+    使用 FlashAttention 的高效滑动窗口注意力
+
+    q, k, v: [total_tokens, heads, dim] (varlen 格式)
+    cu_seqlens: 每个序列的累积长度
+    max_seqlen: 最大序列长度
+    window_size: (left, right) 窗口大小
+    &quot;&quot;&quot;
+    # FlashAttention 原生支持滑动窗口
+    # 只需要传入 window_size 参数
+    output = flash_attn_varlen_func(
+        q, k, v,
+        cu_seqlens_q=cu_seqlens,
+        cu_seqlens_k=cu_seqlens,
+        max_seqlen_q=max_seqlen,
+        max_seqlen_k=max_seqlen,
+        causal=True,
+        window_size=window_size  # 关键参数!
+    )
+    return output
+</code></pre>
+<h3 id="pytorch">纯 PyTorch 实现</h3>
+<pre><code class="language-python">import torch
+import torch.nn.functional as F
+
+def efficient_sliding_window_attention(x, num_heads, window_size):
+    &quot;&quot;&quot;
+    高效的滑动窗口注意力实现
+    使用 unfold 操作避免显式构造掩码
+    &quot;&quot;&quot;
+    B, N, D = x.shape
+    head_dim = D // num_heads
+
+    # 计算 Q, K, V
+    Q = F.linear(x, torch.randn(D, D)).view(B, N, num_heads, head_dim)
+    K = F.linear(x, torch.randn(D, D)).view(B, N, num_heads, head_dim)
+    V = F.linear(x, torch.randn(D, D)).view(B, N, num_heads, head_dim)
+
+    # 使用 unfold 提取窗口
+    # K_windows: [B, num_heads, N, window_size, head_dim]
+    K_padded = F.pad(K, (0, 0, 0, 0, window_size, 0))  # 左侧填充
+    K_windows = K_padded.unfold(2, window_size + 1, 1)
+    K_windows = K_windows.permute(0, 1, 2, 4, 3)
+
+    V_padded = F.pad(V, (0, 0, 0, 0, window_size, 0))
+    V_windows = V_padded.unfold(2, window_size + 1, 1)
+    V_windows = V_windows.permute(0, 1, 2, 4, 3)
+
+    # 窗口内注意力
+    # Q: [B, N, heads, head_dim] -&gt; [B, heads, N, 1, head_dim]
+    q = Q.permute(0, 2, 1, 3).unsqueeze(3)
+    scores = (q * K_windows).sum(-1) / (head_dim ** 0.5)
+    attn = F.softmax(scores, dim=-1)
+    output = (attn.unsqueeze(-1) * V_windows).sum(-2)
+
+    return output.permute(0, 2, 1, 3).reshape(B, N, D)
+</code></pre>
+<hr />
+<h2 id="7">卡片 7：实战卡——滑动窗口注意力的调优指南</h2>
+<h3 id="w">窗口大小 w 的调优</h3>
+<pre><code>调优步骤:
+
+1. 确定目标序列长度 n:
+   - 训练时最大序列长度
+   - 推理时预期序列长度
+
+2. 确定模型层数 L:
+   - 更多层 → 可以用更小的 w (感受野 = L × w)
+   - 更少层 → 需要更大的 w
+
+3. 计算所需 w:
+   - w ≥ n / L (确保感受野覆盖序列)
+   - 推荐: w = 1.5 × n / L (留有余量)
+
+4. 验证 KV Cache:
+   - KV = w × 2 × L × n_kv × d_k × dtype
+   - 确保在 GPU 显存预算内
+
+5. 实验验证:
+   - 在验证集上测试不同 w 的效果
+   - 找到精度-效率的最优平衡点
+</code></pre>
+<h3 id="_12">常见错误与解决方案</h3>
+<pre><code>错误 1: 窗口太小
+- 症状: 长距离依赖任务精度下降
+- 诊断: 检查感受野是否覆盖序列长度
+- 解决: 增大 w 或增加层数
+
+错误 2: 忘记全局 token
+- 症状: 需要全局信息的任务表现差
+- 诊断: 检查是否有跨窗口信息传递机制
+- 解决: 添加 [CLS] token 或其他全局 token
+
+错误 3: 未使用 FlashAttention
+- 症状: 速度比预期慢
+- 诊断: 检查是否使用了标准注意力实现
+- 解决: 切换到 FlashAttention 的滑动窗口模式
+
+错误 4: KV Cache 计算错误
+- 症状: 显存超出预期
+- 诊断: 检查 KV Cache 是否按 w 而非 n 分配
+- 解决: 确保 KV Cache 大小为 O(w) 而非 O(n)
+</code></pre>
+<h2 id="8">卡片 8：时间线卡——滑动窗口注意力里程碑</h2>
+<pre><code>2017 ─── Vaswani et al. &quot;Attention Is All You Need&quot;
+         │ 全量注意力 O(n^2)，序列长度 ~100
+         │
+2019 ─── Sparse Transformer (OpenAI)
+         │ 首次提出局部+全局的稀疏注意力
+         │ 复杂度 O(n√n)
+         │
+2020 ─── Longformer + BigBird
+         │ 滑动窗口注意力正式确立
+         │ Longformer: 局部+全局混合
+         │ BigBird: 理论证明 universal approximation
+         │
+2021 ─── BigBird-Pegasus
+         │ 滑动窗口注意力用于长文档摘要
+         │ 序列长度达到 8K-16K
+         │
+2022 ─── FlashAttention
+         │ IO 感知的注意力计算
+         │ 原生支持滑动窗口模式
+         │ 两者协同效果极佳
+         │
+2023 ─── Mistral 7B
+         │ 首个使用滑动窗口注意力的主流 LLM
+         │ w=4096, 32层, 128K 有效感受野
+         │
+2024 ─── FlashAttention-2/3
+         │ 进一步优化滑动窗口实现
+         │ 在 Hopper 架构上达到极致效率
+         │
+2025 ─── DSpark (DeepSeek)
+         滑动窗口注意力作为并行主干核心
+         与 MLA 协同，KV Cache 极度压缩
+</code></pre>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

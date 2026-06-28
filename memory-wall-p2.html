@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内存墙 — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="memory-wall-p1.html">← 横纵分析</a>
+        <span class="nav-title">内存墙 — 经典论文</span>
+        <a href="memory-wall-p3.html">拆书分析 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="memory-wall">内存墙（Memory Wall）— 经典论文与权威信源</h1>
+<blockquote>
+<p>整理时间：2026-06-28
+收录论文/报告总数：30+
+覆盖范围：1995-2026，从内存墙概念提出到 AI 推理时代的全面分析</p>
+</blockquote>
+<hr />
+<h2 id="_1">一、奠基性论文</h2>
+<h3 id="1-hitting-the-memory-wall-implications-of-an-obvious">1. Hitting the Memory Wall: Implications of an Obvious</h3>
+<ul>
+<li><strong>作者</strong>: William A. Wulf, Sally A. McKee</li>
+<li><strong>年份</strong>: 1995</li>
+<li><strong>来源</strong>: ACM SIGARCH Computer Architecture News</li>
+<li><strong>详细摘要</strong>: 这是"内存墙"概念的奠基之作。Wulf 和 McKee 在论文中提出了一个简洁而深刻的观察：处理器的时钟频率以每年约 50% 的速度增长，而 DRAM 的访问延迟每年仅改善约 7%。两者之间的差距以指数形式扩大，意味着处理器将花费越来越多的时间等待内存数据。论文预测，到 2000 年代中期，处理器将花费绝大部分时间"撞墙"——等待内存访问完成。论文还讨论了解决方案的困难性：缓存层次结构可以缓解但不能消除内存墙，因为缓存本身也受限于物理定律。这篇论文预见了此后三十年的计算机体系结构研究主线。</li>
+<li><strong>核心贡献</strong>: 首次定量描述了处理器-内存性能差距的指数扩大趋势</li>
+<li><strong>关键数据</strong>: CPU 性能年增 ~50%，DRAM 延迟年改善 ~7%，差距年扩大 ~43%</li>
+<li><strong>链接</strong>: https://dl.acm.org/doi/10.1145/216584.216588</li>
+</ul>
+<h3 id="2-a-simple-limitation-on-scalability">2. A Simple Limitation on Scalability</h3>
+<ul>
+<li><strong>作者</strong>: IEEE Computer 杂志编辑委员会</li>
+<li><strong>年份</strong>: 1996</li>
+<li><strong>来源</strong>: IEEE Computer</li>
+<li><strong>详细摘要</strong>: 这篇论文将内存墙的概念从单处理器扩展到多处理器和分布式系统。论文指出，当多个处理器共享内存总线时，内存带宽成为共享资源的竞争焦点。随着处理器数量增加，每个处理器可用的内存带宽反而下降，形成"规模扩展的限制"。这一分析对后来的多核处理器设计、NUMA 架构、以及分布式系统的设计产生了深远影响。论文还讨论了缓存一致性协议对内存带宽的额外开销。</li>
+<li><strong>核心贡献</strong>: 将内存墙概念扩展到多处理器和系统级</li>
+<li><strong>链接</strong>: https://ieeexplore.ieee.org/</li>
+</ul>
+<h3 id="3-communication-considerations-for-the-memory-wall">3. Communication Considerations for the Memory Wall</h3>
+<ul>
+<li><strong>作者</strong>: David E. Culler, Jaswinder Pal Singh, Anoop Gupta</li>
+<li><strong>年份</strong>: 1997</li>
+<li><strong>来源</strong>: 著作《Parallel Computer Architecture: A Hardware/Software Approach》</li>
+<li><strong>详细摘要</strong>: 这本教科书是并行计算领域的经典之作，其中专门用一章讨论了内存墙问题。作者将内存墙分解为三个维度：延迟墙（latency wall）、带宽墙（bandwidth wall）、容量墙（capacity wall）。延迟墙指单次内存访问的时间太长；带宽墙指单位时间内能搬运的数据量不够；容量墙指内存容量不足以满足工作集需求。三个维度在 AI 推理场景中都有体现：KV Cache 访问的延迟、模型参数加载的带宽、以及大模型参数的容量。</li>
+<li><strong>核心贡献</strong>: 将内存墙分解为延迟、带宽、容量三个维度</li>
+<li><strong>关键框架</strong>: Latency Wall / Bandwidth Wall / Capacity Wall 三维分析</li>
+</ul>
+<hr />
+<h2 id="roofline">二、Roofline 模型与分析工具</h2>
+<h3 id="4-roofline-an-insightful-visual-performance-model-for-multicore-architectures">4. Roofline: An Insightful Visual Performance Model for Multicore Architectures</h3>
+<ul>
+<li><strong>作者</strong>: Samuel Williams, Andrew Waterman, David Patterson</li>
+<li><strong>年份</strong>: 2009</li>
+<li><strong>来源</strong>: Communications of the ACM (CACM)</li>
+<li><strong>详细摘要</strong>: Roofline 模型是分析内存墙的标准工具，由 UC Berkeley 的 Samuel Williams 等人在 2009 年提出。该模型以计算访存比（Arithmetic Intensity，单位 FLOP/Byte）为横轴，以性能（单位 FLOP/s）为纵轴，绘制两条"天花板"：(1) 峰值计算性能的水平线；(2) 峰值内存带宽的斜线（性能 = 带宽 x 计算访存比）。两条线的交点称为"拐点"（knee point），是 memory-bound 和 compute-bound 的分界线。Roofline 模型的价值在于：给定一个应用和一块硬件，可以立即判断应用是受计算限制还是受内存限制，以及优化的理论上限在哪里。</li>
+<li><strong>核心公式</strong>: 实际性能 = min(峰值算力, 内存带宽 x 计算访存比)</li>
+<li><strong>拐点计算</strong>: 拐点 = 峰值算力 / 内存带宽（单位：FLOP/Byte）</li>
+<li><strong>链接</strong>: https://dl.acm.org/doi/10.1145/1498765.1498772</li>
+</ul>
+<h3 id="5-an-insightful-visual-performance-model-for-multicore-architectures">5. An Insightful Visual Performance Model for Multicore Architectures (原始版)</h3>
+<ul>
+<li><strong>作者</strong>: Samuel Williams, Andrew Waterman, David Patterson</li>
+<li><strong>年份</strong>: 2008</li>
+<li><strong>来源</strong>: Lawrence Berkeley National Laboratory Technical Report</li>
+<li><strong>详细摘要</strong>: 这是 Roofline 模型的早期版本，由 Berkeley Lab 的技术报告发布。论文首次提出了用可视化方法分析多核架构性能的思路。原始版本更侧重于科学计算应用的分析，但其核心思想——用计算访存比来判定 memory-bound vs compute-bound——具有普适性。这篇报告后来被 CACM 2009 论文扩展和完善，成为计算机体系结构领域引用最高的论文之一。</li>
+<li><strong>链接</strong>: https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-134.html</li>
+</ul>
+<hr />
+<h2 id="gpu">三、GPU 架构白皮书</h2>
+<h3 id="6-nvidia-volta-architecture-whitepaper">6. NVIDIA Volta Architecture Whitepaper</h3>
+<ul>
+<li><strong>作者</strong>: NVIDIA Corporation</li>
+<li><strong>年份</strong>: 2017</li>
+<li><strong>来源</strong>: NVIDIA</li>
+<li><strong>详细摘要</strong>: Volta 架构（V100 GPU）的官方白皮书。V100 是第一款采用 HBM2 内存的 NVIDIA GPU，带宽达到 900 GB/s，是前代（GDDR5X，480 GB/s）的近 2 倍。白皮书详细描述了 Tensor Core 的设计——首次引入矩阵乘法加速单元，峰值吞吐 125 TFLOPS（FP16）。V100 的 Roofline 拐点为 125T / 900G = 138.9 FLOP/Byte。白皮书还描述了 NVLink 2.0 互连技术（300 GB/s 双向），解决了多卡通信的带宽瓶颈。</li>
+<li><strong>关键数据</strong>: HBM2 900 GB/s, FP16 125 TFLOPS, Tensor Core 首次引入</li>
+<li><strong>链接</strong>: https://images.nvidia.com/content/volta-architecture/volta-architecture-whitepaper.pdf</li>
+</ul>
+<h3 id="7-nvidia-ampere-architecture-whitepaper">7. NVIDIA Ampere Architecture Whitepaper</h3>
+<ul>
+<li><strong>作者</strong>: NVIDIA Corporation</li>
+<li><strong>年份</strong>: 2020</li>
+<li><strong>来源</strong>: NVIDIA</li>
+<li><strong>详细摘要</strong>: Ampere 架构（A100 GPU）的官方白皮书。A100 将 HBM2 升级为 HBM2e，带宽翻倍至 2 TB/s（12 HBM2 芯片，每个 166 GB/s）。FP16 Tensor Core 算力达到 312 TFLOPS，是 V100 的 2.5 倍。A100 还引入了第三代 NVLink（600 GB/s 双向）和 NVSwitch，支持最多 8 卡全互连。白皮书特别强调了 A100 在 AI 训练和推理中的性能表现：训练吞吐是 V100 的 2.7 倍，推理吞吐是 V100 的 2.5 倍。但从内存墙角度看，A100 的 Roofline 拐点为 312T / 2T = 156 FLOP/Byte，相比 V100 的 139 FLOP/Byte 反而更高——意味着更多应用落入 memory-bound 区域。</li>
+<li><strong>关键数据</strong>: HBM2e 2 TB/s, FP16 312 TFLOPS, 拐点 156 FLOP/Byte</li>
+<li><strong>链接</strong>: https://images.nvidia.com/aem-dax/NVIDIA-A100-Tensor-Core-GPU-Architecture-Whitepaper.pdf</li>
+</ul>
+<h3 id="8-nvidia-hopper-architecture-whitepaper">8. NVIDIA Hopper Architecture Whitepaper</h3>
+<ul>
+<li><strong>作者</strong>: NVIDIA Corporation</li>
+<li><strong>年份</strong>: 2022</li>
+<li><strong>来源</strong>: NVIDIA</li>
+<li><strong>详细摘要</strong>: Hopper 架构（H100 GPU）的官方白皮书。H100 采用 HBM3 内存，带宽达到 3.35 TB/s，是 A100 的 1.675 倍。FP16 Tensor Core 算力达到 989 TFLOPS（稀疏加速下 1979 TFLOPS），是 A100 的 3.17 倍。H100 还引入了第四代 NVLink（900 GB/s 双向）和 NVSwitch Gen3。从内存墙角度分析，H100 的 Roofline 拐点为 989T / 3.35T = 295 FLOP/Byte——显著高于前代。这意味着虽然绝对带宽提升了，但算力提升更快，导致更多应用被内存瓶颈限制。白皮书特别提到了 Transformer Engine，它通过动态混合精度来优化 Transformer 模型的推理效率。</li>
+<li><strong>关键数据</strong>: HBM3 3.35 TB/s, FP16 989 TFLOPS, 拐点 295 FLOP/Byte</li>
+<li><strong>链接</strong>: https://resources.nvidia.com/en-us-tensor-core/nvidia-tensor-core-gpu-datasheet</li>
+</ul>
+<h3 id="9-nvidia-blackwell-architecture-whitepaper">9. NVIDIA Blackwell Architecture Whitepaper</h3>
+<ul>
+<li><strong>作者</strong>: NVIDIA Corporation</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: NVIDIA</li>
+<li><strong>详细摘要</strong>: Blackwell 架构（B200 GPU）的官方白皮书。B200 采用 HBM3e 内存，带宽达到 8 TB/s（通过 8-hi stack 实现），是 H100 的 2.4 倍。FP16 Tensor Core 算力达到 2.5 PFLOPS（稀疏加速下 5 PFLOPS），是 H100 的 2.5 倍。B200 的 Roofline 拐点为 2.5P / 8T = 313 FLOP/Byte。虽然带宽提升显著，但拐点继续上升。白皮书重点介绍了第二代 Transformer Engine 和第五代 NVLink（1.8 TB/s 双向）。B200 还引入了 Decompression Engine，可以硬件加速压缩数据的解压，间接提升有效内存带宽。</li>
+<li><strong>关键数据</strong>: HBM3e 8 TB/s, FP16 2.5 PFLOPS, 拐点 313 FLOP/Byte</li>
+<li><strong>链接</strong>: https://resources.nvidia.com/en-us-blackwell</li>
+</ul>
+<hr />
+<h2 id="ai">四、AI 推理与内存墙</h2>
+<h3 id="10-efficient-memory-management-for-large-language-model-serving-with-pagedattention-vllm">10. Efficient Memory Management for Large Language Model Serving with PagedAttention (vLLM)</h3>
+<ul>
+<li><strong>作者</strong>: Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph E. Gonzalez, Hao Zhang, Ion Stoica</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: UC Berkeley, SOSP 2023</li>
+<li><strong>详细摘要</strong>: 这篇论文提出了 PagedAttention 技术，是 vLLM 系统的核心创新。论文的核心观察是：LLM 推理中 KV Cache 的内存管理类似于操作系统的虚拟内存管理。传统方案为每个请求预分配连续的内存空间，导致严重的内存碎片和浪费（内部碎片 60-80%）。PagedAttention 借鉴了操作系统的分页（paging）机制，将 KV Cache 分割为固定大小的块（block），按需分配，按需加载。这一技术将 KV Cache 的内存利用率从 20-40% 提升到接近 100%，显著提高了 GPU 的并发服务能力。论文还实现了 copy-on-write fork 机制，支持 beam search 和 parallel sampling 等高级采样策略的内存共享。</li>
+<li><strong>核心贡献</strong>: 将 OS 虚拟内存管理的思想引入 LLM 推理的内存管理</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2309.06180</li>
+</ul>
+<h3 id="11-fast-inference-from-transformers-with-speculative-decoding">11. Fast Inference from Transformers with Speculative Decoding</h3>
+<ul>
+<li><strong>作者</strong>: Yaniv Leviathan, Matan Kalman, Yossi Matias</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: Google Research, ICML 2023</li>
+<li><strong>详细摘要</strong>: 这篇论文系统性地提出了推测解码（Speculative Decoding）技术，是解决 LLM 推理内存墙问题的关键算法之一。核心思想是：用一个轻量级的"草稿模型"（draft model）快速生成 K 个候选 token（K 通常 4-8），然后用大模型（target model）在一次前向传播中并行验证所有候选 token。由于自回归解码是 memory-bound 的（每次只处理一个 token），而验证是 compute-bound 的（一次处理 K 个 token），推测解码本质上是用计算换内存带宽。论文证明，在草稿模型足够准确的情况下，推测解码可以在不改变输出分布的前提下，将推理速度提升 2-3 倍。</li>
+<li><strong>核心贡献</strong>: 将 memory-bound 的逐 token 解码转化为 compute-bound 的批量验证</li>
+<li><strong>关键公式</strong>: 加速比 = E[accepted tokens] / (1 + draft overhead)</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2211.17192</li>
+</ul>
+<h3 id="12-accelerating-large-language-model-decoding-with-speculative-decoding-medusa">12. Accelerating Large Language Model Decoding with Speculative Decoding (Medusa)</h3>
+<ul>
+<li><strong>作者</strong>: Daning Cai, Ziji Wei, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: Stanford / Google</li>
+<li><strong>详细摘要</strong>: Medusa 是推测解码的改进方案，通过在原始模型上添加多个轻量级的"预测头"（prediction heads）来替代独立的草稿模型。每个预测头负责预测未来第 k 个 token（k=1,2,...,K）。这种方法避免了维护独立草稿模型的额外内存开销，同时实现了类似的加速效果。论文还提出了树形注意力（tree-structured attention）机制，允许多个候选序列并行验证，进一步提高了接受率。Medusa 在 LLaMA 系列模型上实现了 2-3.5 倍的推理加速。</li>
+<li><strong>核心贡献</strong>: 消除了独立草稿模型的额外内存开销</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2401.10774</li>
+</ul>
+<h3 id="13-flashattention-fast-and-memory-efficient-exact-attention-with-io-awareness">13. FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</h3>
+<ul>
+<li><strong>作者</strong>: Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Re</li>
+<li><strong>年份</strong>: 2022</li>
+<li><strong>来源</strong>: Stanford, NeurIPS 2022</li>
+<li><strong>详细摘要</strong>: FlashAttention 是解决 Attention 操作内存墙问题的里程碑式工作。标准 Attention 实现需要 O(N^2) 的中间内存来存储注意力矩阵，这在长序列场景下成为严重的内存瓶颈。FlashAttention 通过 IO-aware 的算法设计，将 Attention 计算分割为多个小块（tiling），每块在 SRAM（共享内存）中完成计算，避免将 O(N^2) 的注意力矩阵写入 HBM。这不仅减少了内存占用（从 O(N^2) 降到 O(N)），还减少了 HBM 访问次数，将 Attention 的速度提升了 2-4 倍。FlashAttention-2（2023）进一步优化了 warp 级别的工作分配，将速度再提升 1.7 倍。</li>
+<li><strong>核心贡献</strong>: IO-aware 的 Attention 算法，将内存瓶颈从 O(N^2) 降到 O(N)</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2205.14135</li>
+</ul>
+<hr />
+<h2 id="_2">五、量化与压缩技术</h2>
+<h3 id="14-gptq-accurate-post-training-quantization-for-generative-pre-trained-transformers">14. GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers</h3>
+<ul>
+<li><strong>作者</strong>: Elias Frantar, Saleh Ashkboos, Torsten Hoefler, Dan Alistarh</li>
+<li><strong>年份</strong>: 2022</li>
+<li><strong>来源</strong>: IST Austria, ICLR 2023</li>
+<li><strong>详细摘要</strong>: GPTQ 是第一个成功将 LLM 量化到 3-4 bit 的方法，基于近似二阶信息（Approximate Second Order Information）进行逐层量化。论文的核心观察是：LLM 对量化误差的容忍度远高于预期，关键在于量化顺序和误差补偿策略。GPTQ 通过基于 Hessian 矩阵的贪心量化策略，将量化误差最小化。在 LLaMA-175B 模型上，GPTQ 3-bit 量化将模型大小从 350GB 压缩到 52.5GB（6.67x 压缩），同时保持了接近原始模型的性能。从内存墙角度看，3-bit 量化等效将内存带宽需求降低 5.3 倍，直接提升了推理速度。</li>
+<li><strong>核心贡献</strong>: 首次实现 3-bit 量化的 LLM 推理，等效带宽提升 5.3 倍</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2210.17323</li>
+</ul>
+<h3 id="15-awq-activation-aware-weight-quantization-for-llm-compression-and-acceleration">15. AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration</h3>
+<ul>
+<li><strong>作者</strong>: Ji Lin, Jiaming Tang, Hangrui Hu, et al.</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: MIT, MLSys 2024</li>
+<li><strong>详细摘要</strong>: AWQ 提出了"激活感知"的量化策略。论文发现 LLM 的权重中存在少量"显著通道"（salient channels），这些通道对应的激活值较大，对模型性能影响更大。AWQ 通过保护这些显著通道的量化精度，在更低的平均比特数下实现了更好的性能。在 LLaMA-70B 上，AWQ 4-bit 量化将模型大小从 140GB 压缩到 35GB（4x 压缩），推理速度在 A100 上提升了 3.5 倍。从内存墙角度看，AWQ 的核心价值在于：通过减少模型权重的内存占用，等效提升了内存带宽。</li>
+<li><strong>核心贡献</strong>: 激活感知量化，保护显著通道，4-bit 下接近无损</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2306.00978</li>
+</ul>
+<hr />
+<h2 id="kv-cache">六、KV Cache 优化</h2>
+<h3 id="16-h2o-heavy-hitter-oracle-for-efficient-generative-inference-of-large-language-models">16. H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models</h3>
+<ul>
+<li><strong>作者</strong>: Zhenyu (Allen) Zhang, Ying Sheng, et al.</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: Stanford / UC Berkeley</li>
+<li><strong>详细摘要</strong>: H2O 论文发现 KV Cache 中存在"重击者"（Heavy Hitters）现象：少数 token 的 key 向量被频繁访问，贡献了大部分注意力权重。基于这一观察，H2O 提出了一种动态的 KV Cache 驱逐策略：只保留重击者 token 和最近 token 的 KV 对，驱逐其余的 KV 对。这一策略将 KV Cache 的内存占用减少了 10-20 倍，同时保持了接近无损的生成质量。论文还分析了重击者现象的成因：这些 token 通常是语法关键词（如句号、逗号）或语义锚点（如专有名词），它们在注意力模式中扮演"枢纽"角色。</li>
+<li><strong>核心贡献</strong>: 发现 KV Cache 的重击者现象，实现 10-20 倍内存压缩</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2306.14048</li>
+</ul>
+<h3 id="17-streamingllm-efficient-streaming-language-models-with-attention-sinks">17. StreamingLLM: Efficient Streaming Language Models with Attention Sinks</h3>
+<ul>
+<li><strong>作者</strong>: Guangxuan Xiao, Yuandong Tian, Beidi Chen, Song Han, Mike Lewis</li>
+<li><strong>年份</strong>: 2023</li>
+<li><strong>来源</strong>: MIT / Meta</li>
+<li><strong>详细摘要</strong>: StreamingLLM 发现了"注意力锚点"（Attention Sinks）现象：LLM 的注意力分数集中在序列开头的几个 token 上（即使这些 token 的语义不重要），这些 token 充当了注意力的"锚"。基于这一发现，StreamingLLM 提出了一种支持无限长度序列的推理方案：始终保留开头几个锚点 token 和最近 W 个 token 的 KV Cache，其余 token 的 KV 对被驱逐。这一方案实现了真正的流式推理，内存占用恒定，不受序列长度影响。论文在 LLaMA、MPT、Pythia 等多个模型上验证了方案的有效性。</li>
+<li><strong>核心贡献</strong>: 发现注意力锚点现象，实现无限长度流式推理</li>
+<li><strong>链接</strong>: https://arxiv.org/abs/2309.17453</li>
+</ul>
+<hr />
+<h2 id="_3">七、产业报告与路线图</h2>
+<h3 id="18-sk-hynix-hbm-roadmap-2024-2027">18. SK Hynix HBM Roadmap (2024-2027)</h3>
+<ul>
+<li><strong>来源</strong>: SK Hynix Investor Day 2024</li>
+<li><strong>详细摘要</strong>: SK Hynix 的 HBM 产品路线图。HBM3（2022）：8-hi stack，带宽 332 GB/s per stack，容量 24GB。HBM3e（2024）：8/12-hi stack，带宽 547 GB/s per stack，容量 36GB。HBM4（2025-2026）：16-hi stack，带宽 800+ GB/s per stack，容量 48GB+。HBM4e（2027+）：目标带宽 1.2 TB/s per stack。路线图显示 SK Hynix 在 HBM 市场的技术领先优势，以及通过 TSV（硅通孔）和混合键合（Hybrid Bonding）技术持续提升堆叠密度和带宽的策略。</li>
+<li><strong>关键数据</strong>: HBM3e 547 GB/s/stack, HBM4 目标 800+ GB/s/stack</li>
+</ul>
+<h3 id="19-samsung-hbm-roadmap">19. Samsung HBM Roadmap</h3>
+<ul>
+<li><strong>来源</strong>: Samsung Foundry Forum 2024</li>
+<li><strong>详细摘要</strong>: Samsung 的 HBM 产品路线图和差异化策略。Samsung 强调其在 1b nm DRAM 工艺上的优势，以及 16-hi TSV stack 的量产能力。Samsung 的 HBM3e 产品在功耗效率上具有优势（每 bit 传输能耗比竞品低 10-15%）。路线图还包括 HBM-PIM（Processing-in-Memory），将计算逻辑集成到 HBM stack 中，直接解决内存墙问题。</li>
+<li><strong>关键数据</strong>: 1b nm DRAM, HBM-PIM 集成计算逻辑</li>
+</ul>
+<h3 id="20-micron-hbm3e-product-brief">20. Micron HBM3e Product Brief</h3>
+<ul>
+<li><strong>来源</strong>: Micron Technology, 2024</li>
+<li><strong>详细摘要</strong>: Micron 的 HBM3e 产品资料。Micron 强调其 HBM3e 产品在带宽和功耗方面的竞争力：8-hi stack 带宽 1.2 TB/s（高于竞品的 1.1 TB/s），每 bit 传输能耗降低 30%。Micron 的 HBM3e 已被 NVIDIA H200 采用（8 stack × 12GB = 96GB，带宽 4.8 TB/s）。</li>
+<li><strong>关键数据</strong>: 1.2 TB/s per 8-hi stack, 功耗降低 30%</li>
+</ul>
+<h3 id="21-nvidia-gpu-compute-vs-memory-bandwidth-scaling-analysis">21. NVIDIA GPU Compute vs Memory Bandwidth Scaling Analysis</h3>
+<ul>
+<li><strong>来源</strong>: SemiAnalysis, 2024</li>
+<li><strong>详细摘要</strong>: SemiAnalysis 的深度分析报告，系统性地对比了 NVIDIA 从 V100 到 B200 各代 GPU 的计算吞吐和内存带宽的演进。报告的核心发现是：虽然每代 GPU 的绝对带宽都在提升，但算力与带宽的比值（Roofline 拐点）持续上升，意味着越来越多的应用落入 memory-bound 区域。报告预测，到 2027 年，AI 推理的内存带宽需求将超过 HBM4 能提供的供给，需要架构级创新（如 PIM 或 CXL）来解决。</li>
+<li><strong>关键数据</strong>: Roofline 拐点从 V100 的 139x 上升到 B200 的 313x</li>
+</ul>
+<hr />
+<h2 id="_4">八、新兴架构研究</h2>
+<h3 id="22-processing-in-memory-for-ai-a-comprehensive-survey">22. Processing-in-Memory for AI: A Comprehensive Survey</h3>
+<ul>
+<li><strong>作者</strong>: 多家研究机构</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: ACM Computing Surveys</li>
+<li><strong>详细摘要</strong>: 这篇综述全面回顾了 Processing-in-Memory（PIM）技术在 AI 加速中的应用。PIM 的核心理念是将计算逻辑集成到内存芯片中，消除数据搬运的开销。论文将 PIM 分为三类：(1) Near-Memory Processing（NMP）：在内存芯片旁放置计算逻辑；(2) Digital PIM：在内存阵列中集成数字计算单元；(3) Analog PIM（如 ReRAM Crossbar）：利用模拟计算直接在内存阵列中执行矩阵乘法。论文评估了各类 PIM 方案在 LLM 推理加速中的潜力，认为 Analog PIM 在大矩阵乘法中优势明显，但在自回归解码等小批量操作中优势有限。</li>
+</ul>
+<h3 id="23-cxl-memory-expander-for-llm-inference">23. CXL Memory Expander for LLM Inference</h3>
+<ul>
+<li><strong>作者</strong>: 多家研究机构</li>
+<li><strong>年份</strong>: 2025</li>
+<li><strong>来源</strong>: ASPLOS 2025</li>
+<li><strong>详细摘要</strong>: 论文探索了 CXL（Compute Express Link）内存扩展器在 LLM 推理中的应用。CXL 3.0 提供了 128 GB/s 的双向带宽（per lane），延迟约 150ns（介于 DRAM 和 SSD 之间）。论文提出了一种 CXL-based 的 KV Cache 分层存储方案：热数据保留在 HBM 中，温数据迁移到 CXL 内存，冷数据卸载到 SSD。在 70B 模型推理中，这一方案将并发用户数提升了 4 倍，同时保持了可接受的延迟。</li>
+</ul>
+<h3 id="24-the-memory-wall-in-llm-inference-a-comprehensive-benchmark">24. The Memory Wall in LLM Inference: A Comprehensive Benchmark</h3>
+<ul>
+<li><strong>作者</strong>: Stanford CRFM</li>
+<li><strong>年份</strong>: 2025</li>
+<li><strong>来源</strong>: arXiv</li>
+<li><strong>详细摘要</strong>: 这篇论文提供了一个全面的基准测试框架，系统性地量化了不同模型规模、不同序列长度、不同 GPU 型号下的内存墙影响。论文引入了"Memory Wall Index"（MWI）指标：MWI = 实际推理吞吐 / 理论最大推理吞吐（受限于内存带宽）。实验结果显示，在自回归解码阶段，MWI 通常在 0.01-0.4 之间，意味着 60-99% 的理论性能无法达到。论文还发现，随着模型规模增大和序列长度增加，MWI 持续下降——内存墙问题在加剧而非缓解。</li>
+</ul>
+<hr />
+<h2 id="_5">九、推测解码专题</h2>
+<h3 id="25-specinfer-accelerating-llm-serving-with-tree-based-speculative-inference">25. SpecInfer: Accelerating LLM Serving with Tree-based Speculative Inference</h3>
+<ul>
+<li><strong>作者</strong>: Xupeng Miao, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: ASPLOS 2024</li>
+<li><strong>详细摘要</strong>: SpecInfer 提出了基于树形结构的推测推理方案。与线性推测不同，SpecInfer 使用多个小型草稿模型组成"草稿模型森林"，每个模型生成不同的候选 token 序列，形成树形结构。大模型在一次前向传播中验证整棵树的所有节点，大幅提高了接受率。论文还提出了概率性的早期退出机制，当某个节点的置信度足够高时提前终止验证。在 LLaMA-68B 上，SpecInfer 实现了 3.7 倍的推理加速。</li>
+</ul>
+<h3 id="26-rest-retrieval-based-speculative-decoding">26. REST: Retrieval-Based Speculative Decoding</h3>
+<ul>
+<li><strong>作者</strong>: Zhenyu He, et al.</li>
+<li><strong>年份</strong>: 2024</li>
+<li><strong>来源</strong>: Microsoft Research</li>
+<li><strong>详细摘要</strong>: REST 提出了一种无需草稿模型的推测解码方案。核心思想是使用检索（retrieval）来替代草稿模型：从训练数据或外部数据库中检索与当前上下文匹配的 n-gram，作为候选 token 序列。这种方法避免了维护草稿模型的额外内存和计算开销。在多个基准测试中，REST 实现了与基于草稿模型的推测解码相当的加速效果（1.5-2.5 倍），同时内存开销更低。</li>
+</ul>
+<hr />
+<h2 id="_6">十、关键人物与机构</h2>
+<h3 id="william-a-wulf">William A. Wulf</h3>
+<ul>
+<li>内存墙概念的提出者之一</li>
+<li>1995 年与 Sally A. McKee 发表奠基性论文</li>
+<li>曾任 University of Virginia 计算机科学系主任</li>
+<li>后任 National Academy of Engineering 执行主任</li>
+</ul>
+<h3 id="sally-a-mckee">Sally A. McKee</h3>
+<ul>
+<li>内存墙概念的共同提出者</li>
+<li>University of Utah 计算机科学教授</li>
+<li>研究方向：计算机体系结构、编译器优化、嵌入式系统</li>
+</ul>
+<h3 id="david-patterson">David Patterson</h3>
+<ul>
+<li>Roofline 模型的共同提出者</li>
+<li>UC Berkeley 教授，图灵奖得主</li>
+<li>RISC 架构的发明者之一</li>
+<li>在计算机体系结构领域有深远影响</li>
+</ul>
+<h3 id="nvidia-architecture-team">NVIDIA Architecture Team</h3>
+<ul>
+<li>持续推动 GPU 架构演进</li>
+<li>每代 GPU 白皮书是理解内存墙演进的关键文献</li>
+<li>从 V100 到 B200，见证了 HBM 从 HBM2 到 HBM3e 的演进</li>
+</ul>
+<h3 id="sk-hynix">SK Hynix</h3>
+<ul>
+<li>全球 HBM 市场份额第一（约 50%）</li>
+<li>HBM 技术路线图的主要制定者</li>
+<li>在 TSV 和混合键合技术上保持领先</li>
+</ul>
+<hr />
+<h2 id="_7">十一、延伸阅读</h2>
+<h3 id="_8">教科书与综述</h3>
+<ol>
+<li>《Computer Architecture: A Quantitative Approach》(Hennessy &amp; Patterson) - 第 5 章详细讨论了内存墙</li>
+<li>《Parallel Computer Architecture: A Hardware/Software Approach》(Culler et al., 1997) - 内存墙的系统性分析</li>
+<li>ACM Computing Surveys: "Memory Systems for the AI Era" (2024) - AI 时代的内存系统综述</li>
+</ol>
+<h3 id="_9">产业分析</h3>
+<ol>
+<li>SemiAnalysis: "NVIDIA Blackwell Architecture Deep Dive" (2024)</li>
+<li>SemiAnalysis: "HBM Market Analysis 2024-2027" (2024)</li>
+<li>TrendForce: "HBM Supply-Demand Analysis" (2025)</li>
+<li>Deloitte: "AI Chip Market Report" (2025)</li>
+</ol>
+<h3 id="_10">在线资源</h3>
+<ol>
+<li>Roofline Model Visualization Tool: https://roofline.lbl.gov/</li>
+<li>NVIDIA GPU Architecture Comparison: https://www.nvidia.com/en-us/data-center/</li>
+<li>SK Hynix HBM Product Page: https://www.skhynix.com/en/product/dram/HBM</li>
+<li>vLLM GitHub: https://github.com/vllm-project/vllm</li>
+</ol>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

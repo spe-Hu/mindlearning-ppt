@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杰文斯悖论 — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+/* Top Navigation */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Content Area */
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+/* Typography */
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+/* Blockquote */
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* Lists */
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+/* Code */
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+/* Progress bar */
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="jevons-paradox-p3.html">← 拆书分析</a>
+        <span class="nav-title">杰文斯悖论 — 知识卡片</span>
+        <a href="jevons-paradox-p5.html">概念解剖 →</a>
+    </nav>
+    <div class="content">
+        <h1 id="-">杰文斯悖论 -- 知识卡片集</h1>
+<blockquote>
+<p>九张卡片，从定义到投资启示，构建杰文斯悖论的完整认知图谱。</p>
+</blockquote>
+<hr />
+<h2 id="1">卡片 1：核心定义卡</h2>
+<h3 id="jevons-paradox">杰文斯悖论 (Jevons Paradox)</h3>
+<p><strong>一句话定义</strong>：效率提升不减少资源消耗，反而增加资源消耗——当需求弹性大于 1 时。</p>
+<p><strong>形式化定义</strong>：</p>
+<pre><code>设 η = 效率提升比例
+设 ε_d = 需求价格弹性
+
+当 ε_d &gt; 1 时：
+  效率提升 η% → 单位成本下降 η%
+  → 需求量增加 ε_d × η% &gt; η%
+  → 总消耗变化 = ε_d × η% - η% = (ε_d - 1) × η% &gt; 0
+  → 总消耗增加
+
+回弹系数 R = (ε_d - 1) × η% / η% = ε_d - 1
+当 R &gt; 0（即 ε_d &gt; 1），杰文斯悖论成立
+</code></pre>
+<p><strong>核心洞见</strong>：
+- 局部优化 ≠ 全局优化
+- 单位效率 ≠ 系统效率
+- 节约的意图 ≠ 节约的结果</p>
+<p><strong>常见误读</strong>：
+- 误读："效率提升了，所以消耗会下降"
+- 正解："效率提升了，所以单位消耗下降，但总消耗上升"</p>
+<hr />
+<h2 id="2">卡片 2：历史起源卡</h2>
+<h3 id="1865">1865 年：一个英国经济学家的煤炭之问</h3>
+<p><strong>人物</strong>：William Stanley Jevons (1835-1882)
+- 英国经济学家，边际效用学派创始人之一
+- 30 岁出版《煤炭问题》，一举成名
+- 47 岁溺水身亡，死因成谜</p>
+<p><strong>发现过程</strong>：</p>
+<pre><code>1769 年：瓦特改良蒸汽机，效率 ~5%
+    ↓ 效率提升 → 预期煤炭消耗下降
+1800 年：高压蒸汽机，效率 ~10%
+    ↓ 但煤炭消耗翻倍
+1840 年：复合式蒸汽机，效率 ~15%
+    ↓ 煤炭消耗继续翻倍
+1860 年：最先进蒸汽机，效率 ~20%
+    ↓ 煤炭消耗已是 1769 年的 16 倍
+1865 年：Jevons 出版《煤炭问题》
+</code></pre>
+<p><strong>Jevons 的原话</strong>：</p>
+<blockquote>
+<p>"It is a confusion of ideas to suppose that the economical use of fuel is equivalent to a diminished consumption. The very contrary is the truth."</p>
+</blockquote>
+<p><strong>历史讽刺</strong>：
+- Jevons 警告英国煤炭将耗尽
+- 但石油和天然气的发现延缓了危机
+- 不是因为效率提升节省了煤炭，而是因为新能源替代了煤炭
+- 然而，今天全球化石燃料消耗量远超 Jevons 时代的煤炭消耗量</p>
+<hr />
+<h2 id="3">卡片 3：经济学原理卡</h2>
+<h3 id="_1">回弹效应的四层传导</h3>
+<pre><code>第一层：直接回弹
+  效率提升 → 单位成本下降 → 同一服务使用量增加
+  例：推理成本下降 → 每个用户消耗更多 Token
+  回弹幅度：10-50%
+
+第二层：间接回弹（收入效应）
+  成本节省 → 实际收入增加 → 其他消费增加
+  例：企业节省 AI 支出 → 投入更多 AI 项目
+  回弹幅度：10-30%
+
+第三层：替代效应
+  AI 推理变得更便宜 → 替代其他方案
+  例：AI 推理替代传统软件开发 → AI 推理需求增加
+  回弹幅度：20-50%
+
+第四层：宏观效应（新需求创造）
+  效率提升 → 此前不经济的应用变得可行 → 全新市场
+  例：Agent 经济、AI 原生应用、具身智能
+  回弹幅度：100-500%
+
+总回弹 = 直接 + 间接 + 替代 + 宏观
+AI 推理领域：总回弹 ≈ 250-580%
+→ 杰文斯悖论强烈成立
+</code></pre>
+<p><strong>关键区别</strong>：
+- 传统领域（供暖、交通）：总回弹 &lt; 100%，杰文斯悖论不成立
+- IT 领域（云计算、AI）：总回弹 &gt; 100%，杰文斯悖论成立
+- AI 推理：总回弹 &gt;&gt; 100%，杰文斯悖论强烈成立</p>
+<hr />
+<h2 id="4">卡片 4：公式卡</h2>
+<h3 id="_2">杰文斯悖论的数学表达</h3>
+<p><strong>基础公式</strong>：</p>
+<pre><code>总消耗 = 单位消耗 × 服务量
+C_total = C_unit × S
+
+效率提升 η → C_unit_new = C_unit / (1 + η)
+服务量变化 → S_new = S × (1 + η)^ε_d
+
+总消耗变化：
+C_total_new / C_total = (1 + η)^(ε_d - 1)
+
+当 ε_d &gt; 1：C_total_new &gt; C_total → 杰文斯悖论成立
+当 ε_d &lt; 1：C_total_new &lt; C_total → 杰文斯悖论不成立
+当 ε_d = 1：C_total_new = C_total → 临界状态
+</code></pre>
+<p><strong>回弹系数</strong>：</p>
+<pre><code>R = (C_total_new - C_total_expected) / |C_total_expected|
+
+C_total_expected = C_total × (1 - η/(1+η))  // 预期消耗
+C_total_new = C_unit_new × S_new            // 实际消耗
+
+R &gt; 0：杰文斯悖论（过度回弹）
+R = 0：完全回弹
+R &lt; 0：部分回弹（但未达到杰文斯悖论）
+</code></pre>
+<p><strong>动态模型</strong>：</p>
+<pre><code>设 E(t) = 推理效率，每年增长 k 倍
+设 ε_d = 需求弹性
+
+GPU 总需求增长率 = k^(ε_d - 1)
+
+例：k = 3（效率每年提升 3 倍），ε_d = 2.5
+GPU 总需求增长率 = 3^(2.5-1) = 3^1.5 ≈ 5.2 倍/年
+
+→ 即使效率每年提升 3 倍，GPU 需求每年仍增长 5.2 倍
+</code></pre>
+<p><strong>Scaling Law 叠加模型</strong>：</p>
+<pre><code>总 GPU 需求 = G_train + G_infer
+
+G_train ∝ N^α × D^β（Scaling Law 驱动）
+G_infer ∝ T^γ（杰文斯悖论驱动）
+
+N = 模型参数，D = 训练数据，T = Token 消耗
+α, β, γ &gt; 1（超线性）
+
+总 GPU 需求增长率 = G_train 增长率 × G_infer 增长率
+→ 超线性 × 超线性 = 超超线性
+</code></pre>
+<hr />
+<h2 id="5ai">卡片 5：AI 推理案例卡</h2>
+<h3 id="token">Token 经济的杰文斯螺旋</h3>
+<p><strong>数据全景</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>2023</th>
+<th>2024</th>
+<th>2025</th>
+<th>2026</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>百万 Token 成本</td>
+<td>$60</td>
+<td>$5</td>
+<td>$1</td>
+<td>$0.2</td>
+</tr>
+<tr>
+<td>日 Token 消耗</td>
+<td>100 亿</td>
+<td>2 万亿</td>
+<td>50 万亿</td>
+<td>500 万亿</td>
+</tr>
+<tr>
+<td>推理 GPU 需求（万块）</td>
+<td>5</td>
+<td>50</td>
+<td>500</td>
+<td>5000</td>
+</tr>
+<tr>
+<td>成本下降倍数</td>
+<td>1x</td>
+<td>12x</td>
+<td>60x</td>
+<td>300x</td>
+</tr>
+<tr>
+<td>Token 消耗增长倍数</td>
+<td>1x</td>
+<td>200x</td>
+<td>5000x</td>
+<td>50000x</td>
+</tr>
+<tr>
+<td>隐含回弹系数</td>
+<td>-</td>
+<td>16.6x</td>
+<td>83.3x</td>
+<td>166.7x</td>
+</tr>
+</tbody>
+</table>
+<p><strong>传导链条</strong>：</p>
+<pre><code>推理效率提升（量化/蒸馏/硬件加速/DSpark）
+    ↓
+单位 Token 成本下降 99.7%（2023→2026）
+    ↓
+AI 应用场景爆发：
+  - 2023：客服、编程辅助、内容创作
+  - 2024：搜索增强、文档处理、数据分析
+  - 2025：实时翻译、语音助手、Agent
+  - 2026：嵌入式 AI、视频理解、Agent 网络
+    ↓
+Token 消耗增长 50000 倍
+    ↓
+KV Cache 需求激增：
+  - 每并发请求需独立 KV Cache
+  - GPT-4 级模型 128K 上下文 ≈ 30GB KV Cache
+  - 50 亿并发 × 30GB = 150 PB HBM
+    ↓
+HBM/SSD 需求不降反增
+    ↓
+GPU 总需求不降反增
+    ↓
+电力需求不降反增
+</code></pre>
+<p><strong>核心结论</strong>：推理越便宜，Token 烧得越凶。</p>
+<hr />
+<h2 id="6dspark">卡片 6：DSpark 案例卡</h2>
+<h3 id="2026">2026 年：把方向读反了</h3>
+<p><strong>DSpark 是什么</strong>：
+- 下一代高效推理架构
+- 核心创新：推理效率提升 5-10 倍
+- 市场第一反应："利空算力、利空存储"</p>
+<p><strong>为什么方向读反了</strong>：</p>
+<pre><code>市场逻辑（错误）：
+  推理效率 ↑ → 需要的算力 ↓ → 利空算力
+
+杰文斯悖论逻辑（正确）：
+  推理效率 ↑ → 推理成本 ↓ → 新应用爆发
+  → Token 消耗 ↑↑ → KV Cache ↑↑
+  → HBM 需求 ↑↑ → SSD 需求 ↑↑
+  → GPU 总需求 ↑↑ → 利好算力
+</code></pre>
+<p><strong>DSpark 的五重杰文斯效应</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>效应</th>
+<th>传导机制</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>成本效应</td>
+<td>推理成本再降 5-10 倍</td>
+<td>更多应用变得经济可行</td>
+</tr>
+<tr>
+<td>Agent 效应</td>
+<td>Agent 大规模部署</td>
+<td>并发量暴增 100 倍</td>
+</tr>
+<tr>
+<td>多模态效应</td>
+<td>视频/音频推理普及</td>
+<td>单请求 Token 消耗 10-100 倍</td>
+</tr>
+<tr>
+<td>KV Cache 效应</td>
+<td>并发 × 上下文长度</td>
+<td>HBM 需求激增</td>
+</tr>
+<tr>
+<td>SSD 效应</td>
+<td>KV Cache offloading</td>
+<td>企业级 SSD 需求激增</td>
+</tr>
+</tbody>
+</table>
+<p><strong>投资含义</strong>：
+- DSpark 利好 GPU（NVIDIA/AMD）
+- DSpark 利好 HBM（SK 海力士/三星/美光）
+- DSpark 利好 SSD（三星/西部数据）
+- DSpark 利好电力/冷却
+- DSpark 利好网络/光模块</p>
+<p><strong>一句话</strong>：DSpark 不是利空的信号，而是利好的加速器。</p>
+<hr />
+<h2 id="7-scaling-law">卡片 7：与 Scaling Law 关联卡</h2>
+<h3 id="_3">需求侧 × 供给侧 = 超线性增长</h3>
+<p><strong>Scaling Law（需求侧）</strong>：</p>
+<pre><code>L(N, D) = (N_c/N)^α_N + (D_c/D)^α_D + L_∞
+
+核心含义：
+- 模型越大 → 性能越好 → 用户越多 → 收入越多
+- 只要性能还在提升，就有动力继续扩大模型
+- 驱动力：性能追求
+- 描述：&quot;我想要多少&quot;
+</code></pre>
+<p><strong>杰文斯悖论（供给侧）</strong>：</p>
+<pre><code>C_total = C_unit × S
+效率 ↑ → C_unit ↓ → S ↑↑（当 ε_d &gt; 1）
+
+核心含义：
+- 效率越高 → 成本越低 → 应用越多 → Token 越多
+- 只要效率还在提升，就有更多应用变得可行
+- 驱动力：成本下降
+- 描述：&quot;效率越高用得越多&quot;
+</code></pre>
+<p><strong>叠加效应</strong>：</p>
+<pre><code>训练侧：Scaling Law → 模型越来越大 → 训练 GPU 越来越多
+推理侧：杰文斯悖论 → Token 越来越多 → 推理 GPU 越来越多
+两侧叠加 → 总 GPU 需求超线性增长
+
+数学表达：
+G_total(t) = c₁ × N(t)^α + c₂ × T(t)^β
+           = c₁ × e^(α₁t) + c₂ × e^(β₁t)
+
+由于 α₁, β₁ &gt; 0，G_total(t) 是指数增长
+→ GPU 需求不会因效率提升而下降
+→ 只会因效率提升而加速增长
+</code></pre>
+<p><strong>投资启示</strong>：
+- Scaling Law + 杰文斯悖论 = AI 算力的双重引擎
+- 两个引擎都在加速，不是在减速
+- 任何"算力需求见顶"的叙事都是错误的</p>
+<hr />
+<h2 id="8">卡片 8：投资启示卡</h2>
+<h3 id="_4">从杰文斯悖论到投资决策</h3>
+<p><strong>核心逻辑</strong>：</p>
+<pre><code>效率提升 → 成本下降 → 需求暴增 → 总消耗增加
+→ 利好算力产业链的每一个环节
+</code></pre>
+<p><strong>受益产业链图谱</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>代表公司</th>
+<th>杰文斯传导机制</th>
+<th>受益程度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU</td>
+<td>NVIDIA, AMD</td>
+<td>Token 消耗暴增 → 推理 GPU 需求暴增</td>
+<td>极高</td>
+</tr>
+<tr>
+<td>HBM</td>
+<td>SK 海力士, 三星, 美光</td>
+<td>KV Cache 激增 → HBM 需求不降反增</td>
+<td>极高</td>
+</tr>
+<tr>
+<td>SSD</td>
+<td>三星, SK 海力士, 西部数据</td>
+<td>KV Cache offloading → 企业级 SSD 需求激增</td>
+<td>高</td>
+</tr>
+<tr>
+<td>先进制程</td>
+<td>TSMC, 三星</td>
+<td>GPU 需求暴增 → 先进制程产能需求暴增</td>
+<td>极高</td>
+</tr>
+<tr>
+<td>电力</td>
+<td>公用事业公司</td>
+<td>数据中心扩张 → 电力需求暴增</td>
+<td>高</td>
+</tr>
+<tr>
+<td>液冷</td>
+<td>Vertiv, 英维克</td>
+<td>功率密度提升 → 散热需求增加</td>
+<td>中高</td>
+</tr>
+<tr>
+<td>网络</td>
+<td>光模块厂商</td>
+<td>分布式推理 → 网络带宽需求增加</td>
+<td>中高</td>
+</tr>
+<tr>
+<td>云计算</td>
+<td>AWS, Azure, GCP</td>
+<td>推理需求暴增 → 云服务收入增长</td>
+<td>高</td>
+</tr>
+</tbody>
+</table>
+<p><strong>投资框架</strong>：</p>
+<pre><code>当看到&quot;XX 效率提升&quot;的新闻时：
+  ✗ 错误反应：利空 XX 产业链
+  ✓ 正确反应：利好 XX 产业链（如果 ε_d &gt; 1）
+
+判断 ε_d &gt; 1 的三个条件：
+  1. 应用场景是否几乎无限？
+  2. 是否存在持续性的消耗模式（如 Agent）？
+  3. 是否存在新的消耗维度（如多模态）？
+
+如果三个条件都满足 → ε_d &gt;&gt; 1 → 杰文斯悖论强烈成立
+→ 效率提升利好整个产业链
+</code></pre>
+<p><strong>风险提示</strong>：
+- 杰文斯悖论是长期规律，短期可能有周期性波动
+- 监管干预可能改变弹性系数
+- 技术替代可能改变产业链价值分配</p>
+<hr />
+<h2 id="9">卡片 9：与自动驾驶关联卡</h2>
+<h3 id="_5">自动驾驶的杰文斯悖论</h3>
+<p><strong>核心论点</strong>：自动驾驶的算力需求会随效率提升而下降吗？不会。只会加速增长。</p>
+<p><strong>车端杰文斯效应</strong>：</p>
+<pre><code>推理效率 ↑ → 单车算力成本 ↓
+→ 可以跑更大模型 / 更多模型
+→ 模型能力 ↑ → 功能更丰富
+→ 更多车辆部署自动驾驶
+→ 总车端算力需求 ↑
+</code></pre>
+<p><strong>云端杰文斯效应</strong>：</p>
+<pre><code>训练效率 ↑ → 单次训练成本 ↓
+→ 更多实验 / 更大模型
+→ 模型能力 ↑ → 更多场景覆盖
+→ 总训练算力需求 ↑
+</code></pre>
+<p><strong>数据飞轮杰文斯效应</strong>：</p>
+<pre><code>数据采集效率 ↑ → 采集成本 ↓
+→ 采集更多数据 / 更多车辆
+→ 数据量暴增 → 存储/计算需求暴增
+→ 总数据基础设施需求 ↑
+</code></pre>
+<p><strong>量化数据</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>2024</th>
+<th>2026</th>
+<th>2028</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单车算力需求（TOPS）</td>
+<td>200</td>
+<td>1000</td>
+<td>5000</td>
+</tr>
+<tr>
+<td>自动驾驶车辆数（百万）</td>
+<td>5</td>
+<td>50</td>
+<td>200</td>
+</tr>
+<tr>
+<td>总车端算力（万 PFLOPS）</td>
+<td>1</td>
+<td>50</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>云端训练算力（万 PFLOPS）</td>
+<td>10</td>
+<td>100</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>数据量（PB/天）</td>
+<td>10</td>
+<td>100</td>
+<td>1000</td>
+</tr>
+</tbody>
+</table>
+<p><strong>一句话</strong>：自动驾驶的杰文斯悖论——效率越高，算力饥渴越强。</p>
+<hr />
+<h2 id="_6">附录：卡片速查表</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>卡片名称</th>
+<th>核心要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>核心定义卡</td>
+<td>效率提升 → 消耗增加（当 ε_d &gt; 1）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>历史起源卡</td>
+<td>1865 年 Jevons 发现煤炭效率悖论</td>
+</tr>
+<tr>
+<td>3</td>
+<td>经济学原理卡</td>
+<td>四层回弹：直接/间接/替代/宏观</td>
+</tr>
+<tr>
+<td>4</td>
+<td>公式卡</td>
+<td>R = (ε_d - 1) × η，R &gt; 0 即杰文斯悖论</td>
+</tr>
+<tr>
+<td>5</td>
+<td>AI 推理案例卡</td>
+<td>Token 消耗增长 50000 倍，回弹系数 167</td>
+</tr>
+<tr>
+<td>6</td>
+<td>DSpark 案例卡</td>
+<td>效率提升利好算力，不是利空</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Scaling Law 关联卡</td>
+<td>需求侧 × 供给侧 = 超线性增长</td>
+</tr>
+<tr>
+<td>8</td>
+<td>投资启示卡</td>
+<td>效率提升 → 利好算力全产业链</td>
+</tr>
+<tr>
+<td>9</td>
+<td>自动驾驶关联卡</td>
+<td>效率越高，算力饥渴越强</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>卡片集整理日期：2026 年 6 月 28 日</em>
+<em>关键词：杰文斯悖论、知识卡片、回弹效应、AI 推理、Scaling Law、投资框架</em></p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>
