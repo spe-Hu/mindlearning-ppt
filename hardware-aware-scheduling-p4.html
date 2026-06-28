@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>硬件感知调度与在线校准 — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="hardware-aware-scheduling-p3.html">← 上一页</a>
+        <span class="nav-title">硬件感知调度与在线校准 — 知识卡片</span>
+        <a href="hardware-aware-scheduling-p5.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>硬件感知调度与在线校准 — 视觉化卡片（ljg-card 风格）</h1>
+<blockquote><p>**概念压缩**：DSpark 通过置信度头 + 吞吐量参考曲线动态匹配最优验证长度，用顺序温度缩放将校准误差从 3%-8% 压到 ~1%，整套调度逻辑完全在 GPU 内部执行。</p></blockquote>
+<hr>
+<h2>卡片 1：核心概念全景</h2>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│              硬件感知调度与在线校准 · 核心概念                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  定义：推测解码中的智能调度与校准系统                              │
+│  位置：DSpark 推理管线的调度层                                    │
+│  功能：动态决定验证长度 + 持续校准分布偏差                         │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │              两大核心创新                                 │    │
+│  │                                                         │    │
+│  │  创新1: 硬件感知调度                                     │    │
+│  │  置信度头 → 存活概率 → 吞吐量曲线 → 最优 K*              │    │
+│  │                                                         │    │
+│  │  创新2: 在线校准                                         │    │
+│  │  顺序温度缩放 → 逐位置校准 → ECE 3-8% → ~1%             │    │
+│  │                                                         │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  关键参数：                                                      │
+│  • 置信度头参数: d_hidden + 1 (可忽略)                           │
+│  • 温度参数: K 个 (每位置一个)                                   │
+│  • 吞吐量曲线: B×K 查找表                                       │
+│  • CPU 开销: 0 (全 GPU 执行)                                    │
+│  • 校准误差: ~1% (vs 基线 3-8%)                                 │
+│  • 端到端加速: 2.5x                                              │
+│                                                                 │
+│  精神内核："越跑越准，真正自适应"                                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 2：数学核心</h2>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│              数学核心 · 动态调度 + 顺序校准                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  动态调度公式：                                                   │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  K* = argmax_K [Σ P_survive(i) + 1] / T_verify(K,B) │       │
+│  │                                                      │       │
+│  │  其中：                                               │       │
+│  │  • P_survive(i) = σ(w_c · h_i + b_c)  置信度头       │       │
+│  │  • T_verify(K,B) = K·d·|V| / Θ(B)     验证成本       │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  顺序温度缩放：                                                   │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  p^(i) = softmax(z^(i) / T_i)                        │       │
+│  │                                                      │       │
+│  │  位置 1: T_1 ≈ 1.02  (ECE ≈ 2.1%)                   │       │
+│  │  位置 4: T_4 ≈ 1.15  (ECE ≈ 3.8%)                   │       │
+│  │  位置 8: T_8 ≈ 1.32  (ECE ≈ 5.2%)                   │       │
+│  │  位置 12: T_12 ≈ 1.58 (ECE ≈ 7.1%)                  │       │
+│  │  位置 16: T_16 ≈ 1.85 (ECE ≈ 8.5%)                  │       │
+│  │                                                      │       │
+│  │  统一校准后 ECE ≈ 1.0%                                │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  在线更新：                                                      │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  T_i^(t+1) = T_i^(t) - η · ∇_{T_i} L_NLL           │       │
+│  │  T_i ∈ [0.5, 3.0] (约束范围)                         │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 3：横向对比矩阵</h2>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────────┐
+│              横向对比 · 调度方案                                      │
+├────────────┬──────────┬──────────┬──────────┬──────────┬───────────┤
+│ 维度       │ 固定 K   │ EAGLE    │ Sarathi  │ 自适应K  │ DSpark    │
+├────────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 调度策略   │ 固定     │ 置信度阈值│ Chunked  │ 动态     │ 置信度+   │
+│            │          │          │          │          │ 吞吐曲线  │
+│ 硬件感知   │ 否       │ 否       │ 否       │ 否       │ ★ 是     │
+│ 在线校准   │ 否       │ 否       │ 否       │ 否       │ ★ 是     │
+│ GPU 内执行 │ 是       │ 是       │ 部分     │ 是       │ ★ 是     │
+│ CPU 开销   │ 0        │ 0        │ 需要     │ 0        │ ★ 0      │
+│ ECE        │ 5-8%     │ 5-8%     │ 5-8%     │ 5-8%     │ ★ ~1%   │
+│ 加速比     │ 1.5x     │ 2.3x     │ 1.8x     │ 2.0x     │ ★ 2.5x  │
+│ 草稿长度   │ 固定     │ 动态     │ 固定chunk│ 动态     │ ★ 动态   │
+├────────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 帕累托最优 │ 否       │ 否       │ 否       │ 否       │ ★ 是     │
+└────────────┴──────────┴──────────┴──────────┴──────────┴───────────┘
+</code></pre>
+<hr>
+<h2>卡片 4：性能数据仪表板</h2>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│              性能仪表板 · DSpark 调度与校准                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  校准误差 (ECE) 对比                                             │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  无校准:        ████████████████████████████ 7.8%     │       │
+│  │  标准温度缩放:   ████████████████ 4.2%                 │       │
+│  │  分块温度缩放:   ██████████ 2.5%                       │       │
+│  │  顺序温度缩放:   ████ ~1.0% ← DSpark                   │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  端到端吞吐量 (tokens/s, LLaMA-70B)                              │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  固定 K=8:       ████████████████ 4500                │       │
+│  │  自适应 K:       ████████████████████ 5800             │       │
+│  │  + 硬件感知:     ██████████████████████████ 7200       │       │
+│  │  + 在线校准:     ██████████████████████████████ 7800   │       │
+│  │  全量 DSpark:    ██████████████████████████████████ 8500│      │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  不同位置的温度参数（收敛后）                                      │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  位置 1:  T=1.02  ████                               │       │
+│  │  位置 4:  T=1.15  █████                               │       │
+│  │  位置 8:  T=1.32  ██████                              │       │
+│  │  位置 12: T=1.58  ████████                            │       │
+│  │  位置 16: T=1.85  █████████                           │       │
+│  │  趋势：位置越远，温度越高（偏差越大）                    │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 5：GPU 内部执行流程</h2>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│              GPU 内部执行 · 零 CPU 开销                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐  │
+│  │ 草稿模型  │ → │ 置信度头  │ → │ 调度求解  │ → │ 在线校准  │  │
+│  │ 前向传播  │    │ 推理     │    │ argmax   │    │ 温度缩放  │  │
+│  │          │    │          │    │          │    │          │  │
+│  │ [K,h_dim]│    │ [K] prob │    │ K*       │    │ [K*,|V|] │  │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘  │
+│       ↓              ↓              ↓              ↓             │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              目标模型验证 (并行)                            │   │
+│  │              接受/拒绝 [K*]                                │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  全程无 CPU-GPU 数据传输                                         │
+│  延迟: &lt; 0.1ms (调度+校准)                                       │
+│  CPU 开销: 0ms                                                   │
+│                                                                 │
+│  对比 CPU 调度:                                                  │
+│  • CPU 决策: 2-5ms                                              │
+│  • GPU-CPU 传输: 0.5-1ms                                        │
+│  • 总延迟: +3-6ms                                                │
+│  • 吞吐量影响: -15%                                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 6：代码速查</h2>
+<pre><code>
+# 硬件感知调度核心（3 步）
+def schedule(conf_head, throughput, draft_hidden, batch_size):
+    # 1. 预估存活概率
+    probs = conf_head(draft_hidden)  # [K]
+    # 2. 计算净收益
+    gains = [(probs[:K].sum() + 1) / throughput.query(B, K)
+             for K in range(1, K_max+1)]
+    # 3. 选择最优 K
+    return np.argmax(gains) + 1
+
+# 顺序温度缩放核心（1 行）
+calibrated = F.softmax(logits / temperatures[position], dim=-1)
+
+# 在线温度更新（3 行）
+loss = -(target * F.log_softmax(logits/T, -1)).sum(-1).mean()
+T.grad = torch.autograd.grad(loss, T)[0]
+T.clamp_(0.5, 3.0)
+</code></pre>
+<hr>
+<h2>卡片 7：金句集</h2>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│              金句集                                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  "每次应该猜几个？没有固定答案。让系统自己决定。"                   │
+│  —— 硬件感知调度的核心哲学                                       │
+│                                                                 │
+│  "越跑越准，真正自适应。"                                        │
+│  —— 在线校准的持续进化                                           │
+│                                                                 │
+│  "最优不是预设的，而是涌现的。"                                   │
+│  —— 自适应系统的深层智慧                                         │
+│                                                                 │
+│  "硬件感知不是可选项，是必选项。"                                 │
+│  —— 系统优化的基本前提                                           │
+│                                                                 │
+│  "校准不是一次性的，是持续的。"                                   │
+│  —— 在线学习的核心理念                                           │
+│                                                                 │
+│  "零 CPU 开销，全 GPU 执行。"                                    │
+│  —— 工程实现的极致追求                                           │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

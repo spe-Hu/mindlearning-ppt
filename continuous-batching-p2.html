@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连续批处理 — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="continuous-batching-p1.html">← 上一页</a>
+        <span class="nav-title">连续批处理 — 经典论文</span>
+        <a href="continuous-batching-p3.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>连续批处理 (Continuous Batching) 核心论文分析</h1>
+<blockquote><p>研究时间：2026-06-28 | 所属领域：AI/推理加速</p></blockquote>
+<blockquote><p>关键词：Continuous Batching, PagedAttention, vLLM, Orca, FastGen, Splitwise, DistServe, RadixAttention</p></blockquote>
+<hr>
+<h2>一、论文关系图谱</h2>
+<pre><code>
+时间线：
+2017 ──── Vaswani et al. "Attention Is All You Need" (Transformer 架构)
+  │
+2019 ──── NVIDIA FasterTransformer (动态批处理雏形)
+  │
+2022 ──── Gimelshein et al. "Orca" ──────────────── 连续批处理概念正式提出
+  │           │
+  │           └──→ Iteration-level Scheduling
+  │
+2023 ──── Kwon et al. "vLLM / PagedAttention" ──── 显存管理革命
+  │           │
+  │           ├──→ Paged KV Cache (类比虚拟内存)
+  │           └──→ 前缀共享 (Copy-on-Write)
+  │
+2024 ──── DeepSpeed-FastGen (Dynamic SplitFuse) ─── prefill/decode 混合调度
+  │           │
+  │           └──→ SplitFuse: 将 prefill 分块与 decode 混合
+  │
+  │────── SGLang / RadixAttention ─────────────── Radix Tree KV Cache 管理
+  │           │
+  │           └──→ 基于 Radix Tree 的前缀匹配与缓存
+  │
+2024 ──── Splitwise / DistServe ────────────────── Prefill-Decode 分离架构
+  │           │
+  │           └──→ PD Disaggregation: 不同阶段分配不同 GPU
+  │
+2025 ──── TensorRT-LLM 0.10+ ──────────────────── 工业级连续批处理
+  │           │
+  │           ├──→ In-flight Batching
+  │           ├──→ FP8 量化 + 连续批处理联合优化
+  │           └──→ NVIDIA H100/H200 硬件级支持
+  │
+2026 ──── 异构调度 / 多模型连续批处理 ─────────── 前沿探索
+</code></pre>
+<hr>
+<h2>二、核心论文详细分析</h2>
+<h3>论文 1：Orca — 连续批处理的奠基之作</h3>
+<p><strong>论文信息</strong>：</p>
+<ul>
+<li>标题：Orca: A Distributed Serving System for Transformer-Based Generative Models</li>
+<li>作者：Gimelshein, Kharitonov, et al. (NVIDIA)</li>
+<li>发表：OSDI 2022 / arXiv 2022</li>
+<li>引用数：1500+</li>
+</ul>
+<p><strong>核心问题</strong>：</p>
+<p>如何高效地为 Transformer 生成模型提供在线推理服务？传统的静态批处理导致 GPU 利用率极低（10-30%），因为 batch 中的所有请求必须同步完成。</p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>**Iteration-level Scheduling（迭代级调度）**：</li>
+</ul>
+<p>   Orca 的核心洞见是将调度粒度从"请求级"降低到"迭代级"。在传统的请求级调度中，一个 batch 从开始到结束（所有请求生成 EOS）是不可分割的整体。Orca 打破了这个约束——在每一次前向传播（iteration）中，调度器可以动态决定哪些请求参与计算。</p>
+<p>   具体机制：</p>
+<ul>
+<li>每个 iteration 开始时，调度器检查当前 batch 中是否有请求已完成（生成 EOS）</li>
+<li>已完成的请求立即从 batch 中移除</li>
+<li>等待队列中的新请求被插入 batch</li>
+<li>所有请求仍然同步执行一次前向传播（每个请求生成 1 个 token）</li>
+<li>**All-or-Nothing Batch Scheduling**：</li>
+</ul>
+<p>   Orca 还提出了批调度的优化策略。当新请求到达时，调度器需要决定是否将其加入当前 batch。Orca 的分析表明：只有当 batch 中所有请求的"剩余生成长度"相近时，批处理才是高效的。如果新请求的预计生成长度远大于 batch 中已有请求，加入它会降低整体效率。</p>
+<ol>
+<li>**分布式架构**：</li>
+</ul>
+<p>   Orca 设计了分布式推理服务架构，包括：</p>
+<ul>
+<li>Coordinator：接收请求、分配到其他节点</li>
+<li>Worker：执行模型推理</li>
+<li>动态负载均衡：根据各 worker 的队列长度和当前 batch 状态做负载均衡</li>
+</ul>
+<p><strong>性能数据</strong>：</p>
+<ul>
+<li>在 GPT-175B 上，相比静态批处理，吞吐量提升 4 倍</li>
+<li>P99 延迟降低 70%</li>
+<li>GPU 利用率从 ~20% 提升至 ~80%</li>
+</ul>
+<p><strong>局限性</strong>：</p>
+<ul>
+<li>没有解决 KV Cache 的显存管理问题。KV Cache 仍然是连续分配的，导致严重的显存碎片化。</li>
+<li>当请求的生成长度差异很大时，仍然存在一定的资源浪费。</li>
+<li>没有考虑 prefill 和 decode 阶段的异构性。</li>
+</ul>
+<p><strong>历史地位</strong>：</p>
+<p>Orca 是连续批处理概念的正式提出者。它证明了"在 decode 阶段，每个请求每步的工作量相同（1 个 token），因此可以在 iteration 边界动态调度请求"这一核心洞见。后续所有连续批处理工作（vLLM、TensorRT-LLM、SGLang）都建立在 Orca 的迭代级调度思想之上。</p>
+<hr>
+<h3>论文 2：vLLM / PagedAttention — 显存管理革命</h3>
+<p><strong>论文信息</strong>：</p>
+<ul>
+<li>标题：Efficient Memory Management for Large Language Model Serving with PagedAttention</li>
+<li>作者：Kwon, Li, et al. (UC Berkeley)</li>
+<li>发表：SOSP 2023</li>
+<li>引用数：5000+</li>
+</ul>
+<p><strong>核心问题</strong>：</p>
+<p>大语言模型推理服务中，KV Cache 的显存管理是核心瓶颈。传统方案为每个请求预分配连续的 KV Cache 空间，导致 60-80% 的显存浪费（内部碎片 + 外部碎片）。这严重限制了可同时服务的请求数量，从而限制了吞吐量。</p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>**PagedAttention（分页注意力）**：</li>
+</ul>
+<p>   核心类比：KV Cache 的显存管理可以类比操作系统的虚拟内存管理。</p>
+<p>   在操作系统中，进程的虚拟地址空间被分成固定大小的页（通常 4KB），物理内存也被分成同样大小的页框。通过页表（page table）将虚拟页映射到物理页框，使得进程的内存不需要连续物理空间。</p>
+<p>   PagedAttention 采用完全相同的思路：</p>
+<ul>
+<li>KV Cache 被分成固定大小的**块（block）**，每个块存储固定数量 token（如 16 个）的 KV 值</li>
+<li>物理显存被分成同样大小的**物理块**</li>
+<li>每个请求通过**块表（block table）**将其逻辑块映射到物理块</li>
+<li>逻辑块不需要映射到连续的物理块</li>
+</ul>
+<p>   块的大小选择是一个工程权衡：</p>
+<ul>
+<li>太小（如 1 token）：页表开销大，管理复杂</li>
+<li>太大（如 256 token）：内部碎片严重</li>
+<li>实践中的最优值：16 token（vLLM 默认值）</li>
+<li>**Copy-on-Write（写时复制）**：</li>
+</ul>
+<p>   借鉴操作系统的 Copy-on-Write 机制，PagedAttention 支持多个请求<strong>共享</strong>同一个物理块的 KV Cache。</p>
+<p>   应用场景：</p>
+<ul>
+<li>**前缀共享**：多个请求使用相同的 system prompt 或前缀，可以共享前缀对应的物理块</li>
+<li>**Beam Search**：beam search 的多条候选序列在分叉前共享相同的 KV Cache</li>
+<li>**Parallel Sampling**：对同一 prompt 的多次采样共享前缀 KV Cache</li>
+</ul>
+<p>   写时复制机制：当某个请求需要修改共享块的 KV 值时（如在新生成的 token 处写入 KV），系统先复制该块，再在副本上修改。这保证了其他共享该块的请求不受影响。</p>
+<ol>
+<li>**内存优化效果**：</li>
+<li>内部碎片降低到 <5%（只有最后一个块可能有未使用的空间）</li>
+<li>外部碎片几乎消除（所有物理块大小相同，可以任意分配）</li>
+<li>前缀共享进一步减少了 50-80% 的重复 KV Cache 存储</li>
+</ul>
+<p>4. <strong>与 Orca 调度的集成</strong>：</p>
+<p>   vLLM 将 PagedAttention 与 Orca 的迭代级调度无缝集成。PagedAttention 解决了显存管理问题，Orca 调度解决了请求调度问题。两者结合实现了：</p>
+<ul>
+<li>吞吐量比静态批处理提升 4-24 倍</li>
+<li>支持更大的 batch size（因为显存利用更高效）</li>
+<li>零浪费的 KV Cache 管理</li>
+</ul>
+<p><strong>性能数据</strong>：</p>
+<ul>
+<li>在 OPT-175B 上，吞吐量比 FasterTransformer 提升 24 倍</li>
+<li>在 OPT-13B 上，吞吐量提升 14 倍</li>
+<li>在 ChatGPT 级别的模型上，显存浪费从 60-80% 降低到 <4%</li>
+<li>前缀共享场景下，KV Cache 存储减少 55%</li>
+</ul>
+<p><strong>局限性</strong>：</p>
+<ul>
+<li>页表本身占用显存（但占比很小，通常 <1%）</li>
+<li>非连续物理块的访问可能引入少量的内存访问碎片（但通过预取和缓存可以缓解）</li>
+<li>对于极长序列（如 100K+ token），块表的查找开销可能变得显著</li>
+</ul>
+<p><strong>历史地位</strong>：</p>
+<p>vLLM/PagedAttention 是连续批处理从学术概念走向工业级部署的关键推动力。它解决了 Orca 未解决的显存管理问题，使得连续批处理在实际部署中的效果大幅提升。vLLM 开源后迅速成为最流行的推理引擎，GitHub stars 超过 25k，被 OpenAI、Anthropic、Together AI 等主流 AI 公司采用。</p>
+<hr>
+<h3>论文 3：DeepSpeed-FastGen / Dynamic SplitFuse</h3>
+<p><strong>论文信息</strong>：</p>
+<ul>
+<li>标题：DeepSpeed-FastGen: High-throughput Text Generation with DeepSpeed-MII and FastGen</li>
+<li>作者：Microsoft DeepSpeed Team</li>
+<li>发表：2024</li>
+<li>引用数：300+</li>
+</ul>
+<p><strong>核心问题</strong>：</p>
+<p>Orca 和 vLLM 的连续批处理方案中，prefill 阶段和 decode 阶段在同一个 GPU 上混合执行。但这两个阶段的特性截然不同：</p>
+<ul>
+<li>Prefill：计算密集型（处理完整 prompt，seq_len 可能很长）</li>
+<li>Decode：内存带宽密集型（每次只处理 1 个 token）</li>
+</ul>
+<p>当一个长 prompt 请求进入 prefill 阶段时，它可能占用 GPU 数百毫秒，期间所有 decode 请求都被阻塞。这导致 decode 请求的延迟出现严重的"毛刺"（spike）。</p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>**Dynamic SplitFuse（动态分割融合）**：</li>
+</ul>
+<p>   核心思想是将 prefill 阶段的长 prompt <strong>分成多个 chunk</strong>，每个 chunk 与 decode 请求混合执行。</p>
+<p>   具体机制：</p>
+<ul>
+<li>调度器维护一个"预算"（budget），表示当前 iteration 可以处理的总 token 数量</li>
+<li>将 decode 请求的 token（每个请求 1 个）和 prefill chunk 的 token 组合成一个 batch</li>
+<li>例如：budget=2048，batch 中包含 128 个 decode token（128 个请求各 1 个）+ 1920 个 prefill chunk token</li>
+</ul>
+<p>   这确保了每个 iteration 的总工作量是恒定的，避免了长 prefill 阻塞 decode 的问题。</p>
+<ol>
+<li>**Chunked Prefill 的调度策略**：</li>
+</ul>
+<p>   SplitFuse 的关键设计决策是如何选择 chunk 大小。太小的 chunk 增加了调度开销和 prefill 的总时间（因为每个 chunk 都需要一次完整的前向传播），太大的 chunk 又回到了"阻塞 decode"的问题。</p>
+<p>   FastGen 的策略：</p>
+<ul>
+<li>根据当前 decode 请求的数量动态调整 chunk 大小</li>
+<li>decode 请求越多，chunk 越小（优先保证 decode 延迟）</li>
+<li>decode 请求越少，chunk 越大（优先加速 prefill）</li>
+<li>**与 vLLM 的对比**：</li>
+<li>vLLM 的连续批处理在 decode 阶段做得很好，但 prefill 仍然是"原子性"的（一个 prompt 必须一次性处理完）</li>
+<li>FastGen 将 prefill 也"连续化"了——长 prompt 被分成多个 chunk，跨多个 iteration 处理</li>
+</ul>
+<p><strong>性能数据</strong>：</p>
+<ul>
+<li>在 LLaMA-2-70B 上，相比 vLLM，吞吐量提升 1.4-2.0 倍</li>
+<li>P99 延迟降低 60%（消除了 prefill 导致的延迟毛刺）</li>
+<li>在混合长短 prompt 场景下效果最显著</li>
+</ul>
+<p><strong>历史地位</strong>：</p>
+<p>DeepSpeed-FastGen 解决了连续批处理中最后一个"不连续"的环节——prefill 阶段。通过 Chunked Prefill，它实现了真正的"全阶段连续"。这一思想在 2025-2026 年被广泛采纳，成为推理引擎的标准特性。</p>
+<hr>
+<h3>论文 4：SGLang / RadixAttention — 基于 Radix Tree 的 KV Cache 管理</h3>
+<p><strong>论文信息</strong>：</p>
+<ul>
+<li>标题：SGLang: Efficient Execution of Structured Language Model Programs</li>
+<li>作者：Zheng, Yin, et al. (Stanford)</li>
+<li>发表：OSDI 2024 / arXiv 2024</li>
+<li>引用数：800+</li>
+</ul>
+<p><strong>核心问题</strong>：</p>
+<p>vLLM 的 PagedAttention 通过分页解决了显存碎片化问题，但前缀匹配仍然是"手动"的——用户需要显式指定哪些请求可以共享前缀。在实际场景中，前缀关系可能非常复杂（如多轮对话、共享 system prompt、相似的用户指令），需要自动化的前缀匹配和缓存管理。</p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>**RadixAttention**：</li>
+</ul>
+<p>   使用 <strong>Radix Tree（基数树/压缩前缀树）</strong> 来管理所有请求的 KV Cache。</p>
+<p>   Radix Tree 的特性：</p>
+<ul>
+<li>每个节点代表一个 token 序列</li>
+<li>从根到任意节点的路径代表一个前缀</li>
+<li>共享前缀的请求自然汇聚到同一子树</li>
+<li>支持高效的 LCP（Longest Common Prefix）查找</li>
+</ul>
+<p>   工作方式：</p>
+<ul>
+<li>当新请求到达时，在 Radix Tree 中查找其 prompt 的最长匹配前缀</li>
+<li>匹配到的前缀对应的 KV Cache 直接复用（无需重新计算）</li>
+<li>只有未匹配的部分需要执行 prefill</li>
+<li>生成的新 token 的 KV Cache 插入 Radix Tree，供后续请求使用</li>
+<li>**自动前缀缓存（Automatic Prefix Caching）**：</li>
+</ul>
+<p>   RadixAttention 自动缓存所有计算过的 KV Cache，并在后续请求中自动复用。用户无需任何额外配置。</p>
+<p>   示例：</p>
+<pre><code>
+   请求1: "System: You are a helpful assistant. User: Hello" → 完整 prefill
+   请求2: "System: You are a helpful assistant. User: How are you" → 复用 "System: You are a helpful assistant. User: " 的 KV Cache
+   请求3: "System: You are a helpful assistant. User: Hello, tell me about AI" → 复用 "System: You are a helpful assistant. User: Hello" 的 KV Cache
+</code></pre>
+<ol>
+<li>**LRU 缓存淘汰**：</li>
+</ul>
+<p>   当显存不足时，Radix Tree 中的 KV Cache 节点按 LRU（Least Recently Used）策略淘汰。最近被访问的节点保留，最久未访问的节点优先释放。</p>
+<p>4. <strong>结构化生成支持</strong>：</p>
+<p>   SGLang 不仅优化了 KV Cache 管理，还支持结构化的生成模式（如 JSON schema 约束、正则表达式约束），通过约束解码（constrained decoding）确保输出符合指定格式。</p>
+<p><strong>性能数据</strong>：</p>
+<ul>
+<li>在多轮对话场景下，相比 vLLM，吞吐量提升 1.5-3.0 倍（前缀缓存命中率高）</li>
+<li>在共享 system prompt 场景下，首 token 延迟降低 80%</li>
+<li>Radix Tree 的管理开销 <2%</li>
+</ul>
+<p><strong>历史地位</strong>：</p>
+<p>SGLang/RadixAttention 将 KV Cache 管理从"分页"提升到"智能缓存"。Radix Tree 的数据结构天然适合处理前缀关系复杂的场景（多轮对话、RAG、Agent 工作流），使得 KV Cache 的复用率大幅提升。</p>
+<hr>
+<h3>论文 5：Splitwise / DistServe — Prefill-Decode 分离架构</h3>
+<p><strong>论文信息</strong>：</p>
+<ul>
+<li>标题 1：Splitwise: Efficient Generative LLM Inference Using Phase Splitting</li>
+<li>作者 1：Patel et al. (University of Washington)</li>
+<li>发表 1：2024</li>
+<li>标题 2：DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving</li>
+<li>作者 2：Zhong et al. (UC Berkeley)</li>
+<li>发表 2：OSDI 2024</li>
+</ul>
+<p><strong>核心问题</strong>：</p>
+<p>连续批处理将 prefill 和 decode 混合在同一 GPU 上执行，但这两个阶段的资源需求完全不同：</p>
+<ul>
+<li>Prefill 需要大量计算（高 FLOPs 利用率）</li>
+<li>Decode 需要大量显存带宽（高 memory bandwidth 利用率）</li>
+</ul>
+<p>在同一 GPU 上混合执行意味着无法同时优化两个阶段。</p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>**PD Disaggregation（Prefill-Decode 分离）**：</li>
+</ul>
+<p>   将 prefill 和 decode 分配到不同的 GPU 集群：</p>
+<ul>
+<li>Prefill 集群：优化计算性能（高 FLOPs GPU，如 H100）</li>
+<li>Decode 集群：优化显存带宽（高带宽 GPU，或相同 GPU 但更大的 batch size）</li>
+</ul>
+<p>   工作流程：</p>
+<pre><code>
+   请求到达 → Prefill GPU 集群（处理 prompt，生成 KV Cache）
+            → 通过高速网络传输 KV Cache 到 Decode GPU 集群
+            → Decode GPU 集群（自回归生成 token）
+            → 返回结果
+</code></pre>
+<ol>
+<li>**KV Cache 传输优化**：</li>
+</ul>
+<p>   PD 分离的关键挑战是如何高效传输 KV Cache。对于一个 70B 模型，seq_len=2048 的请求，KV Cache 大小约 10-20 GB。传输这么大的数据需要高速网络（如 InfiniBand/NVLink）。</p>
+<p>   优化策略：</p>
+<ul>
+<li>KV Cache 量化：传输前将 KV Cache 从 FP16 量化到 INT8，减少传输量</li>
+<li>流水线传输：将 KV Cache 分成多个块，逐块传输，与 decode 的第一批 token 生成重叠</li>
+<li>预取：预测请求的 KV Cache 大小，提前在 decode 集群预留显存</li>
+<li>**Goodput 优化**：</li>
+</ul>
+<p>   DistServe 提出了 <strong>Goodput</strong> 指标——在满足 SLO（Service Level Objective，如 P99 延迟 < 2s）约束下的有效吞吐量。PD 分离的目标是最大化 Goodput，而非简单的吞吐量。</p>
+<p><strong>性能数据</strong>：</p>
+<ul>
+<li>在 LLaMA-2-70B 上，相比混合部署，Goodput 提升 1.5-2.0 倍</li>
+<li>P99 延迟降低 50%</li>
+<li>在异构 GPU 集群中效果更显著（可以用低带宽 GPU 做 decode）</li>
+</ul>
+<p><strong>历史地位</strong>：</p>
+<p>PD 分离代表了连续批处理架构的下一个演进方向。从"在单个 GPU 上做连续批处理"到"在集群级别做连续批处理"，PD 分离将调度优化的空间从单 GPU 扩展到了整个数据中心。</p>
+<hr>
+<h3>论文 6：TensorRT-LLM 技术白皮书</h3>
+<p><strong>论文信息</strong>：</p>
+<ul>
+<li>标题：NVIDIA TensorRT-LLM: Optimizing Large Language Model Inference</li>
+<li>作者：NVIDIA</li>
+<li>发表：GTC 2024 / 持续更新</li>
+<li>类型：技术白皮书</li>
+</ul>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>**In-flight Batching**：</li>
+</ul>
+<p>   NVIDIA 在 TensorRT-LLM 中实现了硬件级的连续批处理优化。In-flight Batching 是 Orca 迭代级调度的增强版：</p>
+<ul>
+<li>利用 CUDA Graph 减少 kernel launch 开销</li>
+<li>利用 Tensor Core 的异步特性，实现 batch 组成的动态调整</li>
+<li>支持 FP8 量化下的连续批处理</li>
+<li>**Paged KV Cache 的硬件优化**：</li>
+</ul>
+<p>   TensorRT-LLM 在 H100/H200 上对 Paged KV Cache 做了硬件级优化：</p>
+<ul>
+<li>利用 H100 的 TMA（Tensor Memory Accelerator）实现高效的非连续显存访问</li>
+<li>利用 L2 cache 分区减少 KV Cache 访问的 cache miss</li>
+<li>预取机制：根据当前 batch 的 block table，提前将下一 iteration 需要的 KV Cache 页加载到 L2 cache</li>
+<li>**FP8 + 连续批处理的联合优化**：</li>
+</ul>
+<p>   H100 原生支持 FP8 计算。TensorRT-LLM 将 FP8 量化与连续批处理结合：</p>
+<ul>
+<li>FP8 将模型权重大小减半，T_memory 减半</li>
+<li>连续批处理在更小的 batch size 下即可达到高 GPU 利用率</li>
+<li>两者协同：FP8 减少显存占用 → 支持更大 batch size → 更高吞吐量</li>
+</ul>
+<p><strong>性能数据</strong>：</p>
+<ul>
+<li>在 LLaMA-70B (FP8) + H100 上，单节点吞吐量达到 2000+ tokens/s</li>
+<li>相比 PyTorch 原生推理，吞吐量提升 8-12 倍</li>
+<li>相比 vLLM，在相同硬件上吞吐量提升 1.3-1.8 倍（得益于硬件级优化）</li>
+<hr>
+<h2>三、论文关系总结</h2>
+<table>
+<thead><tr>
+<th>论文</th>
+<th>年份</th>
+<th>核心贡献</th>
+<th>解决的问题</th>
+<th>遗留问题</th>
+</tr></thead><tbody>
+<tr>
+<td>Orca</td>
+<td>2022</td>
+<td>迭代级调度</td>
+<td>请求级调度的低效</td>
+<td>KV Cache 显存管理</td>
+</tr>
+<tr>
+<td>vLLM/PagedAttention</td>
+<td>2023</td>
+<td>分页 KV Cache</td>
+<td>显存碎片化</td>
+<td>Prefill 阻塞 decode</td>
+</tr>
+<thead><tr>
+<th>DeepSpeed-FastGen</th>
+<th>2024</th>
+<th>SplitFuse</th>
+<th>Prefill 阻塞</th>
+<th>前缀匹配不智能</th>
+</tr></thead><tbody>
+<tr>
+<td>SGLang/RadixAttention</td>
+<td>2024</td>
+<td>Radix Tree KV Cache</td>
+<td>前缀匹配</td>
+<td>单 GPU 优化上限</td>
+</tr>
+<tr>
+<td>Splitwise/DistServe</td>
+<td>2024</td>
+<td>PD 分离</td>
+<td>混合阶段资源冲突</td>
+<td>集群级 KV Cache 传输</td>
+</tr>
+<thead><tr>
+<th>TensorRT-LLM</th>
+<th>2024-25</th>
+<th>硬件级优化</th>
+<th>软件优化上限</th>
+<th>通用性/灵活性</th>
+</tr></thead><tbody>
+</tbody></table>
+<hr>
+<h2>四、技术演进脉络</h2>
+<pre><code>
+核心问题：如何最大化 GPU 在 LLM 推理中的利用率？
+
+├── 子问题1：如何动态调度请求？
+│   └── Orca (2022) → Iteration-level Scheduling
+│       └── 每个 iteration 动态调整 batch 组成
+│
+├── 子问题2：如何高效管理 KV Cache 显存？
+│   └── vLLM (2023) → PagedAttention
+│       └── 分页 + Copy-on-Write + 前缀共享
+│
+├── 子问题3：如何避免 Prefill 阻塞 Decode？
+│   └── FastGen (2024) → Dynamic SplitFuse
+│       └── Chunked Prefill + 混合调度
+│
+├── 子问题4：如何智能复用 KV Cache？
+│   └── SGLang (2024) → RadixAttention
+│       └── Radix Tree + 自动前缀缓存
+│
+├── 子问题5：如何在集群级别优化？
+│   └── Splitwise/DistServe (2024) → PD Disaggregation
+│       └── Prefill/Decode 分离 + KV Cache 传输
+│
+└── 子问题6：如何在硬件级别优化？
+    └── TensorRT-LLM (2024-25) → 硬件级连续批处理
+        └── CUDA Graph + TMA + FP8
+</code></pre>
+<hr>
+<h2>五、关键数据对比表</h2>
+<table>
+<thead><tr>
+<th>方案</th>
+<th>吞吐量提升</th>
+<th>延迟改善</th>
+<th>显存效率</th>
+<th>复杂度</th>
+</tr></thead><tbody>
+<tr>
+<td>静态批处理</td>
+<td>1x (baseline)</td>
+<td>高延迟</td>
+<td>低 (20-40%)</td>
+<td>低</td>
+</tr>
+<tr>
+<td>动态批处理</td>
+<td>2-4x</td>
+<td>中等</td>
+<td>中 (40-60%)</td>
+<td>中</td>
+</tr>
+<thead><tr>
+<th>Orca</th>
+<th>4-8x</th>
+<th>低延迟</th>
+<th>中 (40-60%)</th>
+<th>中高</th>
+</tr></thead><tbody>
+<tr>
+<td>vLLM</td>
+<td>4-24x</td>
+<td>低延迟</td>
+<td>高 (95%+)</td>
+<td>中</td>
+</tr>
+<tr>
+<td>FastGen</td>
+<td>6-30x</td>
+<td>极低延迟</td>
+<td>高 (95%+)</td>
+<td>高</td>
+</tr>
+<thead><tr>
+<th>SGLang</th>
+<th>6-40x (前缀场景)</th>
+<th>极低延迟</th>
+<th>极高 (98%+)</th>
+<th>高</th>
+</tr></thead><tbody>
+<tr>
+<td>PD 分离</td>
+<td>8-50x (集群级)</td>
+<td>极低延迟</td>
+<td>极高</td>
+<td>极高</td>
+</tr>
+<tr>
+<td>TensorRT-LLM</td>
+<td>8-50x</td>
+<td>极低延迟</td>
+<td>极高</td>
+<td>高 (NVIDIA 专用)</td>
+</tr>
+</tbody></table>
+</ol>
+<p>注：数据为典型场景下的相对值，实际效果取决于模型大小、请求模式、硬件配置等因素。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>硬件感知调度与在线校准 — 横纵分析 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <span></span>
+        <span class="nav-title">硬件感知调度与在线校准 — 横纵分析</span>
+        <a href="hardware-aware-scheduling-p2.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>硬件感知调度与在线校准 — 横纵深度分析</h1>
+<blockquote><p>**一句话定位**：DSpark 通过置信度头预估每个草稿位置的验证存活概率，结合预先测算的 GPU 吞吐量参考曲线，动态匹配最优验证长度；同时用顺序温度缩放做在线校准，将预期校准误差从 3%-8% 压到约 1%，整套调度逻辑完全在 GPU 内部执行，无需 CPU 参与。</p></blockquote>
+<hr>
+<h2>一、纵轴：从固定长度到硬件感知自适应的演化叙事</h2>
+<h3>1.1 起点：固定长度草稿</h3>
+<p>推测解码的最初设计采用固定长度的草稿。每次推测-验证循环中，草稿模型生成固定数量 $K$ 个候选 token，目标模型一次性验证。</p>
+<p>$$</p>
+<p>K_{\text{fixed}} = \text{const}</p>
+<p>$$</p>
+<p>这种设计的优点是简单，但存在严重的效率问题：</p>
+<ol>
+<li>**过度推测**：当草稿模型信心很低时（如生成罕见词汇），大部分草稿 token 会被拒绝，浪费验证计算</li>
+<li>**推测不足**：当草稿模型信心很高时（如生成常见短语），可以接受更多 token，但固定长度限制了收益</li>
+<li>**硬件不感知**：不考虑 GPU 当前的负载状态和吞吐特性</li>
+</ul>
+<p>数学建模：设 GPU 在批次大小 $B$ 下的吞吐量为 $\Theta(B)$，验证 $K$ 个 token 的时间为：</p>
+<p>$$</p>
+<p>T_{\text{verify}}(K) = \frac{K \cdot d_{\text{model}} \cdot |V|}{\Theta(B)}</p>
+<p>$$</p>
+<p>当 $K$ 过大时，$T_{\text{verify}}$ 增加但接受率不增反降；当 $K$ 过小时，$T_{\text{verify}}$ 减少但每轮前进的 token 数也减少。存在一个最优的 $K^*$：</p>
+<p>$$</p>
+<p>K^* = \arg\max_K \frac{\mathbb{E}[\text{accept}(K)] + 1}{T_{\text{draft}}(K) + T_{\text{verify}}(K)}</p>
+<p>$$</p>
+<h3>1.2 第一次跃迁：自适应长度草稿</h3>
+<p>早期自适应方案（如 EAGLE）根据草稿模型的置信度动态调整草稿长度：</p>
+<p>$$</p>
+<p>K_{\text{adaptive}} = f(\text{confidence})</p>
+<p>$$</p>
+<p>当草稿模型的 top-1 概率高于阈值时继续生成，否则停止。这种方案比固定长度好，但存在两个问题：</p>
+<ol>
+<li>**只看草稿模型**：不考虑目标模型的验证行为</li>
+<li>**不看硬件状态**：不考虑 GPU 的实时吞吐特性</li>
+<h3>1.3 第二次跃迁：硬件感知调度</h3>
+</ol>
+<p>DSpark 的核心创新之一是引入<strong>硬件感知调度</strong>。其核心思想是：</p>
+<ol>
+<li>**预先测算** GPU 在不同批次大小下的吞吐数据</li>
+<li>**生成吞吐量参考曲线** $\Theta(B)$</li>
+<li>**动态匹配**当前 GPU 状态下的最优验证长度</li>
+</ul>
+<p>具体来说，DSpark 在系统启动时执行一个校准阶段：</p>
+<pre><code>
+def calibrate_throughput(model, device):
+    """
+    预先测算 GPU 在不同批次大小下的吞吐量
+    
+    输出：吞吐量参考曲线 Theta(B)
+    """
+    batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128]
+    throughputs = []
+    
+    for B in batch_sizes:
+        # 测量不同草稿长度下的验证吞吐量
+        for K in [4, 8, 12, 16, 24, 32]:
+            # 构造批次
+            input_ids = torch.randint(0, vocab_size, (B, K)).to(device)
+            
+            # 预热
+            for _ in range(10):
+                _ = model(input_ids)
+            torch.cuda.synchronize()
+            
+            # 测量
+            start = time.time()
+            for _ in range(100):
+                _ = model(input_ids)
+            torch.cuda.synchronize()
+            elapsed = (time.time() - start) / 100
+            
+            throughput = B * K / elapsed  # tokens/s
+            throughputs.append((B, K, throughput))
+    
+    # 拟合吞吐量曲线
+    throughput_curve = fit_curve(throughputs)
+    return throughput_curve
+</code></pre>
+<p>校准结果是一个二维查找表：</p>
+<table>
+<thead><tr>
+<th>批次大小 B</th>
+<th>K=4</th>
+<th>K=8</th>
+<th>K=12</th>
+<th>K=16</th>
+<th>K=24</th>
+<th>K=32</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>450</td>
+<td>820</td>
+<td>1100</td>
+<td>1350</td>
+<td>1680</td>
+<td>1900</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1600</td>
+<td>2900</td>
+<td>3800</td>
+<td>4500</td>
+<td>5200</td>
+<td>5600</td>
+</tr>
+<thead><tr>
+<th>8</th>
+<th>2800</th>
+<th>5200</th>
+<th>6800</th>
+<th>8000</th>
+<th>9200</th>
+<th>9800</th>
+</tr></thead><tbody>
+<tr>
+<td>16</td>
+<td>4800</td>
+<td>9000</td>
+<td>11800</td>
+<td>13800</td>
+<td>15600</td>
+<td>16500</td>
+</tr>
+<tr>
+<td>32</td>
+<td>8200</td>
+<td>15200</td>
+<td>19800</td>
+<td>23000</td>
+<td>25800</td>
+<td>27200</td>
+</tr>
+</tbody></table>
+<p>（单位：tokens/s，A100 GPU）</p>
+<h3>1.4 终态：置信度头 + 吞吐量曲线 → 动态最优</h3>
+<p>DSpark 的最终方案是<strong>置信度头</strong>与<strong>吞吐量参考曲线</strong>的结合：</p>
+<ol>
+<li>**置信度头**（Confidence Head）：给每个草稿位置打分，预估验证存活概率</li>
+<li>**吞吐量曲线**：提供当前 GPU 状态下的验证成本</li>
+<li>**最优化求解**：在 GPU 内部实时求解最优验证长度</li>
+</ul>
+<p>$$</p>
+<p>K^* = \arg\max_K \frac{\sum_{i=1}^{K} P_{\text{survive}}(i) + 1}{T_{\text{verify}}(K, B) / \Theta(B)}</p>
+<p>$$</p>
+<p>其中 $P_{\text{survive}}(i)$ 是置信度头预估的第 $i$ 个位置的验证存活概率。</p>
+<hr>
+<h2>二、核心创新 1：置信度头与动态调度</h2>
+<h3>2.1 置信度头的设计</h3>
+<p>置信度头是一个轻量级的分类器，输入草稿模型在位置 $i$ 的隐藏状态，输出该位置的验证存活概率：</p>
+<p>$$</p>
+<p>P_{\text{survive}}(i) = \sigma(w_c^T \cdot h_i^{\text{draft}} + b_c)</p>
+<p>$$</p>
+<p>其中 $w_c \in \mathbb{R}^{d_{\text{hidden}}}$，$b_c \in \mathbb{R}$ 是可训练参数，$\sigma$ 是 sigmoid 函数。</p>
+<p><strong>训练目标</strong>：最小化预估存活概率与实际存活情况的二元交叉熵：</p>
+<p>$$</p>
+<p>\mathcal{L}_{\text{conf}} = -\sum_{i=1}^{K} \left[ y_i \log \hat{y}_i + (1 - y_i) \log(1 - \hat{y}_i) \right]</p>
+<p>$$</p>
+<p>其中 $y_i \in \{0, 1\}$ 是实际验证结果（接受=1，拒绝=0），$\hat{y}_i = P_{\text{survive}}(i)$ 是预估概率。</p>
+<h3>2.2 动态调度算法</h3>
+<pre><code>
+def dynamic_schedule(confidence_head, throughput_curve, draft_hidden, 
+                     current_batch_size, gpu_state):
+    """
+    动态调度算法
+    
+    输入：
+    - confidence_head: 置信度头
+    - throughput_curve: 吞吐量参考曲线
+    - draft_hidden: 草稿模型的隐藏状态 [K_max, d_hidden]
+    - current_batch_size: 当前批次大小
+    - gpu_state: GPU 当前状态
+    
+    输出：
+    - K_opt: 最优验证长度
+    """
+    K_max = draft_hidden.shape[0]
+    
+    # 1. 预估每个位置的存活概率
+    survival_probs = confidence_head(draft_hidden)  # [K_max]
+    
+    # 2. 计算不同验证长度的期望收益
+    expected_gains = []
+    for K in range(1, K_max + 1):
+        # 期望接受长度
+        expected_accept = sum(survival_probs[:K])
+        
+        # 验证成本（从吞吐量曲线查询）
+        verify_cost = throughput_curve.query(current_batch_size, K)
+        
+        # 净收益 = 期望接受长度 / 验证成本
+        net_gain = (expected_accept + 1) / verify_cost
+        expected_gains.append(net_gain)
+    
+    # 3. 选择最优验证长度
+    K_opt = np.argmax(expected_gains) + 1
+    
+    return K_opt
+</code></pre>
+<h3>2.3 调度效果</h3>
+<table>
+<thead><tr>
+<th>场景</th>
+<th>固定 K=8</th>
+<th>自适应 K</th>
+<th>硬件感知调度</th>
+<th>提升</th>
+</tr></thead><tbody>
+<tr>
+<td>高置信度（常见词）</td>
+<td>接受 5.2</td>
+<td>接受 7.1</td>
+<td>接受 7.8</td>
+<td>+50%</td>
+</tr>
+<tr>
+<td>中置信度（混合）</td>
+<td>接受 3.8</td>
+<td>接受 4.5</td>
+<td>接受 5.0</td>
+<td>+32%</td>
+</tr>
+<thead><tr>
+<th>低置信度（罕见词）</th>
+<th>接受 1.2</th>
+<th>接受 2.0</th>
+<th>接受 2.1</th>
+<th>+75%</th>
+</tr></thead><tbody>
+<tr>
+<td>GPU 高负载</td>
+<td>延迟 +40%</td>
+<td>延迟 +25%</td>
+<td>延迟 +5%</td>
+<td>-87%</td>
+</tr>
+<tr>
+<td>GPU 低负载</td>
+<td>浪费 60%</td>
+<td>浪费 35%</td>
+<td>浪费 8%</td>
+<td>-87%</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>三、核心创新 2：在线校准与顺序温度缩放</h2>
+<h3>3.1 问题：校准误差</h3>
+<p>推测解码的拒绝采样要求草稿模型和目标模型的概率分布尽可能一致。但在实际部署中，由于量化、近似等原因，两个模型的分布之间存在校准误差（calibration error）。</p>
+<p>预期校准误差（Expected Calibration Error, ECE）定义为：</p>
+<p>$$</p>
+<p>\text{ECE} = \sum_{m=1}^{M} \frac{n_m}{N} |o_m - e_m|</p>
+<p>$$</p>
+<p>其中 $o_m$ 是第 $m$ 个置信度区间的平均预估置信度，$e_m$ 是实际准确率，$n_m$ 是该区间的样本数。</p>
+<h3>3.2 标准温度缩放 vs 顺序温度缩放</h3>
+<p><strong>标准温度缩放</strong>（Temperature Scaling）：</p>
+<p>$$</p>
+<p>p_{\text{calibrated}} = \text{softmax}(z / T)</p>
+<p>$$</p>
+<p>其中 $T$ 是在验证集上优化的单一温度参数。</p>
+<p><strong>顺序温度缩放</strong>（Sequential Temperature Scaling）：</p>
+<p>DSpark 的创新在于为草稿序列中的<strong>每个位置</strong>使用不同的温度参数：</p>
+<p>$$</p>
+<p>p_{\text{calibrated}}^{(i)} = \text{softmax}(z^{(i)} / T_i)</p>
+<p>$$</p>
+<p>其中 $T_i$ 是第 $i$ 个位置的温度参数。</p>
+<p><strong>为什么需要顺序温度缩放？</strong></p>
+<ol>
+<li>草稿序列中不同位置的分布偏差模式不同</li>
+<li>位置越远，草稿模型和目标模型的分布差异越大</li>
+<li>单一温度无法同时校准所有位置</li>
+</ul>
+<p>数学分析：设位置 $i$ 的 logits 偏差为 $\Delta z^{(i)}$，则最优温度为：</p>
+<p>$$</p>
+<p>T_i^* = 1 + \frac{\mathbb{E}[\|\Delta z^{(i)}\|]}{\mathbb{E}[\|z^{(i)}\|]}</p>
+<p>$$</p>
+<h3>3.3 在线校准流程</h3>
+<pre><code>
+class OnlineCalibrator:
+    """
+    在线校准器
+    
+    使用顺序温度缩放，实时校准草稿模型的输出分布
+    """
+    
+    def __init__(self, max_draft_len=32, initial_temp=1.0):
+        self.max_draft_len = max_draft_len
+        # 每个位置一个温度参数
+        self.temperatures = nn.Parameter(
+            torch.ones(max_draft_len) * initial_temp
+        )
+        # 在线统计
+        self.running_stats = {
+            "ece": 0.0,
+            "num_samples": 0,
+            "update_count": 0
+        }
+    
+    def calibrate(self, draft_logits, position):
+        """
+        对指定位置的 logits 进行校准
+        
+        Args:
+            draft_logits: [batch, vocab_size] 草稿模型 logits
+            position: int 草稿位置索引
+        
+        Returns:
+            calibrated_probs: [batch, vocab_size] 校准后的概率
+        """
+        T = self.temperatures[position]
+        calibrated = torch.softmax(draft_logits / T, dim=-1)
+        return calibrated
+    
+    def update_temperature(self, position, draft_logits, target_probs):
+        """
+        在线更新指定位置的温度参数
+        
+        使用 NLL 损失优化：
+        L = -sum(target_probs * log(softmax(draft_logits / T)))
+        """
+        T = self.temperatures[position]
+        calibrated_log_probs = torch.log_softmax(draft_logits / T, dim=-1)
+        loss = -(target_probs * calibrated_log_probs).sum(dim=-1).mean()
+        
+        # 梯度更新
+        loss.backward()
+        with torch.no_grad():
+            self.temperatures[position] -= 0.01 * self.temperatures[position].grad
+            self.temperatures[position].grad = None
+            # 温度约束在 [0.5, 3.0]
+            self.temperatures[position].clamp_(0.5, 3.0)
+    
+    def compute_ece(self, calibrated_probs, predictions, targets):
+        """计算预期校准误差"""
+        confidences, predicted = torch.max(calibrated_probs, dim=-1)
+        accuracies = (predicted == targets).float()
+        
+        n_bins = 15
+        bin_boundaries = torch.linspace(0, 1, n_bins + 1)
+        
+        ece = 0.0
+        for i in range(n_bins):
+            in_bin = (confidences &gt; bin_boundaries[i]) & \
+                     (confidences &lt;= bin_boundaries[i + 1])
+            prop_in_bin = in_bin.float().mean()
+            
+            if prop_in_bin &gt; 0:
+                avg_confidence = confidences[in_bin].mean()
+                avg_accuracy = accuracies[in_bin].mean()
+                ece += torch.abs(avg_confidence - avg_accuracy) * prop_in_bin
+        
+        return ece.item()
+</code></pre>
+<h3>3.4 校准效果</h3>
+<table>
+<thead><tr>
+<th>校准方法</th>
+<th>ECE (代码)</th>
+<th>ECE (对话)</th>
+<th>ECE (论文)</th>
+<th>接受率提升</th>
+</tr></thead><tbody>
+<tr>
+<td>无校准</td>
+<td>7.8%</td>
+<td>5.2%</td>
+<td>6.5%</td>
+<td>基线</td>
+</tr>
+<tr>
+<td>标准温度缩放</td>
+<td>4.2%</td>
+<td>3.1%</td>
+<td>3.8%</td>
+<td>+8%</td>
+</tr>
+<thead><tr>
+<th>分块温度缩放</th>
+<th>2.5%</th>
+<th>1.8%</th>
+<th>2.2%</th>
+<th>+15%</th>
+</tr></thead><tbody>
+<tr>
+<td>**顺序温度缩放**</td>
+<td>**1.1%**</td>
+<td>**0.8%**</td>
+<td>**1.0%**</td>
+<td>**+22%**</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>四、GPU 内部执行：零 CPU 开销</h2>
+<h3>4.1 设计目标</h3>
+<p>DSpark 的整套调度逻辑完全在 GPU 内部执行，不需要 CPU 参与。这避免了 CPU-GPU 之间的数据传输开销。</p>
+<h3>4.2 实现策略</h3>
+<pre><code>
+GPU 内部调度流程：
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  1. 草稿模型前向传播 ──→ 隐藏状态 [K, d_hidden]              │
+│     (全在 GPU 上)                                            │
+│                                                              │
+│  2. 置信度头推理 ──→ 存活概率 [K]                             │
+│     (全在 GPU 上，单次 GEMV)                                  │
+│                                                              │
+│  3. 动态调度求解 ──→ 最优 K*                                  │
+│     (全在 GPU 上，argmax 操作)                                │
+│                                                              │
+│  4. 在线校准 ──→ 校准后概率 [K*, |V|]                         │
+│     (全在 GPU 上，逐位置温度缩放)                              │
+│                                                              │
+│  5. 目标模型验证 ──→ 接受/拒绝 [K*]                           │
+│     (全在 GPU 上，并行验证)                                    │
+│                                                              │
+│  全程无 CPU-GPU 数据传输                                      │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>4.3 性能对比</h3>
+<table>
+<thead><tr>
+<th>调度方式</th>
+<th>CPU 开销</th>
+<th>GPU-CPU 传输</th>
+<th>总延迟</th>
+<th>吞吐量影响</th>
+</tr></thead><tbody>
+<tr>
+<td>CPU 调度</td>
+<td>2-5ms</td>
+<td>0.5-1ms</td>
+<td>+3-6ms</td>
+<td>-15%</td>
+</tr>
+<tr>
+<td>**GPU 内部调度**</td>
+<td>**0ms**</td>
+<td>**0ms**</td>
+<td>**+0ms**</td>
+<td>**0%**</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>五、横向对比</h2>
+<h3>5.1 DSpark vs Sarathi-Serve</h3>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>DSpark</th>
+<th>Sarathi-Serve</th>
+</tr></thead><tbody>
+<tr>
+<td>调度策略</td>
+<td>置信度头 + 吞吐量曲线</td>
+<td>Chunked Prefill</td>
+</tr>
+<tr>
+<td>草稿长度</td>
+<td>动态（1-32）</td>
+<td>固定 chunk 大小</td>
+</tr>
+<thead><tr>
+<th>硬件感知</th>
+<th>是（吞吐量参考曲线）</th>
+<th>否</th>
+</tr></thead><tbody>
+<tr>
+<td>在线校准</td>
+<td>是（顺序温度缩放）</td>
+<td>否</td>
+</tr>
+<tr>
+<td>CPU 开销</td>
+<td>0</td>
+<td>需要 CPU 调度</td>
+</tr>
+<thead><tr>
+<th>端到端加速</th>
+<th>2.5x</th>
+<th>1.8x</th>
+</tr></thead><tbody>
+</tbody></table>
+<h3>5.2 DSpark vs 其他自适应方案</h3>
+<table>
+<tr>
+<td>系统</td>
+<td>自适应策略</td>
+<td>硬件感知</td>
+<td>在线校准</td>
+<td>GPU 内执行</td>
+<td>加速比</td>
+</tr>
+<thead><tr>
+<th>固定 K</th>
+<th>无</th>
+<th>否</th>
+<th>否</th>
+<th>是</th>
+<th>1.5x</th>
+</tr></thead><tbody>
+<tr>
+<td>EAGLE</td>
+<td>置信度阈值</td>
+<td>否</td>
+<td>否</td>
+<td>是</td>
+<td>2.3x</td>
+</tr>
+<tr>
+<td>Sarathi-Serve</td>
+<td>Chunked</td>
+<td>否</td>
+<td>否</td>
+<td>部分</td>
+<td>1.8x</td>
+</tr>
+<thead><tr>
+<th>**DSpark**</th>
+<th>**置信度头+吞吐曲线**</th>
+<th>**是**</th>
+<th>**是**</th>
+<th>**是**</th>
+<th>**2.5x**</th>
+</tr></thead><tbody>
+</tbody></table>
+<hr>
+<h2>六、关键洞察</h2>
+<h3>6.1 三个核心洞察</h3>
+<ol>
+<li>**硬件感知是必须的**：不同 GPU 的最优草稿长度不同，同一 GPU 在不同负载下的最优长度也不同。忽略硬件特性的调度方案无法达到最优。</li>
+<li>**在线校准是持续的**：分布偏差不是静态的，会随着输入分布、量化精度等因素变化。在线校准使得系统能够持续适应这些变化。</li>
+<li>**GPU 内部执行是关键**：CPU-GPU 传输是推测解码中被忽视的瓶颈。将调度逻辑完全放在 GPU 内部，消除了这一瓶颈。</li>
+<h3>6.2 工程审美</h3>
+</ol>
+<p>硬件感知调度体现了一种<strong>"越跑越准"</strong>的工程审美：</p>
+<ul>
+<li>启动时校准，建立基线</li>
+<li>运行时在线学习，持续优化</li>
+<li>不需要完美的初始配置，只需要正确的学习方向</li>
+<hr>
+<h2>七、总结</h2>
+</ol>
+<p>硬件感知调度与在线校准是 DSpark 的两大核心创新。置信度头 + 吞吐量参考曲线实现了动态最优的验证长度匹配；顺序温度缩放将校准误差从 3%-8% 压到约 1%；GPU 内部执行消除了 CPU-GPU 传输瓶颈。整套方案使得 DSpark 在各种硬件和负载条件下都能保持最优的推理性能。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

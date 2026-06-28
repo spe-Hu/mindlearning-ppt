@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFlash — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="dflash-p3.html">← 上一页</a>
+        <span class="nav-title">DFlash — 知识卡片</span>
+        <a href="dflash-p5.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>DFlash 概念卡片：并行推测解码的核心知识图谱</h1>
+<blockquote><p>本文以结构化卡片形式呈现 DFlash 的核心概念、技术细节、对比分析和关键洞察。</p></blockquote>
+<hr>
+<h2>卡片一：DFlash 核心概念速览</h2>
+<h3>1.1 什么是 DFlash</h3>
+<p><strong>全称</strong>：Block Diffusion for Flash Speculative Decoding</p>
+<p><strong>一句话定义</strong>：用块扩散模型替代自回归草稿模型，一次前向传播并行生成 16 个候选 token 的推测解码加速方案。</p>
+<p><strong>核心标签</strong>：</p>
+<ul>
+<li>并行推测解码</li>
+<li>块扩散（Block Diffusion）</li>
+<li>双向注意力</li>
+<li>无损加速</li>
+<li>DeepSeek-AI</li>
+<h3>1.2 DFlash 在推测解码家族中的位置</h3>
+<pre><code>
+推测解码技术演进树
+├── 串行草稿（2023-2024）
+│   ├── 标准推测解码（Google 2023）
+│   ├── EAGLE-1（特征层推测）
+│   ├── EAGLE-2（自适应草稿树）
+│   └── EAGLE-3（优化训练目标）
+├── 并行草稿（2024-2025）
+│   ├── Medusa（多头预测）
+│   ├── Lookahead（Jacobi 迭代）
+│   └── DFlash（块扩散）← 本文主角
+└── 混合草稿（2026-）
+    └── DSpark（半自回归 + 置信度调度）
+</code></pre>
+<h3>1.3 核心数据速查</h3>
+<table>
+<thead><tr>
+<th>指标</th>
+<th>数值</th>
+<th>说明</th>
+</tr></thead><tbody>
+<tr>
+<td>加速比</td>
+<td>6.0x</td>
+<td>Qwen3-8B 上的无损加速</td>
+</tr>
+<tr>
+<td>Block Size</td>
+<td>16</td>
+<td>一次前向传播生成的 token 数</td>
+</tr>
+<thead><tr>
+<th>Draft 模型层数</th>
+<th>6</th>
+<th>轻量级双向 Transformer</th>
+</tr></thead><tbody>
+<tr>
+<td>接受率（位置 1）</td>
+<td>0.72</td>
+<td>条件接受率</td>
+</tr>
+<tr>
+<td>接受率（位置 7）</td>
+<td>0.63</td>
+<td>条件接受率，衰减 12.5%</td>
+</tr>
+<thead><tr>
+<th>开源协议</th>
+<th>MIT</th>
+<th>github.com/z-lab/dflash</th>
+</tr></thead><tbody>
+<tr>
+<td>支持框架</td>
+<td>vLLM, SGLang, Transformers, MLX</td>
+<td>四大主流框架</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>卡片二：DFlash 技术架构详解</h2>
+<h3>2.1 整体工作流程</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────┐
+│                    DFlash 工作流程                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Step 1: Target Model 计算上下文隐藏状态                      │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Input: "今天天气" → Target Model → hidden_states      │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│  Step 2: 传递上下文特征给 DFlash Draft Model                  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ hidden_states + KV Cache → DFlash Draft               │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│  Step 3: DFlash 通过块扩散一次生成 16 个候选 token            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Noise → Bidirectional Transformer → 16 draft tokens   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│  Step 4: Target Model 并行验证 16 个 draft tokens             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Target Model(draft tokens) → acceptance probabilities │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│  Step 5: 拒绝采样决定接受哪些 token                           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Accept: y1, y2, y3, y4 | Reject: y5, y6, ...        │  │
+│  │ Output: "今天天气真好" (4 tokens accepted)             │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>2.2 DFlash Draft 模型架构</h3>
+<pre><code>
+DFlash Draft Model Architecture
+┌────────────────────────────────────────────────────────────┐
+│  Input Layer                                                │
+│  ├── target_hidden: Target 模型最后一层隐藏状态               │
+│  ├── noise_embedding: 当前 draft token 嵌入（初始为噪声）     │
+│  └── position_ids: 位置编码                                  │
+├────────────────────────────────────────────────────────────┤
+│  Transformer Blocks (x6)                                    │
+│  ├── Bidirectional Self-Attention (is_causal=False)         │
+│  │   └── 每个位置可以看到所有其他位置                          │
+│  ├── Layer Norm                                            │
+│  ├── Feed-Forward Network (FFN)                            │
+│  └── Layer Norm                                            │
+├────────────────────────────────────────────────────────────┤
+│  Output Layer                                               │
+│  └── LM Head → draft_logits (16 x vocab_size)              │
+└────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>2.3 核心代码片段</h3>
+<pre><code>
+# DFlash 核心前向传播逻辑
+def dflash_forward(target_model, draft_model, context, block_size=16):
+    # Step 1: 获取目标模型的隐藏状态
+    target_hidden = target_model.get_hidden_states(context)
+    
+    # Step 2: 初始化噪声嵌入（随机 token）
+    block_output_ids = torch.randint(0, vocab_size, (1, block_size))
+    noise_embedding = target_model.embed_tokens(block_output_ids)
+    
+    # Step 3: DFlash Draft 模型前向传播（双向注意力）
+    draft_logits = target_model.lm_head(draft_model(
+        target_hidden=target_hidden,
+        noise_embedding=noise_embedding,
+        position_ids=position_ids,
+        past_key_values=past_key_values_draft,
+        use_cache=True,
+        is_causal=False,  # 关键：双向注意力
+    ))
+    
+    # Step 4: 采样生成 draft tokens
+    draft_tokens = sample(draft_logits)
+    
+    return draft_tokens
+</code></pre>
+<h3>2.4 关键设计决策</h3>
+<table>
+<thead><tr>
+<th>设计选择</th>
+<th>具体方案</th>
+<th>原因</th>
+</tr></thead><tbody>
+<tr>
+<td>注意力类型</td>
+<td>双向注意力</td>
+<td>允许每个位置同时看到所有其他位置，实现并行生成</td>
+</tr>
+<tr>
+<td>模型层数</td>
+<td>6 层</td>
+<td>平衡生成质量和计算成本</td>
+</tr>
+<thead><tr>
+<th>Block Size</th>
+<th>16</th>
+<th>实验确定的最优值，平衡接受率和速度</th>
+</tr></thead><tbody>
+<tr>
+<td>输入来源</td>
+<td>Target 隐藏状态</td>
+<td>利用目标模型的强表示能力</td>
+</tr>
+<tr>
+<td>验证方式</td>
+<td>拒绝采样</td>
+<td>保证输出分布无损</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>卡片三：DFlash 的两大核心问题</h2>
+<h3>3.1 多模态碰撞（Multimodal Collision）</h3>
+</ol>
+<p><strong>问题描述</strong>：</p>
+<p>各位置独立采样导致不通顺的 token 组合。</p>
+<p><strong>具体示例</strong>：</p>
+<pre><code>
+上下文: "I will definitely..."
+
+位置 3 的候选分布:
+  - "of" (来自 "of course") → 概率 0.4
+  - "no" (来自 "no problem") → 概率 0.3
+  - 其他 → 概率 0.3
+
+位置 4 的候选分布:
+  - "course" (来自 "of course") → 概率 0.35
+  - "problem" (来自 "no problem") → 概率 0.35
+  - 其他 → 概率 0.3
+
+独立采样结果:
+  - 位置 3 采样到 "of" (来自模式 A)
+  - 位置 4 采样到 "problem" (来自模式 B)
+  - 组合: "of problem" ← 语义崩塌！
+</code></pre>
+<p><strong>数学分析</strong>：</p>
+<p>独立采样假设：</p>
+<p>$$P(y_1, y_2, \ldots, y_K) = \prod_{i=1}^{K} P(y_i | \text{context}, \text{noise})$$</p>
+<p>理想联合分布：</p>
+<p>$$P(y_1, y_2, \ldots, y_K) = \prod_{i=1}^{K} P(y_i | y_{<i}, \text{context})$$</p>
+<p>两者的差异 = 多模态碰撞的根源。</p>
+<p><strong>严重程度</strong>：</p>
+<ul>
+<li>16 个 token 的 block 中，平均有 2-3 个位置出现语义不连贯</li>
+<li>Block 越长，碰撞概率越高</li>
+<h3>3.2 后缀衰减（Suffix Decay）</h3>
+</ol>
+<p><strong>问题描述</strong>：</p>
+<p>位置越靠后，接受率越低。</p>
+<p><strong>衰减曲线</strong>：</p>
+<pre><code>
+接受率
+1.0 ┤
+    │
+0.8 ┤ ●━━━━━●
+    │         ●━━━━━●
+0.7 ┤                 ●━━━━━●
+    │                         ●
+0.6 ┤                         ●
+    │
+    └──┬──┬──┬──┬──┬──┬──┬──
+       1  2  3  4  5  6  7  位置
+       
+    ● DFlash: 0.72 → 0.63 (衰减 12.5%)
+</code></pre>
+<p><strong>根因分析</strong>：</p>
+<ol>
+<li>**信息论角度**：位置越靠后，可用的上下文信息越少（前面的 token 还未被验证接受）</li>
+<li>**扩散模型角度**：块扩散模型在去噪过程中，靠近边界的 token 获得的信号最弱</li>
+<li>**验证角度**：前面有任何一个 token 被拒绝，后续全部作废</li>
+</ul>
+<p><strong>实验数据</strong>：</p>
+<table>
+<thead><tr>
+<th>位置</th>
+<th>DFlash 接受率</th>
+<th>DSpark 接受率</th>
+<th>改善</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>0.72</td>
+<td>0.82</td>
+<td>+13.9%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.71</td>
+<td>0.81</td>
+<td>+14.1%</td>
+</tr>
+<thead><tr>
+<th>3</th>
+<th>0.69</th>
+<th>0.80</th>
+<th>+15.9%</th>
+</tr></thead><tbody>
+<tr>
+<td>4</td>
+<td>0.68</td>
+<td>0.80</td>
+<td>+17.6%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0.66</td>
+<td>0.79</td>
+<td>+19.7%</td>
+</tr>
+<thead><tr>
+<th>6</th>
+<th>0.65</th>
+<th>0.79</th>
+<th>+21.5%</th>
+</tr></thead><tbody>
+<tr>
+<td>7</td>
+<td>0.63</td>
+<td>0.79</td>
+<td>+25.4%</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>卡片四：DFlash vs 其他方案对比</h2>
+<h3>4.1 架构对比</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                    推测解码方案架构对比                            │
+├─────────────┬─────────────┬─────────────┬─────────────┬─────────┤
+│   维度      │ 标准SpecDec │   Medusa    │  EAGLE-3    │ DFlash  │
+├─────────────┼─────────────┼─────────────┼─────────────┼─────────┤
+│ 草稿模型    │ 独立小模型  │ 多头附加    │ 特征层AR    │ 块扩散  │
+│ 生成方式    │ 串行AR      │ 并行(多头)  │ 串行(特征)  │ 完全并行│
+│ 单次草稿量  │ 5-8 tokens  │ 3-5 tokens  │ 5-8 tokens  │ 16 tok  │
+│ 额外参数    │ 完整小模型  │ 几个预测头  │ 特征映射层  │ 6层轻量 │
+│ 训练成本    │ 低          │ 中          │ 中高        │ 中      │
+│ 验证方式    │ 逐token验证 │ 树形注意力  │ 树形注意力  │ 并行验证│
+└─────────────┴─────────────┴─────────────┴─────────────┴─────────┘
+</code></pre>
+<h3>4.2 性能对比</h3>
+<pre><code>
+加速比对比 (Qwen3-8B)
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│  标准 SpecDec  ████████ 2.1x                               │
+│                                                            │
+│  Medusa        ███████████ 2.8x                            │
+│                                                            │
+│  EAGLE-3       ██████████████ 3.5x                         │
+│                                                            │
+│  DFlash        ████████████████████████ 6.0x               │
+│                                                            │
+│  DSpark        █████████████████████████████ 7.2x          │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>4.3 接受长度对比</h3>
+<pre><code>
+平均接受长度对比
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│  EAGLE-3       ████████████ 3.2 tokens                     │
+│                                                            │
+│  DFlash        ██████████████ 3.8 tokens                   │
+│                                                            │
+│  DSpark(2层)   ██████████████████ 4.8 tokens               │
+│                                                            │
+│  DSpark(5层)   ████████████████████ 5.2 tokens             │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>4.4 接受率衰减对比</h3>
+<pre><code>
+位置 vs 接受率
+┌────────────────────────────────────────────────────────────┐
+│ 1.0 ┤                                                      │
+│     │                                                      │
+│ 0.8 ┤ ●━━━━━●━━━━━●━━━━━●━━━━━●━━━━━●━━━━━●  DSpark      │
+│     │                                                      │
+│ 0.7 ┤ ●━━━━━●━━━━━●━━━━━●━━━━━●━━━━━●━━━━━●  EAGLE-3     │
+│     │                                                      │
+│ 0.6 ┤       ●━━━━━●━━━━━●━━━━━●━━━━━●━━━━━●━━━━━● DFlash  │
+│     │                                                      │
+│     └──┬──┬──┬──┬──┬──┬──┬──                              │
+│        1  2  3  4  5  6  7  位置                           │
+└────────────────────────────────────────────────────────────┘
+
+衰减幅度:
+  DFlash:   -12.5% (0.72 → 0.63)
+  EAGLE-3:  -16.7% (0.78 → 0.65)
+  DSpark:   -3.7%  (0.82 → 0.79)
+</code></pre>
+<hr>
+<h2>卡片五：DSpark 的解决方案</h2>
+<h3>5.1 DSpark 双头架构</h3>
+<pre><code>
+DSpark Architecture
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 并行主干 (DFlash)                                     │  │
+│  │ - 一次前向传播生成所有位置的基础 logits                  │  │
+│  │ - 保证速度                                            │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│                    base_logits                              │
+│                          ↓                                  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 轻量级顺序头 (Markov Head)                            │  │
+│  │ - 256 维低秩分解                                      │  │
+│  │ - 注入"前一个 token 是什么"的信息                      │  │
+│  │ - 端到端延迟增加仅 0.6%-1.3%                          │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│                    refined_logits                           │
+│                          ↓                                  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 置信度估计头                                          │  │
+│  │ - 预测每个 draft token 的前缀存活概率                  │  │
+│  │ - STS 校准 (误差约 1%)                                │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│              confidence_scores                              │
+│                          ↓                                  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 硬件感知前缀调度器                                     │  │
+│  │ - 根据 GPU 负载动态调整验证长度                        │  │
+│  │ - 轻负载: 4-6 tokens                                 │  │
+│  │ - 高并发: 2-3 tokens                                 │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>5.2 Markov Head 设计</h3>
+<pre><code>
+class MarkovHead(nn.Module):
+    """
+    轻量级顺序头：注入前一个 token 的信息
+    """
+    def __init__(self, hidden_dim=4096, rank=256):
+        super().__init__()
+        # 低秩分解：参数量极小
+        self.proj_down = nn.Linear(hidden_dim, rank, bias=False)
+        self.proj_up = nn.Linear(rank, hidden_dim, bias=False)
+        self.embedding = nn.Embedding(vocab_size, hidden_dim)
+    
+    def forward(self, hidden_states, prev_token_ids):
+        """
+        hidden_states: [batch, seq_len, hidden_dim]
+        prev_token_ids: [batch, seq_len]
+        """
+        # 获取前一个 token 的嵌入
+        prev_embed = self.embedding(prev_token_ids)
+        
+        # 低秩投影：hidden_dim -&gt; rank -&gt; hidden_dim
+        prev_feat = self.proj_down(prev_embed)
+        injection = self.proj_up(prev_feat)
+        
+        # 注入到当前隐藏状态
+        return hidden_states + injection
+</code></pre>
+<p><strong>关键设计</strong>：</p>
+<ul>
+<li>256 维低秩分解：参数量仅约 2M（对万亿参数模型可忽略）</li>
+<li>仅注入前一个 token 的信息：最小化串行依赖</li>
+<li>端到端延迟增加：0.6%-1.3%</li>
+<h3>5.3 置信度调度验证</h3>
+<pre><code>
+置信度调度流程
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  Step 1: 置信度估计                                          │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ confidence_head(draft_hidden) → c_1, c_2, ..., c_K   │  │
+│  │ c_i = P(accept_i | accept_{&lt;i}, context)              │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│  Step 2: STS 校准                                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ c_hat_i = sigma(log(c_i) / T_i)                      │  │
+│  │ T_i: 位置相关的温度参数（通过验证集学习）               │  │
+│  │ 校准效果: ECE 从 3%-8% 降到约 1%                      │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                          ↓                                  │
+│  Step 3: 硬件感知调度                                        │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ L* = argmax_L E[sum(c_hat_i)] s.t. GPU_load &lt; thresh │  │
+│  │                                                      │  │
+│  │ 轻负载: L* = 4-6 (大胆多验证)                         │  │
+│  │ 高并发: L* = 2-3 (果断剪掉低置信后缀)                 │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片六：DFlash 的核心洞察</h2>
+<h3>6.1 扩散模型的生态位</h3>
+<pre><code>
+扩散语言模型的定位
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  传统视角:                                                  │
+│  扩散模型 vs 自回归模型 → 比生成质量 → 扩散模型输了          │
+│                                                             │
+│  DFlash 视角:                                               │
+│  扩散模型 vs 自回归模型 → 比速度 → 扩散模型赢了              │
+│                                                             │
+│  关键洞察:                                                  │
+│  扩散模型不需要和自回归 LLM 比生成质量                       │
+│  它只要做好"极快极准的 drafter"就够了                        │
+│  质量由 target 旗舰模型最后做验证来兜底                      │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>6.2 串行-并行-混合的三段论</h3>
+<pre><code>
+推测解码技术演进
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  第一阶段: 纯串行 (2023-2024)                                │
+│  ├── 代表: 标准推测解码, EAGLE 系列                          │
+│  ├── 特点: 草稿阶段串行自回归                                │
+│  ├── 优势: 接受率高, token 间一致性好                        │
+│  └── 瓶颈: 草稿速度有上限 (2-3x)                            │
+│                                                             │
+│  第二阶段: 纯并行 (2025-2026初)                              │
+│  ├── 代表: DFlash, Medusa                                   │
+│  ├── 特点: 草稿阶段完全并行                                  │
+│  ├── 优势: 草稿速度极快 (5-6x)                              │
+│  └── 瓶颈: 多模态碰撞, 后缀衰减                              │
+│                                                             │
+│  第三阶段: 混合架构 (2026-)                                  │
+│  ├── 代表: DSpark                                           │
+│  ├── 特点: 并行主干 + 轻量串行头                             │
+│  ├── 优势: 兼具速度和质量 (6-7x)                            │
+│  └── 哲学: "一点点自回归, 价值巨大"                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>6.3 信息论视角</h3>
+<pre><code>
+每个位置采样时知道的信息
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  串行方案 (EAGLE):                                          │
+│  位置 i 知道: y_1, y_2, ..., y_{i-1} (所有前面的 token)     │
+│  信息量: H(y_{&lt;i})                                          │
+│                                                             │
+│  并行方案 (DFlash):                                         │
+│  位置 i 知道: 仅上下文 x_{1:t} (不知道其他位置)              │
+│  信息量: H(x_{1:t})                                         │
+│                                                             │
+│  混合方案 (DSpark):                                         │
+│  位置 i 知道: 上下文 + y_{i-1} (前一个 token)               │
+│  信息量: H(x_{1:t}) + H(y_{i-1})                            │
+│                                                             │
+│  关键洞察:                                                  │
+│  混合方案只增加了一个 token 的信息量 H(y_{i-1})              │
+│  但效果提升巨大: 衰减从 12.5% 降到 3.7%                     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片七：DFlash 的生产部署</h2>
+<h3>7.1 DSpark 生产数据</h3>
+<pre><code>
+DSpark 在 DeepSeek-V4 的生产数据
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│  单用户生成速度提升:                                         │
+│  ├── V4-Flash: 60%-85%                                     │
+│  └── V4-Pro: 57%-78%                                       │
+│                                                             │
+│  吞吐量提升:                                                │
+│  ├── 低并发: +51%                                          │
+│  └── 高并发: +400%                                         │
+│                                                             │
+│  严格 SLA (120 tok/s/user):                                │
+│  ├── MTP-1: 接近崩溃                                       │
+│  └── DSpark: 从不可行变为正常运行 (吞吐高 661%)             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>7.2 开源资源</h3>
+<table>
+<thead><tr>
+<th>资源</th>
+<th>地址</th>
+<th>说明</th>
+</tr></thead><tbody>
+<tr>
+<td>DFlash 代码</td>
+<td>github.com/z-lab/dflash</td>
+<td>支持 vLLM, SGLang 等</td>
+</tr>
+<tr>
+<td>DSpark 代码</td>
+<td>github.com/deepseek-ai/DeepSpec</td>
+<td>MIT 许可</td>
+</tr>
+<thead><tr>
+<th>DFlash 论文</th>
+<th>arxiv.org/abs/2602.06036</th>
+<th>ICML 2026</th>
+</tr></thead><tbody>
+<tr>
+<td>DSpark 论文</td>
+<td>DeepSpec 仓库</td>
+<td>技术报告</td>
+</tr>
+<tr>
+<td>模型权重</td>
+<td>HuggingFace deepseek-ai</td>
+<td>V4-DSpark 检查点</td>
+</tr>
+</tbody></table>
+<h3>7.3 快速上手</h3>
+<pre><code>
+# 安装 DFlash (vLLM 用户)
+uv pip install -e ".[vllm]"
+
+# 启动服务
+vllm serve Qwen/Qwen3.5-27B \
+  --speculative-config '{
+    "method": "dflash",
+    "model": "z-lab/Qwen3.5-27B-DFlash",
+    "num_speculative_tokens": 15
+  }'
+
+# 安装 DSpark (DeepSpec)
+git clone https://github.com/deepseek-ai/DeepSpec
+cd DeepSpec
+pip install -e .
+
+# 启动 DSpark 服务
+vllm serve deepseek-ai/DeepSeek-V4-Pro-DSpark
+</code></pre>
+<hr>
+<h2>卡片八：关键公式速查</h2>
+<h3>8.1 推测解码核心公式</h3>
+<pre><code>
+自回归解码:
+P(y_1, ..., y_T) = prod_{t=1}^T P(y_t | y_{&lt;t})
+
+推测解码无损性保证:
+P_spec(y_t) = P_target(y_t | y_{&lt;t})
+
+拒绝采样接受概率:
+A_i = min(1, P_target(y_i | y_{&lt;i}) / P_draft(y_i | y_{&lt;i}))
+
+加速比公式:
+S = (1 + alpha + alpha^2 + ... + alpha^K) / (1 + c_draft + c_verify)
+</code></pre>
+<h3>8.2 DFlash 相关公式</h3>
+<pre><code>
+块扩散条件分布:
+P_theta(y_{t+1:t+K} | x_{1:t})
+
+扩散过程:
+y^(0) ~ Uniform(V)
+y^(s) = f_theta(y^(s-1), x_{1:t}, s)
+
+训练目标:
+L = -E_{x,y} [sum_{i=1}^K log P_theta(y_{t+i} | x_{1:t}, y_{t+1:t+i-1}^target)]
+</code></pre>
+<h3>8.3 DSpark 相关公式</h3>
+<pre><code>
+置信度估计:
+c_i = P(accept_i | accept_{&lt;i}, context)
+
+STS 校准:
+c_hat_i = sigma(log(c_i) / T_i)
+
+硬件感知调度:
+L* = argmax_L E[sum_{i=1}^L c_hat_i] s.t. GPU_load &lt; threshold
+</code></pre>
+<hr>
+<h2>卡片九：常见问题 FAQ</h2>
+<h3>Q1: DFlash 和标准推测解码有什么区别？</h3>
+</ol>
+<p><strong>A</strong>: 标准推测解码的草稿模型是自回归的（一个字一个字猜），DFlash 的草稿模型是块扩散的（一口气全部猜完）。DFlash 的草稿速度快得多，但接受率有所下降。</p>
+<h3>Q2: 为什么 DFlash 会有多模态碰撞？</h3>
+<p><strong>A</strong>: 因为 DFlash 在生成 16 个 token 时，每个位置是独立采样的。位置 3 不知道位置 4 采样了什么，导致可能出现不通顺的组合（如 "of problem" 来自 "of course" + "no problem"）。</p>
+<h3>Q3: DSpark 是如何解决后缀衰减的？</h3>
+<p><strong>A</strong>: DSpark 通过 Markov Head 注入前一个 token 的信息，让每个位置的采样都知道"前一个 token 是什么"。这个 256 维的低秩矩阵几乎不增加计算开销，但将接受率衰减从 12.5% 降到 3.7%。</p>
+<h3>Q4: DFlash 的 6x 加速比是怎么算出来的？</h3>
+<p><strong>A</strong>: 加速比 = 使用 DFlash 后的生成时间 / 不使用 DFlash 的生成时间。在 Qwen3-8B 上，DFlash 通过一次前向传播生成 16 个候选 token，其中平均约 3.8 个被接受，整体实现 6 倍无损加速。</p>
+<h3>Q5: DFlash 适合什么场景？</h3>
+<p><strong>A</strong>: DFlash 适合对生成速度要求高、且任务相对简单的场景（如对话、翻译、代码补全）。对于复杂推理任务（如数学证明），接受率可能较低，DFlash 的优势会减弱。</p>
+<h3>Q6: 如何在自己的模型上使用 DFlash？</h3>
+<p><strong>A</strong>: DFlash 支持 vLLM、SGLang、Transformers、MLX 等主流框架。可以通过 <code>pip install</code> 安装，然后通过 <code>--speculative-config</code> 参数启用。详见 github.com/z-lab/dflash。</p>
+<hr>
+<h2>卡片十：学习路径建议</h2>
+<h3>10.1 前置知识</h3>
+<pre><code>
+学习 DFlash 的前置知识
+├── 必需
+│   ├── Transformer 架构
+│   ├── 自回归解码
+│   └── 推测解码基础
+├── 推荐
+│   ├── 扩散模型基础
+│   ├── 双向注意力机制
+│   └── 拒绝采样
+└── 进阶
+    ├── 块扩散（Block Diffusion）
+    ├── 半自回归生成
+    └── 置信度校准
+</code></pre>
+<h3>10.2 推荐阅读顺序</h3>
+<ol>
+<li>**入门**：标准推测解码论文（Google 2023）</li>
+<li>**进阶**：Medusa 论文（ICML 2024）</li>
+<li>**深入**：EAGLE 系列论文（2024-2025）</li>
+</ul>
+<p>4. <strong>核心</strong>：DFlash 论文（ICML 2026）</p>
+<p>5. <strong>前沿</strong>：DSpark 技术报告（2026）</p>
+<h3>10.3 实践建议</h3>
+<ol>
+<li>**先跑通标准推测解码**：理解 draft-verify 范式</li>
+<li>**尝试 Medusa**：体验多头并行预测</li>
+<li>**部署 DFlash**：在 vLLM 上启用 DFlash，观察加速效果</li>
+</ul>
+<p>4. <strong>对比实验</strong>：在相同任务上对比 DFlash 和 EAGLE-3</p>
+<p>5. <strong>阅读 DSpark 代码</strong>：理解半自回归和置信度调度的实现</p>
+<hr>
+<h2>附录：术语表</h2>
+<table>
+<thead><tr>
+<th>术语</th>
+<th>英文</th>
+<th>定义</th>
+</tr></thead><tbody>
+<tr>
+<td>推测解码</td>
+<td>Speculative Decoding</td>
+<td>用小模型猜测 token，大模型验证的加速范式</td>
+</tr>
+<tr>
+<td>块扩散</td>
+<td>Block Diffusion</td>
+<td>一次性生成整个 token 块的扩散生成方式</td>
+</tr>
+<thead><tr>
+<th>多模态碰撞</th>
+<th>Multimodal Collision</th>
+<th>并行采样导致的不通顺 token 组合</th>
+</tr></thead><tbody>
+<tr>
+<td>后缀衰减</td>
+<td>Suffix Decay</td>
+<td>序列越靠后接受率越低的现象</td>
+</tr>
+<tr>
+<td>半自回归</td>
+<td>Semi-Autoregressive</td>
+<td>并行生成 + 轻量串行依赖注入的混合范式</td>
+</tr>
+<thead><tr>
+<th>置信度调度</th>
+<th>Confidence Scheduling</th>
+<th>根据置信度和负载动态调整验证策略</th>
+</tr></thead><tbody>
+<tr>
+<td>拒绝采样</td>
+<td>Rejection Sampling</td>
+<td>保证推测解码无损性的数学机制</td>
+</tr>
+<tr>
+<td>接受长度</td>
+<td>Acceptance Length</td>
+<td>每轮草稿-验证中平均被接受的 token 数</td>
+</tr>
+<thead><tr>
+<th>顺序温度缩放</th>
+<th>Sequential Temperature Scaling</th>
+<th>校准预测概率与真实接受率的方法</th>
+</tr></thead><tbody>
+<tr>
+<td>硬件感知调度</td>
+<td>Hardware-Aware Scheduling</td>
+<td>根据 GPU 负载动态调整计算策略</td>
+</tr>
+</tbody></table>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

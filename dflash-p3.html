@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFlash — 拆书分析 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="dflash-p2.html">← 上一页</a>
+        <span class="nav-title">DFlash — 拆书分析</span>
+        <a href="dflash-p4.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>DFlash 拆书：一口气猜完的代价</h1>
+<blockquote><p>**一句话概括**：DFlash 把推测解码的草稿阶段从"一个字一个字猜"改成"一口气全部猜完"，速度飞升，但每个位置互不知道对方猜了什么。</p></blockquote>
+<hr>
+<h2>一、作者在答什么问题</h2>
+<h3>1.1 大模型推理的"慢"到底慢在哪</h3>
+<p>大语言模型生成文字的过程，本质上是一个极其低效的串行链条。</p>
+<p>你说一句"今天天气不错"，模型不能一口气把六个字同时吐出来。它必须先算"今"，再把"今"放进上下文算"天"，再把"今天"放进去算"气"......每出一个字，整个模型（可能有上万亿参数）就要完整跑一遍前向传播。</p>
+<p>这就是自回归解码（Autoregressive Decoding）的原罪：</p>
+<p>$$\text{总时间} = T \times C_{\text{forward}}$$</p>
+<p>其中 $T$ 是生成的 token 数量，$C_{\text{forward}}$ 是单次前向传播的计算量。对于 DeepSeek-V4-Pro 这种 1.6 万亿参数的模型，$C_{\text{forward}}$ 本身就很大，再乘以 $T$，等待时间自然长得令人发指。</p>
+<p>GPU 的委屈在于：它天生是为大规模并行计算设计的，一次能算几万个矩阵乘法。但自回归解码强制它每次只算一个序列——就像一个能同时炒 100 个菜的大厨，被迫一次只炒一个，炒完一个再炒下一个。</p>
+<h3>1.2 推测解码：找个"快枪手"先猜</h3>
+<p>2023 年 Google 提出的推测解码（Speculative Decoding）是第一个真正有效的解法。</p>
+<p>思路极其巧妙：</p>
+<ol>
+<li>找一个小的草稿模型（Draft Model），比如 7B 参数，先飞快地自回归猜出一串 token（比如 5-8 个）</li>
+<li>让大模型（Target Model）一次性并行验证这串 token</li>
+<li>通过拒绝采样（Rejection Sampling），保证输出质量和直接用大模型一模一样</li>
+</ul>
+<p>数学保证：</p>
+<p>$$P_{\text{output}}^{\text{spec}} = P_{\text{output}}^{\text{target}}$$</p>
+<p>即推测解码的输出分布严格等价于目标模型的原始分布。这不是近似，是数学上的精确等价。</p>
+<p><strong>关键公式</strong>：</p>
+<p>加速比 $S$ 取决于接受率 $\alpha$ 和草稿/验证的相对成本：</p>
+<p>$$S = \frac{1 + \alpha + \alpha^2 + \cdots + \alpha^K}{1 + c_{\text{draft}} + c_{\text{verify}}}$$</p>
+<p>当 $\alpha$ 很高（草稿模型猜得很准）时，加速比接近 $K$（草稿长度）。</p>
+<h3>1.3 但草稿模型也慢</h3>
+<p>问题出在哪？草稿模型本身也是自回归的。</p>
+<p>它虽然比目标模型小很多（比如 7B vs 70B），但仍然是"一个字一个字猜"。这就像你找了个写字飞快的小弟帮你打草稿，但小弟也是一个字一个字写的——他的速度上限就摆在那里。</p>
+<p>实际效果：标准推测解码通常只能实现 2-3x 的加速比。对于一个需要 10 秒生成的回答，变成 3-5 秒。有改善，但远不够。</p>
+<h3>1.4 DFlash 的核心问题</h3>
+<p>DFlash 的作者问了一个更激进的问题：</p>
+<p><strong>能不能连草稿模型都不要自回归了？直接一口气把所有候选 token 全部猜出来？</strong></p>
+<p>这个问题的本质是：能不能把草稿阶段的 $O(K)$ 串行计算变成 $O(1)$ 的并行计算？</p>
+<hr>
+<h2>二、立在什么不证之假设上</h2>
+<h3>2.1 假设一：扩散模型可以一次生成整个 token 块</h3>
+<p>DFlash 的核心假设是：块扩散（Block Diffusion）模型能够通过一次前向传播，同时生成一整块（16 个）token 的候选。</p>
+<p>这个假设来自扩散模型在图像生成领域的成功经验。在 Stable Diffusion 等模型中，整张图像（几百万像素）是通过去噪过程同时生成的。为什么不能把同样的思路搬到文本生成上？</p>
+<p>具体来说：</p>
+<ul>
+<li>初始化：16 个位置全部填充随机 token（噪声）</li>
+<li>去噪：通过双向注意力 Transformer，一次前向传播，所有位置同时更新</li>
+<li>输出：16 个候选 token</li>
+</ul>
+<p><strong>关键设计</strong>：使用双向注意力（<code>is_causal=False</code>），每个位置可以同时看到所有其他位置的信息。这和自回归模型的因果注意力（只能看到前面的 token）形成鲜明对比。</p>
+<h3>2.2 假设二：草稿质量不需要很好，目标模型会兜底</h3>
+<p>这是 DFlash 最精妙的洞察之一。</p>
+<p>传统思路认为，草稿模型必须猜得足够准，否则验证阶段会浪费大量计算。但 DFlash 的作者意识到：</p>
+<p><strong>草稿模型不需要和自回归 LLM 比生成质量。它只需要做好"极快极准的 drafter"就够了。质量由 target 旗舰模型最后做验证来兜底。</strong></p>
+<p>这是一种"能力重新定位"策略：</p>
+<ul>
+<li>扩散模型在生成质量上确实打不过自回归模型——这是事实</li>
+<li>但在"速度"这个维度上，扩散模型有天然优势——一次前向传播生成所有 token</li>
+<li>既然质量有目标模型兜底，那就全力发挥速度优势</li>
+</ul>
+<p>数学上，只要拒绝采样正确实现，即使草稿模型的分布和目标分布差异很大，最终输出仍然是无损的。草稿模型只需要保证"足够多的 token 被接受"就够了。</p>
+<h3>2.3 假设三：各位置可以独立采样</h3>
+<p>DFlash 的块扩散模型在生成 16 个 token 时，每个位置是独立采样的。</p>
+<p>这意味着：位置 3 的采样不知道位置 4 采样了什么，位置 7 的采样也不知道位置 1 采样了什么。</p>
+<p>这个假设带来了速度上的巨大优势（不需要串行依赖），但也埋下了"多模态碰撞"的隐患。</p>
+<h3>2.4 假设四：速度优势可以弥补质量损失</h3>
+<p>DFlash 的底层逻辑是一个权衡：</p>
+<p>$$\text{净收益} = \text{速度提升} - \text{接受率下降带来的浪费}$$</p>
+<p>即使因为独立采样导致接受率下降（比如从 0.80 降到 0.63），但如果草稿生成速度快了 5 倍，净收益仍然是正的。</p>
+<hr>
+<h2>三、用什么框架看</h2>
+<h3>3.1 串行 vs 并行 vs 混合：三角权衡</h3>
+<p>DFlash 的出现，将推测解码的技术路线推到了一个清晰的三角权衡框架中：</p>
+<pre><code>
+                    质量
+                   /    \
+                  /      \
+                 /  混合  \
+                / (DSpark) \
+               /            \
+    串行 -----+--------------+----- 并行
+  (EAGLE)                  (DFlash)
+   高质量                   高速度
+   低速度                   低质量
+</code></pre>
+<p><strong>串行方案（EAGLE 系列）</strong>：</p>
+<ul>
+<li>草稿阶段完全自回归</li>
+<li>每个 token 都知道前面所有 token 的信息</li>
+<li>接受率高（0.78-0.65），衰减慢</li>
+<li>但草稿速度慢</li>
+</ul>
+<p><strong>并行方案（DFlash）</strong>：</p>
+<ul>
+<li>草稿阶段完全并行</li>
+<li>每个 token 不知道其他 token 的信息</li>
+<li>接受率较低（0.72-0.63），衰减快</li>
+<li>但草稿速度极快（一次前向传播）</li>
+</ul>
+<p><strong>混合方案（DSpark）</strong>：</p>
+<ul>
+<li>并行主干 + 轻量串行头</li>
+<li>每个 token 知道前一个 token 的信息</li>
+<li>接受率高（0.82-0.79），衰减极慢</li>
+<li>草稿速度接近并行</li>
+<h3>3.2 信息论视角：每个位置知道多少</h3>
+</ol>
+<p>从信息论的角度看，三种方案的区别在于每个位置在采样时拥有多少信息：</p>
+<table>
+<thead><tr>
+<th>方案</th>
+<th>位置 $i$ 采样时知道的信息</th>
+<th>信息量</th>
+</tr></thead><tbody>
+<tr>
+<td>串行</td>
+<td>$y_1, y_2, \ldots, y_{i-1}$（所有前面的 token）</td>
+<td>$H(y_{<i})$</td>
+</tr>
+<tr>
+<td>并行</td>
+<td>仅上下文 $x_{1:t}$（不知道其他位置）</td>
+<td>$H(x_{1:t})$</td>
+</tr>
+<thead><tr>
+<th>混合</th>
+<th>上下文 + $y_{i-1}$（前一个 token）</th>
+<th>$H(x_{1:t}) + H(y_{i-1})$</th>
+</tr></thead><tbody>
+</tbody></table>
+<p><strong>关键洞察</strong>：混合方案只增加了一个 token 的信息量（$H(y_{i-1})$），但效果提升巨大。这说明在推测解码中，"一点点自回归信息"的价值远超其成本。</p>
+<h3>3.3 经济学视角：成本-收益分析</h3>
+<p>推测解码的经济学模型：</p>
+<p><strong>成本</strong>：</p>
+<ul>
+<li>草稿生成成本：$C_{\text{draft}}$</li>
+<li>验证成本：$C_{\text{verify}} \times K$（$K$ 为草稿长度）</li>
+<li>拒绝浪费：$(1 - \alpha) \times C_{\text{verify}}$</li>
+</ul>
+<p><strong>收益</strong>：</p>
+<ul>
+<li>接受的 token 数：$\alpha \times K$</li>
+<li>节省的目标模型计算：$\alpha \times K \times C_{\text{target}}$</li>
+</ul>
+<p><strong>净收益公式</strong>：</p>
+<p>$$\text{Net} = \alpha \cdot K \cdot C_{\text{target}} - C_{\text{draft}} - K \cdot C_{\text{verify}}$$</p>
+<p>DFlash 的策略：</p>
+<ul>
+<li>$C_{\text{draft}}$ 极低（一次前向传播，且模型很小）</li>
+<li>$K$ 很大（16 个 token）</li>
+<li>$\alpha$ 有所下降（但不至于太低）</li>
+<li>净收益仍然是正的，而且比串行方案更大</li>
+<h3>3.4 扩散模型的生态位理论</h3>
+</ol>
+<p>DFlash 的诞生揭示了一个深刻的技术洞察：</p>
+<p><strong>一项技术不必在所有维度上竞争 SOTA。找到自身架构优势所在的场景，反而能创造独特价值。</strong></p>
+<p>扩散语言模型 vs 自回归语言模型：</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>自回归模型</th>
+<th>扩散模型</th>
+</tr></thead><tbody>
+<tr>
+<td>生成质量</td>
+<td>高（当前主流）</td>
+<td>中（尚未超越自回归）</td>
+</tr>
+<tr>
+<td>生成速度</td>
+<td>低（串行）</td>
+<td>高（并行）</td>
+</tr>
+<thead><tr>
+<th>序列一致性</th>
+<th>高</th>
+<th>低（多模态碰撞）</th>
+</tr></thead><tbody>
+<tr>
+<td>适合作为</td>
+<td>目标模型</td>
+<td>草稿模型</td>
+</tr>
+</tbody></table>
+<p>DFlash 的洞察：扩散模型不需要去和自回归 LLM 比生成质量，它只要做好"极快极准的 drafter"就够了。</p>
+<hr>
+<h2>四、得出什么结论</h2>
+<h3>4.1 纯并行有速度但缺质量</h3>
+<p>DFlash 证明了完全并行的草稿生成是可行的，而且速度优势巨大（6x 加速比）。</p>
+<p>但并行方案有两个致命问题：</p>
+<p><strong>问题一：多模态碰撞</strong></p>
+<p>各位置独立采样导致不通顺的 token 组合。例如：</p>
+<ul>
+<li>位置 3 采样到 "of"（来自 "of course"）</li>
+<li>位置 4 采样到 "problem"（来自 "no problem"）</li>
+<li>结果："of problem"——语义崩塌</li>
+</ul>
+<p><strong>问题二：后缀衰减</strong></p>
+<p>位置越靠后，接受率越低：</p>
+<ul>
+<li>位置 1：0.72</li>
+<li>位置 7：0.63</li>
+<li>衰减幅度：12.5%</li>
+<h3>4.2 纯串行有质量但缺速度</h3>
+</ol>
+<p>EAGLE 系列证明了串行草稿可以获得高接受率，但速度提升有上限（3-4x）。</p>
+<h3>4.3 混合才是最优解</h3>
+<p>DSpark 的结论令人振奋：</p>
+<p><strong>仅 2 层 DSpark（并行主干 + 256 维 Markov Head）的性能就超过 5 层 DFlash。</strong></p>
+<p>这意味着：</p>
+<ul>
+<li>只需要"一点点"自回归信息注入（前一个 token 是什么）</li>
+<li>就能获得"巨大的"质量提升（接受率衰减从 12.5% 降到 3%）</li>
+<li>而速度几乎不损失（端到端延迟增加仅 0.6%-1.3%）</li>
+</ul>
+<p>DSpark 的生产数据：</p>
+<ul>
+<li>单用户生成速度提升 60%-85%</li>
+<li>低并发吞吐提升 51%</li>
+<li>高并发吞吐提升 400%</li>
+<h3>4.4 系统思维不可或缺</h3>
+</ol>
+<p>DSpark 的成功不仅是算法的胜利，更是系统思维的胜利。</p>
+<p>置信度调度验证（Confidence-Scheduled Verification）解决了"上线"的关键问题：</p>
+<ul>
+<li>轻负载时多验证（4-6 个 token）</li>
+<li>高并发时少验证（2-3 个 token）</li>
+<li>动态调整，保证系统稳定</li>
+</ul>
+<p>多少推测解码方案在论文上数据好看，一上高并发就崩。DSpark 把"上线"作为第一设计目标。</p>
+<hr>
+<h2>五、精神内核</h2>
+<h3>取景框</h3>
+<blockquote><p>**"一口气猜完，但每个位置互不知道对方猜了什么。"**</p></blockquote>
+<p>这句话精确地捕捉了 DFlash 的本质。</p>
+<p><strong>"一口气猜完"</strong>——并行扩散的速度优势，一次前向传播生成 16 个 token。</p>
+<p><strong>"每个位置互不知道对方猜了什么"</strong>——独立采样的代价，多模态碰撞和后缀衰减的根源。</p>
+<p>而 DSpark 的故事则是：<strong>让每个位置偷偷瞄一眼前面那个位置猜了什么——只这一眼，就值千金。</strong></p>
+<h3>更深层的启示</h3>
+<p>DFlash 的故事揭示了一个普适性的工程哲学：</p>
+<p><strong>在串行和并行之间，最优解往往不是二选一，而是"并行主干 + 一点点串行"。</strong></p>
+<p>这个模式在很多领域都出现过：</p>
+<ul>
+<li>计算机体系结构：流水线（并行执行 + 阶段间串行依赖）</li>
+<li>经济学：市场（并行决策 + 价格信号传递信息）</li>
+<li>生物学：神经系统（并行处理 + 前馈/反馈连接）</li>
+</ul>
+<p>纯粹的并行太快但太乱，纯粹的串行太准但太慢。混合架构的精妙在于：用最少的串行开销，换取最大的质量提升。</p>
+<p>DSpark 用 256 维的低秩矩阵（对万亿参数模型来说几乎可以忽略不计），实现了从"能用"到"好用"的跨越。</p>
+<p>这就是工程的魅力：不是追求极致的速度或极致的质量，而是在两者之间找到那个精妙的平衡点。</p>
+<hr>
+<h2>附录：关键数据速查</h2>
+<table>
+<thead><tr>
+<th>指标</th>
+<th>数值</th>
+</tr></thead><tbody>
+<tr>
+<td>DFlash 加速比</td>
+<td>6x（Qwen3-8B）</td>
+</tr>
+<tr>
+<td>DFlash Block Size</td>
+<td>16 tokens</td>
+</tr>
+<tr>
+<td>DFlash 接受率衰减</td>
+<td>0.72 → 0.63（-12.5%）</td>
+</tr>
+<thead><tr>
+<th>DSpark 接受率衰减</th>
+<th>0.82 → 0.79（-3.7%）</th>
+</tr></thead><tbody>
+<tr>
+<td>DSpark 速度提升</td>
+<td>60%-85%（V4-Flash）</td>
+</tr>
+<tr>
+<td>DSpark 吞吐提升</td>
+<td>51%（低并发），400%（高并发）</td>
+</tr>
+<tr>
+<td>Markov Head 维度</td>
+<td>256（低秩分解）</td>
+</tr>
+<thead><tr>
+<th>STS 校准误差</th>
+<th>约 1%</th>
+</tr></thead><tbody>
+<tr>
+<td>开源协议</td>
+<td>MIT（DeepSpec）</td>
+</tr>
+</tbody></table>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>硬件感知调度与在线校准 — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="hardware-aware-scheduling-p1.html">← 上一页</a>
+        <span class="nav-title">硬件感知调度与在线校准 — 经典论文</span>
+        <a href="hardware-aware-scheduling-p3.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>硬件感知调度与在线校准 — 核心论文深度解读</h1>
+<blockquote><p>**论文脉络**：从推测解码的基础框架，到自适应草稿长度的探索，再到硬件感知调度和在线校准的最终提出——一条从"加速推理"到"智能调度"的学术演化路径。</p></blockquote>
+<hr>
+<h2>一、奠基论文：推测解码与自适应长度</h2>
+<h3>1.1 Leviathan et al. (2023) — 推测解码框架</h3>
+<p><strong>论文</strong>：<em>Fast Inference from Transformers via Speculative Decoding</em></p>
+<p><strong>核心贡献</strong>：建立了推测解码的理论框架，定义了草稿-验证范式。理论加速比公式：</p>
+<p>$$</p>
+<p>S = \frac{\alpha K + 1}{T_{\text{draft}} \cdot K + T_{\text{verify}}}</p>
+<p>$$</p>
+<p><strong>局限性</strong>：假设固定草稿长度 $K$，未考虑自适应调整。</p>
+<h3>1.2 Chen et al. (2023) — 推测采样</h3>
+<p><strong>论文</strong>：<em>Accelerating Large Language Model Decoding with Speculative Sampling</em></p>
+<p><strong>核心贡献</strong>：独立提出推测解码，给出了完整的拒绝采样算法和正确性证明。关键定理：</p>
+<p>$$</p>
+<p>\mathbb{E}[\text{accept}] = 1 - \text{TVD}(p_{\text{draft}}, p_{\text{target}})</p>
+<p>$$</p>
+<p><strong>与调度的关系</strong>：接受率直接取决于分布差异，而分布差异随位置变化——这为自适应长度提供了理论基础。</p>
+<h3>1.3 SpecInfer (2023) — 树状推测</h3>
+<p><strong>论文</strong>：<em>SpecInfer: Accelerating Generative LLM Serving with Tree-based Speculative Inference</em></p>
+<p><strong>核心贡献</strong>：提出树状草稿结构，通过集成多个小模型提升草稿多样性。</p>
+<p><strong>与调度的关系</strong>：树状结构引入了"验证多少"的新维度——不仅可以选择链的长度，还可以选择树的形状。</p>
+<hr>
+<h2>二、自适应长度论文</h2>
+<h3>2.1 EAGLE (Li et al., 2024)</h3>
+<p><strong>论文</strong>：<em>EAGLE: Speculative Sampling Requires Rethinking Feature Level</em></p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>特征级推测：在目标模型中间层提取特征</li>
+<li>自适应草稿长度：基于置信度阈值动态调整</li>
+</ul>
+<p><strong>自适应策略</strong>：</p>
+<p>$$</p>
+<p>K_{\text{EAGLE}} = \min\{k : P(q_k) < \theta_{\text{conf}}\}</p>
+<p>$$</p>
+<p>当草稿模型的 top-1 概率低于阈值 $\theta_{\text{conf}}$ 时停止生成。</p>
+<p><strong>局限性</strong>：只看草稿模型的置信度，不考虑硬件状态。</p>
+<h3>2.2 Medusa (Cai et al., 2024)</h3>
+<p><strong>论文</strong>：<em>Medusa: Simple LLM Inference Acceleration with Multiple Decoding Heads</em></p>
+<p><strong>核心贡献</strong>：多个 MLP 头同时预测多个未来位置，通过树状注意力验证。</p>
+<p><strong>与调度的关系</strong>：Medusa 的头数决定了最大预测步数，但实际验证长度仍然是固定的。</p>
+<h3>2.3 Sarathi-Serve (2024)</h3>
+<p><strong>论文</strong>：<em>Sarathi-Serve: Efficient LLM Serving with Chunked Prefills and Speculative Decoding</em></p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>Chunked Prefill：将长 prompt 分成多个 chunk 处理</li>
+<li>与推测解码结合：在 decode 阶段插入 prefill chunk</li>
+</ul>
+<p><strong>调度策略</strong>：固定 chunk 大小，根据队列长度动态调整 prefill/decode 比例。</p>
+<p><strong>局限性</strong>：</p>
+<ul>
+<li>chunk 大小固定，不感知硬件状态</li>
+<li>需要 CPU 参与调度决策</li>
+<li>不考虑草稿模型的置信度</li>
+<hr>
+<h2>三、校准理论论文</h2>
+<h3>3.1 Temperature Scaling (Guo et al., 2017)</h3>
+</ol>
+<p><strong>论文</strong>：<em>On Calibration of Modern Neural Networks</em></p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>现代神经网络普遍存在校准问题</li>
+<li>温度缩放是简单有效的校准方法</li>
+<li>ECE 作为校准质量的标准度量</li>
+</ul>
+<p><strong>温度缩放公式</strong>：</p>
+<p>$$</p>
+<p>p_{\text{calibrated}} = \text{softmax}(z / T), \quad T^* = \arg\min_T \text{NLL}(z/T, y)</p>
+<p>$$</p>
+<h3>3.2 Sequential Calibration (Zhang et al., 2024)</h3>
+<p><strong>论文</strong>：<em>Sequential Temperature Scaling for Speculative Decoding</em></p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>发现推测解码中不同位置的校准误差模式不同</li>
+<li>提出顺序温度缩放：每个位置一个温度参数</li>
+<li>证明顺序校准可以将 ECE 从 5% 降到 ~1%</li>
+</ul>
+<p><strong>关键发现</strong>：</p>
+<table>
+<thead><tr>
+<th>位置</th>
+<th>最优温度</th>
+<th>标准温度</th>
+<th>校准误差</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>1.02</td>
+<td>1.05</td>
+<td>2.1%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1.15</td>
+<td>1.05</td>
+<td>3.8%</td>
+</tr>
+<thead><tr>
+<th>8</th>
+<th>1.32</th>
+<th>1.05</th>
+<th>5.2%</th>
+</tr></thead><tbody>
+<tr>
+<td>12</td>
+<td>1.58</td>
+<td>1.05</td>
+<td>7.1%</td>
+</tr>
+<tr>
+<td>16</td>
+<td>1.85</td>
+<td>1.05</td>
+<td>8.5%</td>
+</tr>
+</tbody></table>
+<p>位置越远，最优温度越高，标准温度的校准误差越大。</p>
+<h3>3.3 Online Calibration (Kumar et al., 2024)</h3>
+<p><strong>论文</strong>：<em>Online Calibration of Large Language Models</em></p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>LLM 的校准状态随输入分布变化</li>
+<li>提出在线校准方法：持续更新温度参数</li>
+<li>使用滑动窗口估计当前校准状态</li>
+<hr>
+<h2>四、硬件感知论文</h2>
+<h3>4.1 vLLM (Kwon et al., 2023)</h3>
+</ol>
+<p><strong>论文</strong>：<em>Efficient Memory Management for LLM Serving with PagedAttention</em></p>
+<p><strong>与硬件感知调度的关系</strong>：vLLM 的 continuous batching 机制为硬件感知调度提供了基础——调度器需要感知当前的批次大小和 GPU 状态。</p>
+<h3>4.2 Orca (Yu et al., 2022)</h3>
+<p><strong>论文</strong>：<em>Orca: A Distributed Serving System for Transformer-Based Generative Models</em></p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>Iteration-level scheduling</li>
+<li>动态 batching 策略</li>
+</ul>
+<p><strong>与硬件感知的关系</strong>：Orca 的调度器需要考虑 GPU 的吞吐特性来决定何时合并请求。</p>
+<h3>4.3 DSpark (核心论文)</h3>
+<p><strong>论文</strong>：<em>DSpark: Efficient Speculative Decoding with Hardware-Aware Scheduling</em></p>
+<p><strong>核心贡献</strong>：</p>
+<ol>
+<li>**置信度头**：轻量级分类器预估每个草稿位置的验证存活概率</li>
+</ul>
+<p>$$</p>
+<p>P_{\text{survive}}(i) = \sigma(w_c^T \cdot h_i + b_c)</p>
+<p>$$</p>
+<p>参数量仅 $d_{\text{hidden}} + 1$，计算成本可忽略。</p>
+<ol>
+<li>**吞吐量参考曲线**：系统启动时预先测算 GPU 在不同配置下的吞吐数据</li>
+<li>**动态最优求解**：在 GPU 内部实时求解最优验证长度</li>
+</ul>
+<p>$$</p>
+<p>K^* = \arg\max_K \frac{\sum_{i=1}^{K} P_{\text{survive}}(i) + 1}{T_{\text{verify}}(K, B) / \Theta(B)}</p>
+<p>$$</p>
+<p>4. <strong>顺序温度缩放</strong>：为每个草稿位置使用独立的温度参数</p>
+<p>$$</p>
+<p>p^{(i)} = \text{softmax}(z^{(i)} / T_i)</p>
+<p>$$</p>
+<p>5. <strong>GPU 内部执行</strong>：整套调度逻辑完全在 GPU 上运行</p>
+<p><strong>核心实验结果</strong>：</p>
+<table>
+<thead><tr>
+<th>配置</th>
+<th>固定 K=8</th>
+<th>自适应 K</th>
+<th>硬件感知调度</th>
+<th>在线校准</th>
+<th>全量 DSpark</th>
+</tr></thead><tbody>
+<tr>
+<td>吞吐量 (tok/s)</td>
+<td>4500</td>
+<td>5800</td>
+<td>7200</td>
+<td>7800</td>
+<td>8500</td>
+</tr>
+<tr>
+<td>加速比</td>
+<td>1.5x</td>
+<td>1.9x</td>
+<td>2.2x</td>
+<td>2.3x</td>
+<td>2.5x</td>
+</tr>
+<thead><tr>
+<th>ECE</th>
+<th>5.2%</th>
+<th>5.2%</th>
+<th>5.2%</th>
+<th>1.0%</th>
+<th>1.0%</th>
+</tr></thead><tbody>
+<tr>
+<td>CPU 开销</td>
+<td>0%</td>
+<td>0%</td>
+<td>0%</td>
+<td>0%</td>
+<td>0%</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>五、论文脉络总结</h2>
+<pre><code>
+推测解码基础
+├── Leviathan et al. (2023): 框架 + 无损保证
+├── Chen et al. (2023): 推测采样 + KL 分析
+└── SpecInfer (2023): 树状草稿
+    │
+    ▼
+自适应长度
+├── EAGLE (2024): 置信度阈值 → 动态长度
+├── Medusa (2024): 多头预测 → 固定长度
+└── Sarathi-Serve (2024): Chunked → 固定 chunk
+    │
+    ▼
+硬件感知调度 (DSpark)
+├── 置信度头 → 位置级存活概率
+├── 吞吐量曲线 → 硬件成本模型
+└── 动态最优 → GPU 内部求解
+    │
+    ▼
+在线校准
+├── Temperature Scaling (2017): 全局温度
+├── Sequential TS (2024): 位置级温度
+└── Online Calibration (2024): 持续更新
+</code></pre>
+<hr>
+<h2>六、关键数据汇总</h2>
+<table>
+<thead><tr>
+<th>论文</th>
+<th>年份</th>
+<th>核心方法</th>
+<th>加速比</th>
+<th>ECE</th>
+<th>CPU 开销</th>
+</tr></thead><tbody>
+<tr>
+<td>Leviathan et al.</td>
+<td>2023</td>
+<td>固定 K 推测</td>
+<td>1.5x</td>
+<td>N/A</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>SpecInfer</td>
+<td>2023</td>
+<td>树状草稿</td>
+<td>1.8x</td>
+<td>N/A</td>
+<td>0%</td>
+</tr>
+<thead><tr>
+<th>EAGLE</th>
+<th>2024</th>
+<th>置信度自适应</th>
+<th>2.3x</th>
+<th>N/A</th>
+<th>0%</th>
+</tr></thead><tbody>
+<tr>
+<td>Sarathi-Serve</td>
+<td>2024</td>
+<td>Chunked</td>
+<td>1.8x</td>
+<td>N/A</td>
+<td>需要</td>
+</tr>
+<tr>
+<td>Temp Scaling</td>
+<td>2017</td>
+<td>全局温度</td>
+<td>—</td>
+<td>3-5%</td>
+<td>0%</td>
+</tr>
+<thead><tr>
+<th>**DSpark**</th>
+<th>**2024**</th>
+<th>**硬件感知+在线校准**</th>
+<th>**2.5x**</th>
+<th>**~1%**</th>
+<th>**0%**</th>
+</tr></thead><tbody>
+</tbody></table>
+<hr>
+<h2>七、关键技术细节补充</h2>
+<h3>7.1 置信度头的训练数据构造</h3>
+<p>置信度头的训练需要构造正负样本：</p>
+<ul>
+<li>正样本：草稿 token 被目标模型接受的位置</li>
+<li>负样本：草稿 token 被目标模型拒绝的位置</li>
+<pre><code>
+def construct_training_data(draft_model, target_model, dataset):
+    """构造置信度头训练数据"""
+    data = []
+    for batch in dataset:
+        # 草稿生成
+        draft_out = draft_model(batch["input_ids"])
+        draft_hidden = draft_out.hidden_states[-1]
+        
+        # 目标模型验证
+        target_out = target_model(batch["input_ids"])
+        target_logits = target_out.logits
+        
+        # 判断接受/拒绝
+        draft_probs = F.softmax(draft_out.logits, dim=-1)
+        target_probs = F.softmax(target_logits, dim=-1)
+        
+        for i in range(batch["input_ids"].shape[1]):
+            token = batch["input_ids"][0, i]
+            ratio = target_probs[0, i, token] / (draft_probs[0, i, token] + 1e-8)
+            accepted = 1 if torch.rand(1).item() &lt; ratio.item() else 0
+            
+            data.append({
+                "hidden": draft_hidden[0, i],
+                "label": accepted
+            })
+    
+    return data
+</code></pre>
+<h3>7.2 吞吐量曲线的拟合方法</h3>
+</ol>
+<p>吞吐量曲线可以使用分段线性模型或高斯过程来拟合：</p>
+<p>$$</p>
+<p>\Theta(B, K) = \sum_{i} \alpha_i \cdot \phi_i(B, K)</p>
+<p>$$</p>
+<p>其中 $\phi_i$ 是基函数，$\alpha_i$ 是系数。</p>
+<h3>7.3 在线校准的收敛实验</h3>
+<table>
+<thead><tr>
+<th>更新步数</th>
+<th>位置 1 ECE</th>
+<th>位置 8 ECE</th>
+<th>位置 16 ECE</th>
+<th>平均 ECE</th>
+</tr></thead><tbody>
+<tr>
+<td>0</td>
+<td>7.8%</td>
+<td>12.5%</td>
+<td>18.2%</td>
+<td>12.8%</td>
+</tr>
+<tr>
+<td>100</td>
+<td>4.2%</td>
+<td>6.8%</td>
+<td>9.5%</td>
+<td>6.8%</td>
+</tr>
+<thead><tr>
+<th>500</th>
+<th>2.1%</th>
+<th>3.2%</th>
+<th>4.5%</th>
+<th>3.3%</th>
+</tr></thead><tbody>
+<tr>
+<td>1000</td>
+<td>1.2%</td>
+<td>1.8%</td>
+<td>2.5%</td>
+<td>1.8%</td>
+</tr>
+<tr>
+<td>5000</td>
+<td>0.8%</td>
+<td>1.0%</td>
+<td>1.3%</td>
+<td>1.0%</td>
+</tr>
+<thead><tr>
+<th>10000</th>
+<th>0.7%</th>
+<th>0.9%</th>
+<th>1.1%</th>
+<th>0.9%</th>
+</tr></thead><tbody>
+</tbody></table>
+<p>收敛速度在 1000 步后显著放缓，说明 1000 步是一个合理的训练预算。</p>
+<h3>7.4 不同硬件平台的吞吐量对比</h3>
+<table>
+<tr>
+<td>GPU</td>
+<td>批次 B=1, K=8</td>
+<td>批次 B=8, K=8</td>
+<td>批次 B=32, K=8</td>
+<td>峰值吞吐</td>
+</tr>
+<thead><tr>
+<th>A100 80GB</th>
+<th>820 tok/s</th>
+<th>5200 tok/s</th>
+<th>15200 tok/s</th>
+<th>15200</th>
+</tr></thead><tbody>
+<tr>
+<td>H100 80GB</td>
+<td>1200 tok/s</td>
+<td>7800 tok/s</td>
+<td>22000 tok/s</td>
+<td>22000</td>
+</tr>
+<tr>
+<td>L40S 48GB</td>
+<td>650 tok/s</td>
+<td>4100 tok/s</td>
+<td>11500 tok/s</td>
+<td>11500</td>
+</tr>
+<thead><tr>
+<th>Orin 16GB</th>
+<th>180 tok/s</th>
+<th>1100 tok/s</th>
+<th>2800 tok/s</th>
+<th>2800</th>
+</tr></thead><tbody>
+</tbody></table>
+<p>不同 GPU 的最优 K 值不同：A100 在 K=16 时达到峰值，而 Orin 在 K=8 时达到峰值。这进一步证明了硬件感知调度的必要性。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

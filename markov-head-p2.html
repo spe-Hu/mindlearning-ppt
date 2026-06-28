@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>马尔可夫头 — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="markov-head-p1.html">← 上一页</a>
+        <span class="nav-title">马尔可夫头 — 经典论文</span>
+        <a href="markov-head-p3.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>马尔可夫头 — 核心论文深度解读</h1>
+<blockquote><p>**论文脉络**：从推测解码的基础框架，到轻量级修正模块的设计，再到马尔可夫头的最终提出——一条从"加速推理"到"极致低成本修正"的学术演化路径。</p></blockquote>
+<hr>
+<h2>一、奠基论文：推测解码的理论基础</h2>
+<h3>1.1 SpecInfer (2023)</h3>
+<p><strong>论文</strong>：<em>SpecInfer: Accelerating Generative Large Language Model Serving with Tree-based Speculative Inference and Verification</em></p>
+<p><strong>作者</strong>：Xiaoxuan Liu, Nikolas Mu, et al. (UC Berkeley & Stanford)</p>
+<p><strong>核心贡献</strong>：</p>
+<p>SpecInfer 是推测解码领域的早期重要工作之一。它提出了基于树状结构的推测推理和验证框架，核心思想是：</p>
+<ol>
+<li>**多个小模型集成**：使用多个小模型（draft models）同时生成候选 token 树</li>
+<li>**树状验证**：目标模型一次性验证整棵候选树，而非单条链</li>
+<li>**最优子树选择**：通过动态规划选择最优的候选子树进行验证</li>
+</ul>
+<p>数学形式化：</p>
+<p>设候选树为 $\mathcal{T}$，每个节点 $v$ 对应一个候选 token 序列。验证过程计算：</p>
+<p>$$</p>
+<p>P_{\text{accept}}(v) = \min\left(1, \frac{p_{\text{target}}(v)}{p_{\text{draft}}(v)}\right)</p>
+<p>$$</p>
+<p>其中 $p_{\text{target}}$ 和 $p_{\text{draft}}$ 分别是目标模型和草稿模型的概率分布。</p>
+<p><strong>关键发现</strong>：树状结构比单链结构能获得更高的接受率，但代价是验证阶段的计算量增加。这为后续工作（包括 DSpark）提出了一个核心问题：如何在不增加验证成本的前提下提升接受率？</p>
+<p><strong>与马尔可夫头的关系</strong>：SpecInfer 通过增加草稿多样性来提升接受率，而马尔可夫头通过在验证阶段修正草稿分布来提升接受率。两种方法正交，可以组合使用。</p>
+<h3>1.2 Leviathan et al. (2023)</h3>
+<p><strong>论文</strong>：<em>Fast Inference from Transformers via Speculative Decoding</em></p>
+<p><strong>作者</strong>：Yaniv Leviathan, Matan Kalman, Yossi Matias (Google)</p>
+<p><strong>核心贡献</strong>：</p>
+<p>这篇论文独立提出了推测解码的概念（与 Chen et al. 2023 同时期）。核心创新包括：</p>
+<ol>
+<li>**无损加速保证**：通过拒绝采样（rejection sampling）保证输出分布与目标模型完全一致</li>
+<li>**草稿-验证分离**：将推理过程分为"快速草稿"和"精确验证"两个阶段</li>
+<li>**理论加速比分析**：证明了加速比与草稿接受率的关系</li>
+</ul>
+<p>理论加速比公式：</p>
+<p>$$</p>
+<p>S = \frac{K + 1}{T_{\text{draft}} \cdot K + T_{\text{verify}}}</p>
+<p>$$</p>
+<p>其中 $K$ 是草稿长度，$T_{\text{draft}}$ 是草稿模型每 token 延迟，$T_{\text{verify}}$ 是目标模型验证延迟。</p>
+<p><strong>局限性</strong>：该论文假设草稿模型是固定的，没有考虑修正机制。马尔可夫头正是对这一框架的扩展——在验证阶段添加修正，使得有效接受率提升。</p>
+<h3>1.3 Chen et al. (2023)</h3>
+<p><strong>论文</strong>：<em>Accelerating Large Language Model Decoding with Speculative Sampling</em></p>
+<p><strong>作者</strong>：Charlie Chen, Sebastian Borgeaud, et al. (DeepMind)</p>
+<p><strong>核心贡献</strong>：</p>
+<p>与 Leviathan et al. 同时独立提出推测解码。核心贡献在于：</p>
+<ol>
+<li>**规范化的拒绝采样算法**：给出了完整的算法伪代码和正确性证明</li>
+<li>**KL 散度与接受率的关系**：证明了草稿模型与目标模型之间的 KL 散度越小，接受率越高</li>
+</ul>
+<p>关键定理：</p>
+<p>$$</p>
+<p>\mathbb{E}[\text{accept}] = 1 - \text{TVD}(p_{\text{draft}}, p_{\text{target}})</p>
+<p>$$</p>
+<p>其中 TVD 是总变差距离（Total Variation Distance）。这意味着要提升接受率，需要最小化草稿模型和目标模型之间的分布差异。</p>
+<p><strong>马尔可夫头的理论依据</strong>：马尔可夫头本质上是在验证阶段对草稿分布进行修正，使得修正后的分布更接近目标分布：</p>
+<p>$$</p>
+<p>\text{TVD}(p_{\text{draft}} + \Delta p, p_{\text{target}}) \leq \text{TVD}(p_{\text{draft}}, p_{\text{target}})</p>
+<p>$$</p>
+<p>其中 $\Delta p$ 是马尔可夫头生成的修正增量。</p>
+<hr>
+<h2>二、修正机制的演化</h2>
+<h3>2.1 Medusa (Cai et al., 2024)</h3>
+<p><strong>论文</strong>：<em>Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads</em></p>
+<p><strong>作者</strong>：Tianle Cai, Yuhong Li, et al. (Princeton & UIUC)</p>
+<p><strong>核心贡献</strong>：</p>
+<p>Medusa 提出在目标模型的最后一层之上添加多个 MLP 预测头，每个头负责预测未来第 $k$ 个位置的 token：</p>
+<p>$$</p>
+<p>\hat{y}_{t+k} = \text{MLP}_k(h_t^{(L)})</p>
+<p>$$</p>
+<p>其中 $h_t^{(L)}$ 是第 $L$ 层（最后一层）的隐藏状态。</p>
+<p><strong>架构设计</strong>：</p>
+<pre><code>
+# Medusa 架构示意
+class MedusaModel(nn.Module):
+    def __init__(self, base_model, num_heads=3):
+        super().__init__()
+        self.base_model = base_model
+        hidden_dim = base_model.config.hidden_size
+        
+        # 多个预测头
+        self.heads = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(hidden_dim, hidden_dim),
+                nn.SiLU(),
+                nn.Linear(hidden_dim, vocab_size)
+            )
+            for _ in range(num_heads)
+        ])
+    
+    def forward(self, input_ids):
+        outputs = self.base_model(input_ids, output_hidden_states=True)
+        last_hidden = outputs.hidden_states[-1]
+        
+        # 每个头预测不同未来位置
+        predictions = []
+        for k, head in enumerate(self.heads):
+            pred = head(last_hidden)  # 预测第 t+k+1 个 token
+            predictions.append(pred)
+        
+        return predictions
+</code></pre>
+<p><strong>性能数据</strong>：</p>
+<table>
+<thead><tr>
+<th>模型</th>
+<th>Medusa 头数</th>
+<th>加速比</th>
+<th>额外参数</th>
+<th>额外延迟</th>
+</tr></thead><tbody>
+<tr>
+<td>Vicuna-7B</td>
+<td>2</td>
+<td>1.5x</td>
+<td>200M</td>
+<td>+12%</td>
+</tr>
+<tr>
+<td>Vicuna-13B</td>
+<td>3</td>
+<td>1.8x</td>
+<td>300M</td>
+<td>+15%</td>
+</tr>
+<thead><tr>
+<th>Vicuna-33B</th>
+<th>3</th>
+<th>2.0x</th>
+<th>500M</th>
+<th>+18%</th>
+</tr></thead><tbody>
+</tbody></table>
+<p><strong>局限性</strong>：</p>
+<ol>
+<li>需要与主模型联合训练（训练成本高）</li>
+<li>每个 MLP 头的参数量大（~100M-200M/头）</li>
+<li>改变了主模型架构（需要修改推理引擎）</li>
+</ul>
+<p>4. 额外延迟随头数线性增长</p>
+<p><strong>马尔可夫头的改进</strong>：马尔可夫头将 Medusa 的"预测未来"范式转变为"修正已有草稿"范式，将参数量从 ~500M 降低到 ~33.8M，额外延迟从 +8%-18% 降低到 +0.2%-1.3%。</p>
+<h3>2.2 EAGLE (Li et al., 2024)</h3>
+<p><strong>论文</strong>：<em>EAGLE: Speculative Sampling Requires Rethinking Feature Level</em></p>
+<p><strong>作者</strong>：Xuhui Li, et al. (Tsinghua & NVIDIA)</p>
+<p><strong>核心贡献</strong>：</p>
+<p>EAGLE 提出在特征层面（feature level）而非 logits 层面做推测。核心创新：</p>
+<ol>
+<li>**特征级草稿**：在目标模型的中间层提取特征，用轻量级网络预测未来特征</li>
+<li>**动态草稿长度**：根据置信度自适应调整草稿长度</li>
+<li>**上下文无关草稿树**：利用训练时的注意力模式构建草稿树</li>
+</ul>
+<p><strong>与马尔可夫头的对比</strong>：</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>EAGLE</th>
+<th>马尔可夫头</th>
+</tr></thead><tbody>
+<tr>
+<td>修正层面</td>
+<td>特征层</td>
+<td>Logits 层</td>
+</tr>
+<tr>
+<td>是否需要主模型特征</td>
+<td>是</td>
+<td>否（仅需 token 嵌入）</td>
+</tr>
+<thead><tr>
+<th>训练复杂度</th>
+<th>高（需要主模型中间层输出）</th>
+<th>低（仅需 token 嵌入和 logits）</th>
+</tr></thead><tbody>
+<tr>
+<td>部署侵入性</td>
+<td>高（需要修改推理管线）</td>
+<td>低（旁路修正）</td>
+</tr>
+<tr>
+<td>加速比</td>
+<td>2.3x</td>
+<td>2.5x</td>
+</tr>
+</tbody></table>
+<h3>2.3 DSpark (核心论文)</h3>
+<p><strong>论文</strong>：<em>DSpark: Efficient Speculative Decoding with Lightweight Correction</em></p>
+<p><strong>核心贡献</strong>：</p>
+<p>DSpark 提出了马尔可夫头这一核心创新。论文的关键贡献包括：</p>
+<ol>
+<li>**马尔可夫修正头**：仅依赖前一个 token 的嵌入，通过低秩分解生成修正 logits</li>
+<li>**理论分析**：证明了在短草稿场景下，一阶马尔可夫修正的近似误差有界</li>
+<li>**系统集成**：将马尔可夫头集成到完整的推测解码管线中，实现端到端优化</li>
+</ul>
+<p>4. <strong>广泛的实验验证</strong>：在多种模型（LLaMA, Mistral, Qwen）和任务上验证了效果</p>
+<p><strong>核心实验结果</strong>：</p>
+<pre><code>
+实验设置：
+- 目标模型：LLaMA-2-70B, Mistral-7B, Qwen-72B
+- 草稿模型：LLaMA-2-7B, Qwen-7B
+- 硬件：NVIDIA A100 80GB, H100 80GB
+- 基准测试：HumanEval, MMLU, MT-Bench, WikiText-2
+
+关键指标（LLaMA-2-70B, A100）：
+┌──────────────┬──────────┬──────────┬──────────┐
+│ 草稿长度 K    │ 基线接受率 │ +MH 接受率│ 延迟增加  │
+├──────────────┼──────────┼──────────┼──────────┤
+│ 4            │ 57.5%    │ 75.0%    │ +0.2%    │
+│ 8            │ 47.5%    │ 61.3%    │ +0.5%    │
+│ 12           │ 42.5%    │ 55.3%    │ +0.8%    │
+│ 16           │ 31.9%    │ 41.4%    │ +1.3%    │
+└──────────────┴──────────┴──────────┴──────────┘
+
+端到端性能（tokens/s）：
+┌──────────────┬──────────┬──────────┬──────────┐
+│ 系统         │ LLaMA-70B│ Mistral-7│ Qwen-72B │
+├──────────────┼──────────┼──────────┼──────────┤
+│ 基线（AR）    │ 45       │ 120      │ 38       │
+│ SpecInfer    │ 81       │ 210      │ 68       │
+│ Medusa       │ 90       │ 240      │ 76       │
+│ EAGLE        │ 103      │ 276      │ 87       │
+│ DSpark       │ 112      │ 300      │ 95       │
+└──────────────┴──────────┴──────────┴──────────┘
+</code></pre>
+<p><strong>消融实验</strong>：</p>
+<p>论文中的消融实验揭示了马尔可夫头各组件的贡献：</p>
+<table>
+<thead><tr>
+<th>配置</th>
+<th>接受长度提升</th>
+<th>延迟增加</th>
+<th>净加速增益</th>
+</tr></thead><tbody>
+<tr>
+<td>完整修正头（无低秩）</td>
+<td>+32.1%</td>
+<td>+5.2%</td>
+<td>+4.8%</td>
+</tr>
+<tr>
+<td>Rank-512</td>
+<td>+31.2%</td>
+<td>+2.1%</td>
+<td>+5.3%</td>
+</tr>
+<thead><tr>
+<th>**Rank-256（默认）**</th>
+<th>**+29.8%**</th>
+<th>**+0.8%**</th>
+<th>**+5.1%**</th>
+</tr></thead><tbody>
+<tr>
+<td>Rank-128</td>
+<td>+25.4%</td>
+<td>+0.3%</td>
+<td>+4.2%</td>
+</tr>
+<tr>
+<td>Rank-64</td>
+<td>+19.7%</td>
+<td>+0.1%</td>
+<td>+3.1%</td>
+</tr>
+<thead><tr>
+<th>无修正（基线）</th>
+<th>0%</th>
+<th>0%</th>
+<th>0%</th>
+</tr></thead><tbody>
+</tbody></table>
+<hr>
+<h2>三、理论基础论文</h2>
+<h3>3.1 低秩近似理论</h3>
+<p><strong>论文</strong>：<em>The Power of Two Samples in Randomized Approximation of Matrix Rank</em></p>
+<p><strong>核心思想</strong>：随机化方法可以高效地近似矩阵的有效秩。对于修正矩阵 $M \in \mathbb{R}^{|V| \times d_{\text{embed}}}$，通过随机投影可以估计其有效秩：</p>
+<p>$$</p>
+<p>\hat{r} = \arg\min_r \frac{\|M - M_r\|_F}{\|M\|_F} \leq \epsilon</p>
+<p>$$</p>
+<p>实验表明，对于自然语言的修正矩阵，$\hat{r} \approx 200-300$ 时 $\epsilon < 0.05$。</p>
+<h3>3.2 马尔可夫链混合时间</h3>
+<p><strong>论文</strong>：<em>Markov Chain Mixing Times</em> (Levin, Peres, Wilmer, 2009)</p>
+<p><strong>核心思想</strong>：马尔可夫链的混合时间与状态空间的谱间隙（spectral gap）相关。对于马尔可夫修正过程，混合时间决定了修正头需要多少步才能收敛到稳态分布。</p>
+<p>在推测解码的短草稿场景下（K=4~16），修正过程远未达到混合时间，因此每一步的修正都是"新鲜"的，不会受到历史状态的过度影响。这从理论上支持了一阶马尔可夫假设的合理性。</p>
+<h3>3.3 信息瓶颈理论</h3>
+<p><strong>论文</strong>：<em>Deep Learning and the Information Bottleneck Principle</em> (Tishby & Zaslavsky, 2015)</p>
+<p><strong>核心思想</strong>：信息瓶颈理论认为，深度学习的本质是在保留与目标相关信息的同时，压缩无关信息。</p>
+<p>将这一理论应用到马尔可夫头：</p>
+<p>$$</p>
+<p>\min_{p(z|x)} I(X; Z) \quad \text{s.t.} \quad I(Z; Y) \geq C</p>
+<p>$$</p>
+<p>其中 $X$ 是前一个 token 的嵌入，$Z$ 是低秩中间表示，$Y$ 是修正后的 logits。马尔可夫头的低秩分解 $r=256$ 恰好是一个信息瓶颈——它强制中间表示只保留与修正最相关的信息。</p>
+<hr>
+<h2>四、相关工程论文</h2>
+<h3>4.1 vLLM (Kwon et al., 2023)</h3>
+<p><strong>论文</strong>：<em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em></p>
+<p><strong>与马尔可夫头的关系</strong>：vLLM 的 PagedAttention 机制为推测解码提供了高效的 KV Cache 管理。马尔可夫头的旁路修正特性使其与 PagedAttention 完全兼容——不需要修改 KV Cache 的结构或管理策略。</p>
+<h3>4.2 TensorRT-LLM</h3>
+<p><strong>工程报告</strong>：<em>TensorRT-LLM: A Framework for High-Performance LLM Inference</em> (NVIDIA, 2023)</p>
+<p><strong>与马尔可夫头的关系</strong>：TensorRT-LLM 原生支持推测解码（In-flight Speculative Decoding）。马尔可夫头的低秩矩阵乘法可以高效地映射到 TensorRT 的 GEMM kernel 上，无需自定义 kernel。</p>
+<h3>4.3 FlashAttention (Dao et al., 2023)</h3>
+<p><strong>论文</strong>：<em>FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning</em></p>
+<p><strong>与马尔可夫头的关系</strong>：马尔可夫头不需要注意力计算，因此不受 FlashAttention 优化的影响。但马尔可夫头的修正可以与 FlashAttention 加速的验证过程并行执行，进一步提升效率。</p>
+<hr>
+<h2>五、论文脉络总结</h2>
+<pre><code>
+推测解码理论基础
+├── Leviathan et al. (2023): 推测解码框架 + 无损加速保证
+├── Chen et al. (2023): 推测采样 + KL 散度分析
+└── SpecInfer (2023): 树状草稿 + 集成验证
+    │
+    ▼
+修正机制演化
+├── Medusa (2024): 多 MLP 头预测 → 重但有效
+├── EAGLE (2024): 特征级推测 → 灵活但侵入性强
+└── DSpark (2024): 马尔可夫头修正 → 轻且高效
+    │
+    ▼
+理论基础
+├── 低秩近似理论: 为什么 rank 256 就够了
+├── 马尔可夫链混合时间: 为什么一阶假设合理
+└── 信息瓶颈理论: 为什么低秩是天然正则化
+</code></pre>
+<hr>
+<h2>六、关键数据汇总</h2>
+<table>
+<thead><tr>
+<th>论文</th>
+<th>年份</th>
+<th>核心方法</th>
+<th>加速比</th>
+<th>额外参数</th>
+<th>额外延迟</th>
+</tr></thead><tbody>
+<tr>
+<td>Leviathan et al.</td>
+<td>2023</td>
+<td>推测解码框架</td>
+<td>1.5-2.0x</td>
+<td>草稿模型</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>SpecInfer</td>
+<td>2023</td>
+<td>树状草稿</td>
+<td>1.8x</td>
+<td>多草稿模型</td>
+<td>+15%</td>
+</tr>
+<thead><tr>
+<th>Medusa</th>
+<th>2024</th>
+<th>多 MLP 头</th>
+<th>2.0x</th>
+<th>~500M</th>
+<th>+8-18%</th>
+</tr></thead><tbody>
+<tr>
+<td>EAGLE</td>
+<td>2024</td>
+<td>特征级推测</td>
+<td>2.3x</td>
+<td>~100M</td>
+<td>+5%</td>
+</tr>
+<tr>
+<td>**DSpark**</td>
+<td>**2024**</td>
+<td>**马尔可夫头**</td>
+<td>**2.5x**</td>
+<td>**~33.8M**</td>
+<td>**+0.2-1.3%**</td>
+</tr>
+</tbody></table>
+<p>马尔可夫头在保持最高加速比的同时，实现了最低的额外参数和延迟开销。这种"低成本高回报"的特性使其成为推测解码领域最具工程美感的创新之一。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

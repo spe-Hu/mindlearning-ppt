@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFlash — 经典论文 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="dflash-p1.html">← 上一页</a>
+        <span class="nav-title">DFlash — 经典论文</span>
+        <a href="dflash-p3.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>DFlash 核心论文深度解读</h1>
+<blockquote><p>本文系统梳理 DFlash 及其相关工作的核心论文，涵盖并行推测解码、扩散语言模型、DSpark 等关键研究方向。</p></blockquote>
+<hr>
+<h2>论文一：DFlash — Block Diffusion for Flash Speculative Decoding</h2>
+<h3>基本信息</h3>
+<ul>
+<li>**标题**：Block Diffusion for Flash Speculative Decoding</li>
+<li>**作者**：DeepSeek-AI 团队</li>
+<li>**发表时间**：2026 年 2 月</li>
+<li>**发表会议**：ICML 2026</li>
+<li>**论文地址**：arxiv.org/abs/2602.06036</li>
+<li>**开源代码**：github.com/z-lab/dflash</li>
+<h3>核心问题</h3>
+</ol>
+<p>自回归语言模型的推理速度受限于其串行解码机制：每个 token 必须等待前一个 token 生成完毕。标准推测解码（Speculative Decoding）通过引入草稿模型加速生成，但草稿模型本身仍是自回归的，成为新的速度瓶颈。</p>
+<p><strong>核心问题</strong>：能否让草稿模型也实现完全并行，一次前向传播生成所有候选 token？</p>
+<h3>核心方法</h3>
+<p>DFlash 提出使用<strong>块扩散（Block Diffusion）</strong>模型作为草稿模型，替代传统的自回归草稿模型。</p>
+<h4>1. 块扩散机制</h4>
+<p>块扩散的核心思想是将 token 生成建模为去噪过程：</p>
+<ol>
+<li>从纯噪声开始（所有位置都是随机 token）</li>
+<li>逐步去噪，将噪声位置替换为高置信度 token</li>
+<li>经过固定步数（通常 1 步）后，输出完整的 token 块</li>
+</ul>
+<p>数学形式化：</p>
+<p>设当前上下文为 $x_{1:t}$，需要生成后续 $K$ 个 token。块扩散模型学习条件分布：</p>
+<p>$$P_\theta(y_{t+1:t+K} | x_{1:t})$$</p>
+<p>其中 $y_{t+1:t+K}$ 通过扩散过程生成：</p>
+<p>$$y^{(0)} \sim \text{Uniform}(\mathcal{V})$$</p>
+<p>$$y^{(s)} = f_\theta(y^{(s-1)}, x_{1:t}, s)$$</p>
+<p>$y^{(0)}$ 为初始噪声（从词表 $\mathcal{V}$ 中均匀采样），$y^{(s)}$ 为第 $s$ 步去噪后的结果，$f_\theta$ 为参数化的去噪网络。</p>
+<h4>2. 模型架构</h4>
+<p>DFlash Draft 模型采用双向注意力 Transformer：</p>
+<ul>
+<li>**6 层 Transformer**：参数量远小于目标模型</li>
+<li>**双向注意力**：`is_causal=False`，每个位置可以看到所有其他位置</li>
+<li>**输入构成**：</li>
+<li>`target_hidden`：目标模型最后一层的隐藏状态</li>
+<li>`noise_embedding`：当前 draft token 的嵌入（初始为噪声）</li>
+<li>`position_ids`：位置编码</li>
+<pre><code>
+# DFlash 核心前向传播
+textnoise_embedding = target.model.embed_tokens(block_output_ids)
+draft_logits = target.lm_head(model(
+    target_hidden=target_hidden,
+    noise_embedding=noise_embedding,
+    position_ids=position_ids[:, past_key_values_draft.get_seq_length(): start + block_size],
+    past_key_values=past_key_values_draft,
+    use_cache=True,
+    is_causal=False,  # 双向注意力的关键
+))[:, 1 - block_size:, :])
+</code></pre>
+<h4>3. 训练目标</h4>
+</ol>
+<p>DFlash 的训练目标是最大化给定上下文下 token 块的对数似然：</p>
+<p>$$\mathcal{L} = -\mathbb{E}_{x, y} \left[ \sum_{i=1}^{K} \log P_\theta(y_{t+i} | x_{1:t}, y_{t+1:t+i-1}^{\text{target}}) \right]$$</p>
+<p>其中 $y^{\text{target}}$ 为目标模型生成的真实 token。</p>
+<h4>4. 与目标模型的协同</h4>
+<p>DFlash 的关键设计决策：</p>
+<ul>
+<li>**输入来自目标模型**：DFlash 接收目标模型的隐藏状态和 KV Cache 作为上下文</li>
+<li>**输出由目标模型验证**：DFlash 生成的 draft token 由目标模型通过拒绝采样验证</li>
+<li>**质量兜底**：即使 DFlash 生成质量不高，目标模型的验证保证了最终输出的无损性</li>
+<h3>实验结果</h3>
+<h4>1. 加速比</h4>
+<table>
+<thead><tr>
+<th>模型</th>
+<th>加速比</th>
+<th>说明</th>
+</tr></thead><tbody>
+<tr>
+<td>Qwen3-8B</td>
+<td>6.0x</td>
+<td>非推理模型</td>
+</tr>
+<tr>
+<td>Qwen3-27B</td>
+<td>5.5x</td>
+<td>中等规模模型</td>
+</tr>
+<thead><tr>
+<th>Qwen3.6-27B</th>
+<th>5.8x</th>
+<th>优化版本</th>
+</tr></thead><tbody>
+<tr>
+<td>推理模型（thinking）</td>
+<td>4.5x</td>
+<td>开启推理模式</td>
+</tr>
+</tbody></table>
+<h4>2. 接受率分析</h4>
+<table>
+<tr>
+<td>位置</td>
+<td>接受率</td>
+<td>条件接受率</td>
+</tr>
+<thead><tr>
+<th>1</th>
+<th>0.80</th>
+<th>0.72</th>
+</tr></thead><tbody>
+<tr>
+<td>2</td>
+<td>0.78</td>
+<td>0.71</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.75</td>
+<td>0.69</td>
+</tr>
+<thead><tr>
+<th>4</th>
+<th>0.72</th>
+<th>0.68</th>
+</tr></thead><tbody>
+<tr>
+<td>5</td>
+<td>0.69</td>
+<td>0.66</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0.66</td>
+<td>0.65</td>
+</tr>
+<thead><tr>
+<th>7</th>
+<th>0.63</th>
+<th>0.63</th>
+</tr></thead><tbody>
+</tbody></table>
+</ol>
+<p><strong>关键发现</strong>：接受率随位置递增而下降，从位置 1 的 0.72 衰减到位置 7 的 0.63，衰减幅度约 12.5%。这就是"后缀衰减"问题。</p>
+<h4>3. 与基线方法对比</h4>
+<table>
+<tr>
+<td>方法</td>
+<td>Qwen3-8B</td>
+<td>Qwen3-27B</td>
+<td>Gemma4-12B</td>
+</tr>
+<thead><tr>
+<th>标准 SpecDec</th>
+<th>2.1x</th>
+<th>1.9x</th>
+<th>2.0x</th>
+</tr></thead><tbody>
+<tr>
+<td>Medusa</td>
+<td>2.8x</td>
+<td>2.5x</td>
+<td>2.6x</td>
+</tr>
+<tr>
+<td>EAGLE-3</td>
+<td>3.5x</td>
+<td>3.2x</td>
+<td>3.3x</td>
+</tr>
+<thead><tr>
+<th>**DFlash**</th>
+<th>**6.0x**</th>
+<th>**5.5x**</th>
+<th>**5.8x**</th>
+</tr></thead><tbody>
+</tbody></table>
+<p>DFlash 在所有模型上都实现了显著的性能提升，加速比是 EAGLE-3 的 1.7-1.8 倍。</p>
+<h3>核心贡献</h3>
+<ol>
+<li>**首次将块扩散应用于推测解码的草稿阶段**：打破了草稿模型的自回归范式</li>
+<li>**完全并行的草稿生成**：一次前向传播生成 16 个候选 token</li>
+<li>**无损加速保证**：通过拒绝采样确保输出分布与目标模型一致</li>
+</ul>
+<p>4. <strong>广泛的模型兼容性</strong>：支持 vLLM、SGLang、Transformers、MLX 等主流框架</p>
+<h3>局限性</h3>
+<ol>
+<li>**多模态碰撞**：各位置独立采样导致不通顺的 token 组合</li>
+<li>**后缀衰减**：位置越靠后，接受率越低</li>
+<li>**训练数据依赖**：需要目标模型的隐藏状态作为训练信号</li>
+</ul>
+<p>4. <strong>复杂推理场景</strong>：对于接受率本身很低的复杂请求，并行草稿阶段的计算是浪费的</p>
+<hr>
+<h2>论文二：DSpark — Confidence-Scheduled Speculative Decoding with Semi-Autoregressive Generation</h2>
+<h3>基本信息</h3>
+<ul>
+<li>**标题**：DSpark: Confidence-Scheduled Speculative Decoding with Semi-Autoregressive Generation</li>
+<li>**作者**：DeepSeek-AI, 北京大学</li>
+<li>**首位作者**：袁境阳（北大博士），导师：张铭教授</li>
+<li>**发表时间**：2026 年 6 月 27 日</li>
+<li>**开源代码**：github.com/deepseek-ai/DeepSpec（MIT 许可）</li>
+<li>**部署状态**：已部署于 DeepSeek-V4-Flash 和 DeepSeek-V4-Pro 生产环境</li>
+<h3>核心问题</h3>
+</ol>
+<p>DFlash 虽然实现了极快的草稿生成速度，但暴露了两个核心问题：</p>
+<ol>
+<li>**多模态碰撞**：并行采样导致不通顺的 token 组合</li>
+<li>**后缀衰减**：位置越靠后，接受率急剧下滑</li>
+</ul>
+<p><strong>核心问题</strong>：能否在保持并行速度的同时，解决多模态碰撞和后缀衰减问题？</p>
+<h3>核心方法</h3>
+<p>DSpark 提出两大互补机制：<strong>半自回归生成</strong>和<strong>置信度调度验证</strong>。</p>
+<h4>1. 半自回归生成（Semi-Autoregressive Generation）</h4>
+<p><strong>核心思想</strong>：不抛弃并行，但加上一个轻量的"依赖注入"模块。</p>
+<p><strong>架构设计</strong>：</p>
+<ul>
+<li>**并行主干（DFlash）**：一次前向传播生成所有位置的基础 logits</li>
+<li>**轻量级顺序头（Markov Head / RNN Head）**：在采样时注入前缀依赖信息</li>
+</ul>
+<p><strong>Markov Head 设计</strong>：</p>
+<pre><code>
+class MarkovHead(nn.Module):
+    def __init__(self, hidden_dim=256, rank=256):
+        super().__init__()
+        self.proj_down = nn.Linear(hidden_dim, rank, bias=False)
+        self.proj_up = nn.Linear(rank, hidden_dim, bias=False)
+    
+    def forward(self, hidden_states, prev_token_ids):
+        # 获取前一个 token 的嵌入
+        prev_embed = self.embedding(prev_token_ids)
+        # 低秩投影
+        prev_feat = self.proj_down(prev_embed)
+        # 注入到当前隐藏状态
+        injection = self.proj_up(prev_feat)
+        return hidden_states + injection
+</code></pre>
+<p><strong>关键设计</strong>：</p>
+<ul>
+<li>256 维低秩分解：参数量极小，几乎不增加计算开销</li>
+<li>仅注入"前一个 token 是什么"的信息：让后续 token 的预测不再是盲猜</li>
+<li>端到端延迟增加仅 0.6%-1.3%（draft 长度从 4 扩到 16）</li>
+</ul>
+<p><strong>实验效果</strong>：</p>
+<table>
+<thead><tr>
+<th>位置</th>
+<th>DFlash 接受率</th>
+<th>DSpark 接受率</th>
+<th>改善</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>0.72</td>
+<td>0.82</td>
+<td>+13.9%</td>
+</tr>
+<tr>
+<td>7</td>
+<td>0.63</td>
+<td>0.79</td>
+<td>+25.4%</td>
+</tr>
+</tbody></table>
+<p><strong>关键发现</strong>：仅 2 层 DSpark 的性能就超过 5 层 DFlash，说明一点点自回归信息注入的价值巨大。</p>
+<h4>2. 置信度调度验证（Confidence-Scheduled Verification）</h4>
+<p><strong>核心思想</strong>：根据每个 draft token 的置信度和系统负载，动态决定验证长度。</p>
+<p><strong>组件一：置信度估计头</strong></p>
+<p>额外训练一个置信度头，预测每个 draft token 的"前缀存活概率"——即如果前面的 token 都通过了验证，这个位置的 token 还能活下来的概率。</p>
+<p>数学形式化：</p>
+<p>$$c_i = P(\text{accept}_i | \text{accept}_{<i}, \text{context})$$</p>
+<p><strong>组件二：顺序温度缩放（Sequential Temperature Scaling, STS）</strong></p>
+<p>神经网络天生会过度自信。STS 通过校准方法将预测概率和真实接受率对齐：</p>
+<p>$$\hat{c}_i = \sigma\left(\frac{\log c_i}{T_i}\right)$$</p>
+<p>其中 $T_i$ 为位置相关的温度参数，通过验证集学习得到。</p>
+<p><strong>校准效果</strong>：</p>
+<table>
+<thead><tr>
+<th>方法</th>
+<th>平均校准误差（ECE）</th>
+</tr></thead><tbody>
+<tr>
+<td>原始置信度</td>
+<td>3%-8%</td>
+</tr>
+<tr>
+<td>标准温度缩放</td>
+<td>2%-5%</td>
+</tr>
+<tr>
+<td>**STS**</td>
+<td>**约 1%**</td>
+</tr>
+</tbody></table>
+<p><strong>组件三：硬件感知前缀调度器</strong></p>
+<p>综合考虑系统负载和每个 token 的生存概率，动态决定每个请求该验证几个 token：</p>
+<p>$$L^* = \arg\max_L \mathbb{E}\left[\sum_{i=1}^{L} \hat{c}_i \right] \quad \text{s.t.} \quad \text{GPU\_load} < \text{threshold}$$</p>
+<p><strong>调度策略</strong>：</p>
+<ul>
+<li>轻负载时：大胆多验证（4-6 个 token）</li>
+<li>高并发时：果断剪掉低置信后缀（2-3 个 token）</li>
+<li>动态调整：根据实时 GPU 负载自适应</li>
+</ul>
+<p><strong>关键约束</strong>：不能提前偷看未来 token，否则会破坏无损推测解码的理论保证。DSpark 通过异步调度（使用两步前的历史预测来确定裁剪长度）巧妙绕开了这个问题。</p>
+<h3>实验结果</h3>
+<h4>1. 接受长度对比</h4>
+<table>
+<thead><tr>
+<th>方法</th>
+<th>平均接受长度</th>
+<th>相对 EAGLE-3</th>
+<th>相对 DFlash</th>
+</tr></thead><tbody>
+<tr>
+<td>EAGLE-3</td>
+<td>3.2</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>DFlash</td>
+<td>3.8</td>
+<td>+18.8%</td>
+<td>-</td>
+</tr>
+<thead><tr>
+<th>DSpark (2层)</th>
+<th>4.8</th>
+<th>+50.0%</th>
+<th>+26.3%</th>
+</tr></thead><tbody>
+<tr>
+<td>DSpark (5层)</td>
+<td>5.2</td>
+<td>+62.5%</td>
+<td>+36.8%</td>
+</tr>
+</tbody></table>
+<h4>2. 生产环境部署数据</h4>
+<table>
+<tr>
+<td>场景</td>
+<td>V4-Flash 提升</td>
+<td>V4-Pro 提升</td>
+</tr>
+<thead><tr>
+<th>单用户生成速度</th>
+<th>60%-85%</th>
+<th>57%-78%</th>
+</tr></thead><tbody>
+<tr>
+<td>低并发吞吐</td>
+<td>+51%</td>
+<td>+48%</td>
+</tr>
+<tr>
+<td>高并发吞吐</td>
+<td>+400%</td>
+<td>+350%</td>
+</tr>
+<thead><tr>
+<th>严格 SLA（120 tok/s/user）</th>
+<th>从不可行到正常运行</th>
+<th>从不可行到正常运行</th>
+</tr></thead><tbody>
+</tbody></table>
+<p><strong>关键发现</strong>：在严格 SLA（120 tok/s/user）下，MTP-1 已经接近崩溃，DSpark 名义上吞吐高出 661%——更重要的是，它把这个 SLA 档位从"不可能完成"变成了"正常运行"。</p>
+<h4>3. 开源模型泛化能力</h4>
+<table>
+<tr>
+<td>模型</td>
+<td>EAGLE-3</td>
+<td>DFlash</td>
+<td>DSpark</td>
+</tr>
+<thead><tr>
+<th>Qwen3-4B</th>
+<th>2.8x</th>
+<th>5.2x</th>
+<th>6.5x</th>
+</tr></thead><tbody>
+<tr>
+<td>Qwen3-8B</td>
+<td>3.5x</td>
+<td>6.0x</td>
+<td>7.2x</td>
+</tr>
+<tr>
+<td>Qwen3-14B</td>
+<td>3.3x</td>
+<td>5.6x</td>
+<td>6.9x</td>
+</tr>
+<thead><tr>
+<th>Gemma4-12B</th>
+<th>3.3x</th>
+<th>5.8x</th>
+<th>7.0x</th>
+</tr></thead><tbody>
+</tbody></table>
+<h3>核心贡献</h3>
+<ol>
+<li>**半自回归架构**：并行主干 + 轻量顺序头，兼具速度和质量</li>
+<li>**置信度调度验证**：动态调整验证策略，适配真实生产环境</li>
+<li>**顺序温度缩放**：校准预测概率，提升调度精度</li>
+</ul>
+<p>4. <strong>生产环境验证</strong>：在 DeepSeek-V4 真实流量下验证效果</p>
+<p>5. <strong>全栈开源</strong>：DeepSpec 代码库（MIT 许可），包含 DSpark、DFlash、EAGLE-3 实现</p>
+<h3>局限性</h3>
+<ol>
+<li>**复杂推理场景**：对于接受率本身就很低的复杂请求，并行草稿阶段的计算是浪费的</li>
+<li>**额外训练开销**：需要训练 Markov Head 和置信度头</li>
+<li>**异步调度的延迟**：使用两步前的历史预测可能不够及时</li>
+<hr>
+<h2>论文三：Speculative Decoding（标准推测解码）</h2>
+<h3>基本信息</h3>
+<li>**标题**：Fast Inference from Transformers via Speculative Decoding</li>
+<li>**作者**：Google Research</li>
+<li>**发表时间**：2023 年</li>
+<li>**发表会议**：ICML 2023</li>
+<h3>核心方法</h3>
+</ol>
+<p>标准推测解码的核心思想：</p>
+<ol>
+<li>**Draft 阶段**：使用轻量级草稿模型自回归生成 $K$ 个候选 token</li>
+<li>**Verify 阶段**：目标模型并行验证这 $K$ 个 token</li>
+<li>**Accept/Reject**：通过拒绝采样决定接受哪些 token</li>
+</ul>
+<p><strong>拒绝采样机制</strong>：</p>
+<p>对于每个位置 $i$，计算接受概率：</p>
+<p>$$A_i = \min\left(1, \frac{P_{\text{target}}(y_i | y_{<i})}{P_{\text{draft}}(y_i | y_{<i})}\right)$$</p>
+<p>以概率 $A_i$ 接受 $y_i$，否则拒绝并从 $P_{\text{target}}$ 重新采样。</p>
+<p><strong>无损性保证</strong>：通过拒绝采样，推测解码的输出分布在数学上严格等价于直接使用目标模型解码。</p>
+<h3>核心贡献</h3>
+<ol>
+<li>**提出推测解码范式**：开创了"猜测-验证"的推理加速新赛道</li>
+<li>**数学证明无损性**：拒绝采样保证输出分布不变</li>
+<li>**实现 2-3x 加速**：在多个任务上验证效果</li>
+<h3>局限性</h3>
+<li>**草稿模型瓶颈**：草稿模型本身是自回归的，速度有上限</li>
+<li>**加速比有限**：通常只能实现 2-3x 加速</li>
+<li>**需要额外模型**：需要训练或选择独立的草稿模型</li>
+<hr>
+<h2>论文四：Medusa — Simple LLM Inference Acceleration with Multiple Decoding Heads</h2>
+<h3>基本信息</h3>
+<li>**标题**：Medusa: Simple LLM Inference Acceleration with Multiple Decoding Heads</li>
+<li>**作者**：UC Berkeley</li>
+<li>**发表时间**：2024 年</li>
+<li>**发表会议**：ICML 2024</li>
+<h3>核心方法</h3>
+</ol>
+<p>Medusa 的核心创新：</p>
+<ol>
+<li>**多头预测**：在原始 LLM 基础上增加多个预测头，每个头独立预测未来不同位置的 token</li>
+<li>**树形注意力**：使用树形注意力机制实现并行验证</li>
+<li>**典型接受**：引入基于阈值的典型接受策略</li>
+</ul>
+<p><strong>数学形式化</strong>：</p>
+<p>设模型最后一层隐藏状态为 $h_t^{(L)}$，Medusa 添加 $K$ 个预测头：</p>
+<p>$$\hat{y}_{t+k} = \text{Head}_k(h_t^{(L-1)}), \quad k = 1, 2, \ldots, K$$</p>
+<p>每个头独立预测未来第 $k$ 个位置的 token。</p>
+<h3>核心贡献</h3>
+<ol>
+<li>**消除外部草稿模型**：减少内存占用，简化部署</li>
+<li>**多头并行预测**：无需额外前向传播</li>
+<li>**树形注意力验证**：提升验证效率</li>
+<h3>局限性</h3>
+<li>**预测头之间缺乏交互**：接受率随距离递减</li>
+<li>**单次草稿量有限**：通常只能预测 3-5 个 token</li>
+<li>**训练开销**：需要训练多个预测头</li>
+<hr>
+<h2>论文五：EAGLE — Extrapolation Algorithm for Greater-speed Lossless Efficiency</h2>
+<h3>基本信息</h3>
+<li>**标题**：EAGLE-3: Accelerating Autoregressive Generation via Speculative Decoding with Dynamic Draft Tree</li>
+<li>**作者**：多个版本迭代</li>
+<li>**发表时间**：2024-2025 年</li>
+<h3>核心方法</h3>
+</ol>
+<p>EAGLE 系列的核心创新：</p>
+<p><strong>EAGLE-1</strong>：将推测解码前移至特征层</p>
+<ul>
+<li>对隐藏状态进行自回归预测，而非直接预测 token</li>
+<li>数学形式化：$\hat{f}_{t+k} = g(f_{t}, f_{t-1}, \ldots, f_{t-k+1})$</li>
+<li>其中 $f_t$ 为第 $t$ 步的隐藏状态</li>
+</ul>
+<p><strong>EAGLE-2</strong>：自适应草稿树</p>
+<ul>
+<li>根据上下文动态调整草稿结构</li>
+<li>使用树形注意力机制验证</li>
+</ul>
+<p><strong>EAGLE-3</strong>：优化训练目标</p>
+<ul>
+<li>优化训练目标，实现更高接受率</li>
+<li>动态草稿树生成</li>
+<h3>核心贡献</h3>
+<li>**特征层推测**：将推测解码前移至隐藏状态层面</li>
+<li>**自适应草稿树**：动态调整草稿结构</li>
+<li>**高接受率**：通过特征级预测提升接受率</li>
+<h3>局限性</h3>
+<li>**草稿生成仍为串行**：虽然是在特征层面，但仍然是自回归的</li>
+<li>**速度提升有上限**：受限于串行草稿生成</li>
+<hr>
+<h2>论文对比总结</h2>
+<table>
+<thead><tr>
+<th>论文</th>
+<th>核心创新</th>
+<th>加速比</th>
+<th>接受长度</th>
+<th>优势</th>
+<th>局限</th>
+</tr></thead><tbody>
+<tr>
+<td>Speculative Decoding</td>
+<td>猜测-验证范式</td>
+<td>2-3x</td>
+<td>3-5</td>
+<td>无损保证</td>
+<td>草稿瓶颈</td>
+</tr>
+<tr>
+<td>Medusa</td>
+<td>多头并行预测</td>
+<td>2.5-3x</td>
+<td>3-5</td>
+<td>无需额外模型</td>
+<td>头间缺乏交互</td>
+</tr>
+<thead><tr>
+<th>EAGLE-3</th>
+<th>特征层推测</th>
+<th>3-4x</th>
+<th>3-4</th>
+<th>高接受率</th>
+<th>串行草稿</th>
+</tr></thead><tbody>
+<tr>
+<td>**DFlash**</td>
+<td>**块扩散草稿**</td>
+<td>**5-6x**</td>
+<td>**3-4**</td>
+<td>**完全并行**</td>
+<td>**多模态碰撞、后缀衰减**</td>
+</tr>
+<tr>
+<td>**DSpark**</td>
+<td>**半自回归 + 置信度调度**</td>
+<td>**6-7x**</td>
+<td>**4-5**</td>
+<td>**速度 + 质量 + 系统**</td>
+<td>**额外训练开销**</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>技术演进脉络</h2>
+<pre><code>
+2023: Speculative Decoding（标准推测解码）
+  ↓ 提出"猜测-验证"范式
+2024: Medusa + EAGLE 系列
+  ↓ 多头并行 + 特征层推测
+2026.02: DFlash
+  ↓ 块扩散草稿，完全并行
+2026.06: DSpark
+  ↓ 半自回归 + 置信度调度
+未来: 自适应 block size + 难度感知退出
+</code></pre>
+<hr>
+<h2>参考文献</h2>
+<li>DFlash: Block Diffusion for Flash Speculative Decoding. arxiv.org/abs/2602.06036, ICML 2026.</li>
+<li>DSpark: Confidence-Scheduled Speculative Decoding with Semi-Autoregressive Generation. DeepSeek-AI & Peking University, 2026.</li>
+<li>Speculative Decoding: Fast Inference from Transformers. Google Research, ICML 2023.</li>
+</ul>
+<p>4. Medusa: Simple LLM Inference Acceleration with Multiple Decoding Heads. UC Berkeley, ICML 2024.</p>
+<p>5. EAGLE-3: Accelerating Autoregressive Generation via Speculative Decoding with Dynamic Draft Tree. arxiv.org/abs/2503.01852.</p>
+<p>6. DeepSpec 开源代码库. github.com/deepseek-ai/DeepSpec (MIT License).</p>
+<p>7. DFlash 开源代码库. github.com/z-lab/dflash.</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

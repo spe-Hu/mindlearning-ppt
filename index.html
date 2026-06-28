@@ -78,10 +78,10 @@
         <h1>MindLearning</h1>
         <p class="subtitle">AI 概念知识库 — 深度解析大模型核心技术</p>
         <div class="stats">
-            <div class="stat"><div class="stat-value">90</div><div class="stat-label">文件</div></div>
-            <div class="stat"><div class="stat-value">9</div><div class="stat-label">个概念</div></div>
+            <div class="stat"><div class="stat-value">114</div><div class="stat-label">文件</div></div>
+            <div class="stat"><div class="stat-value">13</div><div class="stat-label">个概念</div></div>
             <div class="stat"><div class="stat-value">5</div><div class="stat-label">维分析</div></div>
-            <div class="stat"><div class="stat-value">3</div><div class="stat-label">大专题</div></div>
+            <div class="stat"><div class="stat-value">4</div><div class="stat-label">大专题</div></div>
         </div>
     </div>
     
@@ -221,12 +221,44 @@
                 </a>
             </div>
         </div>
+
+        <!-- 新增：DSpark 推理优化 -->
+        <div class="section">
+            <div class="section-title"><span class="icon">⚡</span> DSpark 推理优化</div>
+            <p class="section-desc">DSpark 十概念分析系列 — 从调度、解码、修正到自适应校准的完整推理优化链路</p>
+            <div class="card-grid">
+                <a href="index-continuous-batching.html" class="card p1">
+                    <span class="badge">概念 · 调度范式</span>
+                    <h3>连续批处理</h3>
+                    <p>Continuous Batching — GPU 推理调度的核心范式，通过迭代级调度和分页显存管理实现全时满载。</p>
+                    <div class="meta">5 篇深度分析 · 横纵分析 + 论文 + 拆书 + 卡片 + 解剖</div>
+                </a>
+                <a href="index-dflash.html" class="card p2">
+                    <span class="badge">概念 · 并行解码</span>
+                    <h3>DFlash</h3>
+                    <p>Block Diffusion for Flash Speculative Decoding — 用块扩散模型一次前向传播并行生成 16 个候选 token。</p>
+                    <div class="meta">5 篇深度分析 · 横纵分析 + 论文 + 拆书 + 卡片 + 解剖</div>
+                </a>
+                <a href="index-markov-head.html" class="card p3">
+                    <span class="badge">概念 · 修正模块</span>
+                    <h3>马尔可夫头</h3>
+                    <p>Markov Head — 推测解码中的极低秩修正模块，只看前一个 token 即可修正后一个 token 的预测。</p>
+                    <div class="meta">5 篇深度分析 · 横纵分析 + 论文 + 拆书 + 卡片 + 解剖</div>
+                </a>
+                <a href="index-hardware-aware-scheduling.html" class="card p4">
+                    <span class="badge">概念 · 自适应调度</span>
+                    <h3>硬件感知调度与在线校准</h3>
+                    <p>Hardware-Aware Scheduling — 根据 GPU 实时负载动态调整验证长度，通过顺序温度缩放持续校准分布偏差。</p>
+                    <div class="meta">5 篇深度分析 · 横纵分析 + 论文 + 拆书 + 卡片 + 解剖</div>
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
     <div class="footer">
         <p>MindLearning 知识库 · AI 概念专题</p>
-        <p style="margin-top:8px">共 90 个文件 · 覆盖 9 大核心概念</p>
+        <p style="margin-top:8px">共 114 个文件 · 覆盖 13 大核心概念</p>
     </div>
 </body>
 </html>

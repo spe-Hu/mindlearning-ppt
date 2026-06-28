@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连续批处理 — 横纵分析 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <span></span>
+        <span class="nav-title">连续批处理 — 横纵分析</span>
+        <a href="continuous-batching-p2.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>连续批处理 (Continuous Batching) 横纵分析报告</h1>
+<blockquote><p>研究时间：2026-06-28 | 所属领域：AI/推理加速 | 研究对象类型：技术概念</p></blockquote>
+<blockquote><p>关键词：Continuous Batching, Dynamic Batching, PagedAttention, vLLM, Orca, Memory-Bound, GPU Scheduling, KV Cache</p></blockquote>
+<hr>
+<h2>一、一句话定义</h2>
+<p>连续批处理（Continuous Batching）是大语言模型推理服务的核心调度技术：<strong>在 GPU 执行每一次前向传播时，动态地将多个请求的不同位置 token 组合成一个 batch，让新请求随时插入、已完成的请求立即释放，从而实现 GPU 计算单元和显存的全时满载利用。</strong> 其本质是"搬一次也是搬，搬十次也是搬"——GPU 推理的瓶颈不是浮点运算（FLOPs），而是显存带宽（memory bandwidth），每一次前向传播都需要将模型权重从 HBM 搬运到计算核心，这个搬运成本与 batch 中的 token 数量几乎无关。连续批处理通过最大化每次搬运中"顺带处理"的 token 数量，将 GPU 利用率从静态批处理的 10-30% 提升至 80% 以上。从 2019 年 NVIDIA 的 Dynamic Batching 雏形，到 2022 年 Orca 的 Iteration-level Scheduling，到 2023 年 vLLM 的 PagedAttention，到 2025-2026 年 TensorRT-LLM/SGLang 的工业级部署，连续批处理已从学术构想演变为所有推理引擎的标配基础设施。</p>
+<hr>
+<h2>二、纵向分析：从静态批处理到连续批处理（2017-2026）</h2>
+<h3>2.1 静态批处理时代（2017-2019）</h3>
+<p>Transformer 模型（Vaswani et al., 2017）的推理天然采用自回归解码：每一步生成一个 token，然后将这个 token 追加到序列中，再进行下一步。在早期部署中，推理服务采用最简单的<strong>静态批处理（Static Batching）</strong>策略：</p>
+<p><strong>工作方式</strong>：收集一批请求（如 batch_size=8），将这 8 个请求的 prompt 一起送入模型进行 prefill 阶段（处理完整输入序列），然后进入 decode 阶段（逐 token 生成）。关键约束是：<strong>整个 batch 中的所有请求必须同步前进——每一步，所有 8 个请求各生成 1 个 token。只有当 batch 中所有请求都生成了 EOS（结束符），这个 batch 才算完成，才能开始处理下一个 batch。</strong></p>
+<p>静态批处理的致命缺陷：</p>
+<ol>
+<li>**木桶效应**：batch 的处理时间取决于最慢的那个请求。如果 7 个请求在 20 步后完成，但第 8 个请求需要 200 步，那么前 7 个请求的 GPU 资源在 180 步中完全浪费。</li>
+<li>**新请求等待**：在一个 batch 处理期间到达的新请求必须排队等待，即使 GPU 有空闲的计算资源。</li>
+<li>**显存浪费**：已完成请求的 KV Cache 仍然占用显存，直到整个 batch 结束。</li>
+<pre><code>
+静态批处理时间线：
+请求1: [prefill][decode][decode]...[decode][EOS] ← 20步完成
+请求2: [prefill][decode][decode]...[decode][EOS] ← 25步完成
+请求3: [prefill][decode][decode]...[decode]......[decode][EOS] ← 200步完成
+GPU:   |&lt;---------- 必须等待所有请求完成 -----------&gt;|
+       |← 请求1&2完成后，GPU资源闲置180步 →|
+</code></pre>
+</ol>
+<p><strong>量化分析</strong>：假设平均生成长度为 L，batch 中最大生成长度为 L_max。GPU 的有效利用率约为 L_avg / L_max。在长尾分布下（少数请求生成长度远超平均值），这个比值可能低至 10-30%。</p>
+<h3>2.2 动态批处理的萌芽（2019-2021）</h3>
+<p>NVIDIA 在 FasterTransformer（2019）中引入了<strong>动态批处理（Dynamic Batching）</strong>的初步概念：当一个请求完成（生成 EOS）后，立即用新请求替换它，而不是等待整个 batch 完成。</p>
+<p>这解决了"新请求等待"的问题，但仍然有一个关键限制：<strong>替换只能在 iteration 边界进行，且所有请求的序列长度必须对齐（padding 到相同长度）</strong>。这意味着：</p>
+<ol>
+<li>不同 prompt 长度的请求需要 padding 到 batch 内最大长度，浪费计算。</li>
+<li>KV Cache 的显存分配仍然是连续的、预分配的，导致显存碎片化。</li>
+<li>调度粒度仍然是"整个 step"，无法在 token 级别做更精细的调度。</li>
+<pre><code>
+动态批处理（早期）：
+请求1: [prefill][decode][decode][EOS] → 完成，替换为请求4
+请求2: [prefill][decode][decode]......[decode][EOS] → 完成
+请求3: [prefill][decode][decode]......[decode]......[decode]...
+请求4:            [prefill][decode]...[decode][EOS] → 完成
+</code></pre>
+</ol>
+<p>改进明显，但显存管理和调度粒度仍有根本性限制。</p>
+<h3>2.3 Orca：Iteration-level Scheduling（2022）</h3>
+<p><strong>2022 年</strong>，Gimelshein et al.（来自 NVIDIA）发表 <strong>《Orca: A Distributed Serving System for Transformer-Based Generative Models》</strong>，这是连续批处理概念的正式提出。</p>
+<p>Orca 的核心创新是<strong>迭代级调度（Iteration-level Scheduling）</strong>：调度的最小单位不再是"一个完整的请求"，而是"一次前向传播（iteration）"。在每一次 iteration 中，调度器可以：</p>
+<ol>
+<li>**插入新请求**：将新到达的请求加入当前 batch，从下一个 iteration 开始参与计算。</li>
+<li>**移除已完成请求**：生成 EOS 的请求立即从 batch 中移除，释放其占用的资源。</li>
+<li>**动态调整 batch 组成**：根据当前 batch 中各请求的状态，动态决定哪些请求参与本次 iteration。</li>
+</ul>
+<p>关键洞见：在 decode 阶段，每个请求每步只生成 1 个 token。既然所有请求每步的工作量相同（都是 1 个 token 的前向传播），那么让不同请求在不同 iteration 中进出 batch 是完全自然的——不需要任何额外的同步开销。</p>
+<p>Orca 的性能提升：</p>
+<ul>
+<li>相比静态批处理，吞吐量提升 **2-4 倍**</li>
+<li>P99 延迟降低 **50-70%**</li>
+<li>GPU 利用率从 10-30% 提升至 **70-85%**</li>
+</ul>
+<p>但 Orca 仍有局限：它解决了调度问题，但没有解决显存管理问题。KV Cache 仍然是连续分配的，显存碎片化仍然严重。</p>
+<h3>2.4 vLLM 与 PagedAttention（2023）</h3>
+<p><strong>2023 年</strong>，Kwon et al.（UC Berkeley）发表 <strong>《Efficient Memory Management for Large Language Model Serving with PagedAttention》</strong>，这是连续批处理的显存管理革命。</p>
+<p>vLLM 的核心洞见：<strong>KV Cache 的显存管理可以类比操作系统的虚拟内存管理</strong>。</p>
+<p>在传统方案中，每个请求的 KV Cache 需要一块连续的显存空间。这导致两个问题：</p>
+<ol>
+<li>**内部碎片**：预分配的显存通常大于实际需要的显存（因为生成长度不确定），浪费 60-80% 的 KV Cache 显存。</li>
+<li>**外部碎片**：不同请求释放的显存块大小不一，难以复用。</li>
+</ul>
+<p>PagedAttention 的解决方案：</p>
+<ul>
+<li>将 KV Cache 分成固定大小的**页（page/block）**，每页存储固定数量 token（如 16 个 token）的 KV 值。</li>
+<li>每个请求的 KV Cache 不再需要连续显存，而是通过**页表（page table）**映射到分散的物理页。</li>
+<li>按需分配：只有当请求实际生成了新 token，需要新的 KV Cache 空间时，才分配新页。</li>
+<li>页可以跨请求共享：对于具有相同前缀的请求（如使用相同 system prompt），可以共享前缀对应的物理页。</li>
+<pre><code>
+传统 KV Cache 分配：
+请求1: [连续KV Cache ████████████████] ← 预分配200 token，实际使用45 token
+请求2: [连续KV Cache ████████████████████████████] ← 预分配300 token，实际使用120 token
+显存浪费: 60-80%
+
+PagedAttention：
+请求1: [页3][页7][页12] → 按需分配，无浪费
+请求2: [页1][页5][页9][页14][页18] → 分散存储，页表映射
+请求3: [页3][页7][页20] → 与请求1共享前缀页（页3、页7）
+</code></pre>
+</ol>
+<p>vLLM + Orca 调度的组合效果：</p>
+<ul>
+<li>相比静态批处理，吞吐量提升 **4-24 倍**（取决于模型大小和请求模式）</li>
+<li>显存浪费从 60-80% 降低到 **<5%**</li>
+<li>支持更大的 batch size（因为显存利用更高效）</li>
+<li>前缀共享进一步减少了重复计算</li>
+<h3>2.5 工业级部署与生态成熟（2024-2026）</h3>
+</ol>
+<p><strong>2024-2025 年</strong>，连续批处理成为所有主流推理引擎的标配：</p>
+<table>
+<thead><tr>
+<th>推理引擎</th>
+<th>连续批处理实现</th>
+<th>特色功能</th>
+</tr></thead><tbody>
+<tr>
+<td>vLLM</td>
+<td>PagedAttention + 迭代级调度</td>
+<td>前缀缓存、自动前缀匹配</td>
+</tr>
+<tr>
+<td>TensorRT-LLM</td>
+<td>in-flight batching + Paged KV Cache</td>
+<td>NVIDIA 硬件级优化、FP8 支持</td>
+</tr>
+<thead><tr>
+<th>SGLang</th>
+<th>RadixAttention</th>
+<th>基于 Radix Tree 的 KV Cache 管理</th>
+</tr></thead><tbody>
+<tr>
+<td>DeepSpeed-FastGen</td>
+<td>Dynamic SplitFuse</td>
+<td>prefill 分块 + decode 混合调度</td>
+</tr>
+<tr>
+<td>TGI (HuggingFace)</td>
+<td>Continuous batching</td>
+<td>生态集成、模型兼容性</td>
+</tr>
+</tbody></table>
+<p><strong>2025 年</strong>的关键进展：</p>
+<ol>
+<li>**Prefill-Decode 分离调度（PD Separation）**：将 prefill 阶段和 decode 阶段分配到不同的 GPU 集群。Prefill 是计算密集型（处理长 prompt），decode 是内存带宽密集型（逐 token 生成）。分离后可以分别优化。</li>
+<li>**Chunked Prefill**：将长 prompt 的 prefill 分成多个 chunk，每个 chunk 与 decode 请求混合调度。避免了长 prompt prefill 阻塞 decode 请求的问题。</li>
+<li>**多模型连续批处理**：在同一 GPU 上同时服务多个模型（如 MoE 的不同 expert），实现跨模型的 batch 复用。</li>
+</ul>
+<p><strong>2026 年</strong>的现状：</p>
+<p>连续批处理已经成为推理引擎的"操作系统级"基础设施。用户无需理解其内部机制，只需设置 <code>max_batch_size</code> 参数即可享受其加速效果。研究前沿已经转向更精细的调度策略：</p>
+<ul>
+<li>基于优先级和 SLO（Service Level Objective）的调度</li>
+<li>基于请求预测的智能批组合</li>
+<li>异构 GPU 集群的自适应调度</li>
+<hr>
+<h2>三、GPU 运行特性：为什么 Batch 解码几乎不增加延迟</h2>
+<h3>3.1 Compute-Bound vs Memory-Bound</h3>
+</ol>
+<p>理解连续批处理的前提是理解 GPU 推理的瓶颈特性。</p>
+<p>GPU 在执行一次前向传播时，有两个核心操作：</p>
+<ol>
+<li>**内存搬运（Memory Access）**：将模型权重从 HBM（高带宽显存）读取到 SRAM（片上缓存/计算核心）。</li>
+<li>**浮点计算（Computation）**：在计算核心上执行矩阵乘法（GEMM）。</li>
+</ul>
+<p>关键参数：</p>
+<ul>
+<li>HBM 带宽：NVIDIA A100 = 2 TB/s，H100 = 3.35 TB/s</li>
+<li>HBM 容量：A100 = 80 GB，H100 = 80 GB</li>
+<li>SRAM 带宽：A100 = ~12 TB/s（L2），H100 = ~12 TB/s</li>
+<li>计算能力：A100 = 312 TFLOPS (FP16)，H100 = 989 TFLOPS (FP16)</li>
+</ul>
+<p><strong>自回归解码的瓶颈分析</strong>：</p>
+<p>在 decode 阶段，每一步只处理 1 个 token。对于一个 7B 参数的模型（FP16），模型权重约 14 GB。每一步前向传播需要：</p>
+<pre><code>
+内存搬运量 = 模型权重大小 = 14 GB
+计算量 = 2 × 参数量 × 1 = 2 × 7B × 1 = 14 GFLOPs
+
+内存搬运时间 = 14 GB / 2000 GB/s = 7 ms
+计算时间 = 14 GFLOPS / 312 TFLOPS = 0.045 ms
+
+GPU 利用率 = 计算时间 / (计算时间 + 内存搬运时间)
+           = 0.045 / (0.045 + 7)
+           = 0.64%
+</code></pre>
+<p><strong>结论：自回归解码时，GPU 的算力利用率不到 1%。99% 以上的时间花在等待显存搬运上。</strong></p>
+<h3>3.2 为什么 Batch 解码几乎不增加延迟</h3>
+<p>当 batch size 从 1 增加到 N 时：</p>
+<pre><code>
+内存搬运量 = 模型权重大小 = 14 GB（不变！）
+计算量 = 2 × 参数量 × N = 2 × 7B × N GFLOPs
+
+内存搬运时间 = 14 GB / 2000 GB/s = 7 ms（不变！）
+计算时间 = 2 × 7B × N / 312 TFLOPS = 0.045 × N ms
+
+当 N = 10:
+  总时间 = 7 + 0.45 = 7.45 ms（vs 7 ms，仅增加 6.4%）
+  GPU 利用率 = 0.45 / 7.45 = 6%
+
+当 N = 100:
+  总时间 = 7 + 4.5 = 11.5 ms（vs 7 ms，增加 64%）
+  GPU 利用率 = 4.5 / 11.5 = 39%
+
+当 N = 200:
+  总时间 = 7 + 9 = 16 ms（vs 7 ms，增加 129%）
+  GPU 利用率 = 9 / 16 = 56%
+</code></pre>
+<p><strong>核心洞见</strong>：</p>
+<ul>
+<li>当 batch size 较小时（N < 50），增加 batch size 几乎不增加延迟，因为瓶颈仍在内存搬运。</li>
+<li>当 batch size 增大到一定程度后，计算量开始成为瓶颈，延迟线性增长。</li>
+<li>**最优 batch size** 出现在内存搬运时间 ≈ 计算时间时，此时 GPU 利用率达到 ~50%。</li>
+<h3>3.3 核心公式：GPU 利用率</h3>
+<pre><code>
+GPU 利用率 = T_compute / (T_compute + T_memory)
+
+其中：
+  T_compute = 2 × P × B / FLOPS_peak
+  T_memory = M_model / BW_memory
+
+  P = 模型参数量
+  B = batch size（token 数量）
+  FLOPS_peak = GPU 峰值算力
+  M_model = 模型权重大小（字节数）
+  BW_memory = 显存带宽
+
+最优 batch size（GPU 利用率 = 50%）：
+  B_optimal = M_model × FLOPS_peak / (2 × P × BW_memory)
+
+对于 7B 模型在 A100 上：
+  B_optimal = 14 GB × 312 TFLOPS / (2 × 7B × 2 TB/s)
+            = 14 × 312 / (2 × 7 × 2) × (10^9 / 10^9)
+            ≈ 156
+</code></pre>
+</ol>
+<p>这意味着对于 7B 模型在 A100 上，batch size 约为 156 时 GPU 利用率达到 50%。而大多数在线推理服务的 batch size 远低于此，因此增加 batch size 几乎不增加单步延迟——这正是连续批处理的物理基础。</p>
+<h3>3.4 Prefill 阶段的差异</h3>
+<p>需要注意：上述分析针对 decode 阶段。Prefill 阶段（处理完整 prompt）的特性不同：</p>
+<pre><code>
+Prefill 阶段：
+  内存搬运量 = 模型权重 = 14 GB
+  计算量 = 2 × P × seq_len
+
+当 seq_len = 1000:
+  计算量 = 2 × 7B × 1000 = 14 TFLOPs
+  计算时间 = 14 TFLOPS / 312 TFLOPS = 45 ms
+  内存搬运时间 = 7 ms
+  GPU 利用率 = 45 / (45 + 7) = 86.5%
+</code></pre>
+<p>Prefill 阶段是<strong>计算密集型（compute-bound）</strong>的，GPU 利用率很高。这就是为什么 2025 年的 PD 分离架构将 prefill 和 decode 分开处理——它们的瓶颈特性完全不同。</p>
+<hr>
+<h2>四、横向分析：与其他推理加速技术的关系</h2>
+<h3>4.1 连续批处理 vs 推测解码</h3>
+<p>连续批处理和推测解码是<strong>互补</strong>关系，而非替代关系。</p>
+<table>
+<thead><tr>
+<th>维度</th>
+<th>连续批处理</th>
+<th>推测解码</th>
+</tr></thead><tbody>
+<tr>
+<td>优化目标</td>
+<td>提高 GPU 利用率（多请求共享）</td>
+<td>减少解码步数（多 token 并行验证）</td>
+</tr>
+<tr>
+<td>作用层面</td>
+<td>请求级调度</td>
+<td>算法级优化</td>
+</tr>
+<thead><tr>
+<th>依赖条件</th>
+<th>多个并发请求</th>
+<th>草稿模型 + 高接受率</th>
+</tr></thead><tbody>
+<tr>
+<td>加速效果</td>
+<td>吞吐量 2-24x</td>
+<td>单请求延迟 2-5x</td>
+</tr>
+<tr>
+<td>是否可叠加</td>
+<td>可以同时使用</td>
+<td>可以同时使用</td>
+</tr>
+</tbody></table>
+<p>协同方式：推测解码在连续批处理的框架内运行。每个请求的 decode 步骤中，草稿模型生成多个候选 token，目标模型一次性验证。连续批处理确保 GPU 始终有足够的请求来填满 batch，推测解码确保每个请求的每个 decode 步骤能处理更多 token。</p>
+<h3>4.2 连续批处理 vs 量化</h3>
+<p>量化（Quantization）通过降低模型参数的精度（FP16 → INT8 → INT4）来减少模型大小和内存搬运量。</p>
+<p>关系：</p>
+<ul>
+<li>量化**减小**了 M_model，从而**减少**了 T_memory。</li>
+<li>连续批处理通过增大 B 来**增加** T_compute，使其接近 T_memory。</li>
+<li>两者协同：量化后 T_memory 降低，最优 batch size 也随之降低，但连续批处理仍然可以在更小的 batch size 下实现高 GPU 利用率。</li>
+<pre><code>
+量化前（FP16）：M_model = 14 GB, T_memory = 7 ms
+量化后（INT8）：M_model = 7 GB, T_memory = 3.5 ms
+量化后（INT4）：M_model = 3.5 GB, T_memory = 1.75 ms
+
+INT4 量化后，最优 batch size 从 ~156 降至 ~39
+但 GPU 利用率的提升曲线形状不变——连续批处理仍然有效
+</code></pre>
+<h3>4.3 连续批处理 vs 模型并行</h3>
+</ol>
+<p>模型并行（Tensor Parallelism, Pipeline Parallelism）将大模型分布到多个 GPU 上。</p>
+<p>关系：</p>
+<ul>
+<li>模型并行是连续批处理的**前提条件**——对于超过单 GPU 显存容量的模型，必须先做模型并行，才能进行推理。</li>
+<li>张量并行（TP）在每个 transformer 层内部切分矩阵乘法，需要 AllReduce 通信。TP 增加了通信开销，但不改变连续批处理的基本原理。</li>
+<li>流水线并行（PP）将不同层分配到不同 GPU，引入流水线气泡。PP 与连续批处理的交互更复杂——需要确保不同 stage 的 batch 组成一致。</li>
+<h3>4.4 连续批处理 vs FlashAttention</h3>
+</ol>
+<p>FlashAttention 通过 IO 感知的注意力计算（减少 HBM 访问次数）来加速注意力层。</p>
+<p>关系：</p>
+<ul>
+<li>FlashAttention 降低了注意力计算的 T_memory，从而改变了整体的 compute-bound vs memory-bound 平衡。</li>
+<li>对于长序列（prefill 阶段），FlashAttention 的收益最大——注意力的 O(n^2) 计算量中，内存搬运的占比显著降低。</li>
+<li>对于短序列（decode 阶段），FlashAttention 的收益较小——注意力计算本身不是瓶颈。</li>
+<li>连续批处理和 FlashAttention 是**正交优化**：FlashAttention 优化单次前向传播的效率，连续批处理优化多次前向传播的调度。</li>
+<hr>
+<h2>五、2026 年现状与未来趋势</h2>
+<h3>5.1 当前产业格局</h3>
+</ol>
+<p>截至 2026 年中，连续批处理已成为所有主流推理引擎的标配。关键数据：</p>
+<ul>
+<li>vLLM：GitHub 25k+ stars，被 OpenAI、Anthropic、 Together AI 等采用</li>
+<li>TensorRT-LLM：NVIDIA 官方推理引擎，深度优化 H100/H200 特性</li>
+<li>SGLang：Stanford 团队开发，RadixAttention 实现高效前缀缓存</li>
+<h3>5.2 前沿方向</h3>
+<li>**Disaggregated Serving（分离式服务）**：Prefill 和 Decode 分别在不同的 GPU 集群上执行，通过高速网络传输 KV Cache。代表工作：Splitwise、DistServe。</li>
+<li>**KV Cache 压缩**：通过量化、剪枝、蒸馏等手段压缩 KV Cache 大小，允许更大的 batch size。</li>
+<li>**异构调度**：在混合 GPU 集群（如 A100 + H100 + L40S）中做自适应调度。</li>
+</ul>
+<p>4. <strong>推测解码 + 连续批处理的联合优化</strong>：在连续批处理框架内智能调度推测解码的草稿/验证阶段。</p>
+<h3>5.3 总结</h3>
+<p>连续批处理的核心洞见——"GPU 推理的瓶颈是内存带宽而非算力，因此 batch 解码几乎不增加延迟"——已经成为理解所有推理加速技术的基础。无论是推测解码、量化、模型并行还是 FlashAttention，其价值和效果都需要在连续批处理的框架下理解。</p>
+<p>正如操作系统通过虚拟内存和进程调度让 CPU 资源被充分利用，连续批处理通过 PagedAttention 和迭代级调度让 GPU 资源被充分利用。它是推理时代的"操作系统"——看不见，但不可或缺。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

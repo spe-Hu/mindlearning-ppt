@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>马尔可夫头 — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="markov-head-p3.html">← 上一页</a>
+        <span class="nav-title">马尔可夫头 — 知识卡片</span>
+        <a href="markov-head-p5.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <h1>马尔可夫头 — 视觉化卡片（ljg-card 风格）</h1>
+<blockquote><p>**概念压缩**：马尔可夫头是 DSpark 推测解码系统中的轻量级串行修正模块，仅依赖前一个 token 的嵌入，通过 rank-256 低秩分解生成修正 logits，以几乎为零的计算成本将草稿接受长度提升 ~30%。</p></blockquote>
+<hr>
+<h2>卡片 1：核心概念全景</h2>
+<h3>马尔可夫头 (Markov Head)</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                    马尔可夫头 · 核心概念                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  定义：推测解码中的轻量级串行修正模块                              │
+│  位置：DSpark 推理管线的验证阶段                                  │
+│  功能：修正草稿模型的 logits 分布，提升接受率                      │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                  计算流程                                 │    │
+│  │                                                         │    │
+│  │  embed(q_{i-1})  →  W_A (4096→256)  →  SiLU           │    │
+│  │       ↓                                                 │    │
+│  │  →  W_B (256→128K)  →  Δlogits                         │    │
+│  │                                                         │    │
+│  │  修正后: logits_corrected = logits_draft + Δlogits      │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  关键参数：                                                      │
+│  • Rank: 256                                                    │
+│  • 参数量: 33.8M                                                │
+│  • FLOPs: 67.6 MFLOPs/position                                 │
+│  • 额外延迟: 0.2%-1.3%                                          │
+│  • 接受长度提升: ~30%                                            │
+│                                                                 │
+│  精神内核："只看前一步，修正后一步"                                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 2：数学核心</h2>
+<h3>低秩修正的数学表达</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                    数学核心 · 低秩修正                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  修正公式：                                                      │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  Δlog p(q_i | q_{i-1}) = W_B · σ(W_A · embed(q_{i-1}))  │  │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  矩阵维度：                                                      │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  embed(q_{i-1})  ∈ ℝ^{4096}                          │       │
+│  │  W_A             ∈ ℝ^{256 × 4096}    (下投影)         │       │
+│  │  W_B             ∈ ℝ^{128000 × 256}  (上投影)         │       │
+│  │  Δlog p          ∈ ℝ^{128000}        (修正增量)       │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  成本分析：                                                      │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  Params = 256×4096 + 128000×256 = 33.8M              │       │
+│  │  FLOPs  = 2×(256×4096 + 128000×256) = 67.6M          │       │
+│  │  相对成本 = 67.6M / 8.6G = 0.79% (vs 完整注意力头)    │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  为什么 rank 256 就够了？                                        │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  ||f - f_r||_F ≤ σ_{r+1}(f)                          │       │
+│  │  当 r=256 时，捕获 95%+ 修正能量                       │       │
+│  │  奇异值衰减极快：前 256 个 SV 已足够                    │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 3：横向对比矩阵</h2>
+<h3>马尔可夫头 vs 其他修正方案</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────────┐
+│                    横向对比 · 修正方案                                │
+├────────────┬──────────┬──────────┬──────────┬──────────┬───────────┤
+│ 维度       │ 完整注意力 │ Medusa   │ EAGLE    │ RNN 头   │ 马尔可夫头│
+├────────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 参数量     │ ~67M     │ ~524M    │ ~100M    │ ~33M     │ ~33.8M   │
+│ FLOPs      │ 8.6G     │ 1.05G    │ ~500M    │ 16.8M    │ 67.6M    │
+│ 额外延迟   │ +100%    │ +8-18%   │ +5%      │ +0.3%    │ +0.2-1.3%│
+│ 接受提升   │ ~35%     │ ~25%     │ ~22%     │ ~28%     │ ~30%     │
+│ 信息范围   │ 全局     │ 当前层   │ 特征层   │ 全序列   │ 前1 token │
+│ 可并行性   │ 是       │ 是       │ 是       │ 否       │ 是       │
+│ 部署侵入   │ 高       │ 高       │ 高       │ 中       │ 低       │
+│ 训练复杂度 │ 高       │ 高       │ 高       │ 中       │ 低       │
+├────────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+│ 帕累托最优 │ 否       │ 否       │ 否       │ 接近     │ ★ 是     │
+└────────────┴──────────┴──────────┴──────────┴──────────┴───────────┘
+</code></pre>
+<hr>
+<h2>卡片 4：性能数据仪表板</h2>
+<h3>关键性能指标</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                    性能仪表板 · DSpark + 马尔可夫头               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  接受长度 vs 草稿长度                                            │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  K=4:  ████████████████████████ 2.3 → 3.0 (+30.4%)  │       │
+│  │  K=8:  ████████████████████████████████ 3.8 → 4.9 (+28.9%) │
+│  │  K=12: ████████████████████████████████████ 5.1 → 6.6 (+29.4%) │
+│  │  K=16: ████████████████████████████████████████ 5.1 → 6.6 (+29.4%) │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  端到端吞吐量 (tokens/s, LLaMA-70B)                             │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  基线 (AR):    ████████████████ 45                    │       │
+│  │  SpecInfer:    ██████████████████████████ 81          │       │
+│  │  Medusa:       ██████████████████████████████ 90      │       │
+│  │  EAGLE:        ██████████████████████████████████ 103 │       │
+│  │  DSpark:       ██████████████████████████████████████ 112 │   │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  Rank 消融实验                                                   │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  Rank 32:   ████ +12.3% (延迟+0.01%)                 │       │
+│  │  Rank 64:   ████████ +19.7% (延迟+0.02%)              │       │
+│  │  Rank 128:  ████████████ +25.4% (延迟+0.05%)          │       │
+│  │  Rank 256:  ████████████████ +29.8% (延迟+0.08%) ← 最优│      │
+│  │  Rank 512:  ██████████████████ +31.2% (延迟+0.15%)    │       │
+│  │  Rank 1024: ████████████████████ +31.8% (延迟+0.30%)  │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  结论：Rank 256 是帕累托最优拐点                                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 5：工程审美提炼</h2>
+<h3>三个核心洞察</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                    工程审美 · 三个核心洞察                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  洞察 1: 修正比预测便宜                                          │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  修正: O(r · |V|) = O(256 × 128K) = 32.8M           │       │
+│  │  预测: O(d · |V|) = O(4096 × 128K) = 524.3M          │       │
+│  │  成本比: 修正 / 预测 = 1/16                            │       │
+│  │                                                      │       │
+│  │  启示：在推测解码中，"纠偏"比"重做"便宜得多            │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  洞察 2: 局部性是关键                                            │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  一阶马尔可夫解释率：                                  │       │
+│  │  • 代码: ~85%     • 中文对话: ~72%                    │       │
+│  │  • 英文论文: ~68%  • 数学公式: ~91%                    │       │
+│  │                                                      │       │
+│  │  启示：短草稿场景下，局部修正已经足够                   │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  洞察 3: 低秩是天然正则化                                        │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  Rank 256 的三重角色：                                 │       │
+│  │  1. 计算优化: 将 FLOPs 从 GFLOPs 降到 MFLOPs          │       │
+│  │  2. 正则化: 防止过拟合训练数据中的噪声模式              │       │
+│  │  3. 信息瓶颈: 只保留与修正最相关的信息                  │       │
+│  │                                                      │       │
+│  │  启示：约束即力量，限制即效率                           │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 6：代码速查</h2>
+<h3>核心实现（5 行代码）</h3>
+<pre><code>
+# 马尔可夫头的核心计算（5 行）
+class MarkovHead(nn.Module):
+    def __init__(self, d_embed=4096, vocab_size=128000, rank=256):
+        self.down = nn.Linear(d_embed, rank, bias=False)  # 4096 → 256
+        self.up   = nn.Linear(rank, vocab_size, bias=False)  # 256 → 128K
+        self.act  = nn.SiLU()
+    
+    def forward(self, prev_embed):
+        return self.up(self.act(self.down(prev_embed)))
+        # prev_embed: [B, 4096] → delta_logits: [B, 128000]
+        # FLOPs: ~67.6M | Params: ~33.8M
+</code></pre>
+<hr>
+<h2>卡片 7：可迁移模型</h2>
+<h3>马尔可夫修正的通用框架</h3>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                    可迁移模型 · 通用修正框架                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  通用公式：                                                      │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  ŷ = y_base + W_B · σ(W_A · x_prev)                 │       │
+│  │                                                      │       │
+│  │  其中：                                               │       │
+│  │  • y_base: 基础预测（粗糙但快速）                     │       │
+│  │  • x_prev: 前一步的输入                               │       │
+│  │  • W_A, W_B: 低秩修正矩阵                             │       │
+│  │  • σ: 非线性激活                                      │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  应用场景：                                                      │
+│  ┌──────────────────────────────────────────────────────┐       │
+│  │  1. 推测解码: 修正草稿模型的 logits                    │       │
+│  │  2. 语音识别: 修正声学模型的输出                       │       │
+│  │  3. 机器翻译: 修正翻译模型的流畅度                     │       │
+│  │  4. 推荐系统: 修正推荐模型的上下文偏差                  │       │
+│  │  5. 控制系统: 修正参考轨迹的局部偏差                    │       │
+│  │  6. 图像生成: 修正扩散模型的采样方向                    │       │
+│  └──────────────────────────────────────────────────────┘       │
+│                                                                 │
+│  适用条件：                                                      │
+│  • 基础预测已经"大致正确"                                        │
+│  • 修正模式主要是局部的                                          │
+│  • 额外计算成本需要极低                                          │
+│  • 修正的内在维度远低于输出维度                                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>卡片 8：金句集</h2>
+<pre><code>
+┌─────────────────────────────────────────────────────────────────┐
+│                    金句集                                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  "只看前一步，修正后一步。"                                       │
+│  —— 马尔可夫头的核心哲学                                         │
+│                                                                 │
+│  "Rank 256：不多不少，恰好够用。"                                 │
+│  —— 工程审美的胜利                                               │
+│                                                                 │
+│  "修正比预测便宜一个数量级。"                                     │
+│  —— 推测解码中被忽视的免费午餐                                   │
+│                                                                 │
+│  "不是越复杂越好，而是找到成本和收益的最优折中。"                  │
+│  —— 系统设计的深层智慧                                           │
+│                                                                 │
+│  "完美的修正是不必要的；足够好的修正 + 零成本 = 最优系统。"        │
+│  —— 工程实践的终极洞见                                           │
+│                                                                 │
+│  "一阶修正，零阶成本。"                                          │
+│  —— 六个字浓缩全部精髓                                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

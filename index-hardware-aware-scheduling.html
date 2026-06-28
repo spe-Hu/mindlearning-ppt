@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>硬件感知调度与在线校准 (Hardware-Aware Scheduling) | MindLearning</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f; --bg-soft: #14141f; --surface: #1a1a2e;
+            --primary: #6366f1; --primary-light: #818cf8; --accent: #f59e0b;
+            --text: #e2e8f0; --text-dim: #94a3b8; --text-muted: #64748b;
+            --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+        }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .top-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: rgba(10, 10, 15, 0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .top-nav a { color: var(--primary-light); text-decoration: none; font-size: 14px; font-weight: 500; padding: 6px 14px; border-radius: 8px; transition: all 0.2s; }
+        .top-nav a:hover { background: rgba(99,102,241,0.15); color: #fff; }
+        .top-nav .nav-title { font-family: 'Noto Serif SC', serif; font-size: 14px; font-weight: 600; color: var(--text); text-align: center; flex: 1; }
+        .hero { background: radial-gradient(ellipse at top, rgba(99,102,241,0.15) 0%, transparent 50%), var(--bg); padding: 100px 24px 60px; text-align: center; }
+        .hero h1 { font-family: 'Noto Serif SC', serif; font-size: clamp(32px, 7vw, 56px); font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+        .hero .subtitle { font-size: 18px; color: var(--text-dim); margin-bottom: 32px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+        .section { margin-top: 48px; }
+        .section-title { font-family: 'Noto Serif SC', serif; font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 20px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .card { background: var(--surface); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: inherit; transition: all 0.2s; display: block; position: relative; overflow: hidden; }
+        .card:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.15); }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .card.p1::before { background: #6366f1; }
+        .card.p2::before { background: #8b5cf6; }
+        .card.p3::before { background: #a855f7; }
+        .card.p4::before { background: #d946ef; }
+        .card.p5::before { background: #ec4899; }
+        .card .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; margin-bottom: 12px; }
+        .card.p1 .badge { background: rgba(99,102,241,0.15); color: #818cf8; }
+        .card.p2 .badge { background: rgba(139,92,246,0.15); color: #a78bfa; }
+        .card.p3 .badge { background: rgba(168,85,247,0.15); color: #c084fc; }
+        .card.p4 .badge { background: rgba(217,70,239,0.15); color: #e879f9; }
+        .card.p5 .badge { background: rgba(236,72,153,0.15); color: #f472b6; }
+        .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+        .card p { font-size: 13px; color: var(--text-dim); line-height: 1.6; margin: 0; }
+        .card .meta { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+        @media (max-width: 600px) { .card-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="index.html">← 首页</a>
+        <span class="nav-title">硬件感知调度与在线校准 (Hardware-Aware Scheduling)</span>
+        <a href="hardware-aware-scheduling-p1.html">开始阅读 →</a>
+    </nav>
+    <div class="hero">
+        <h1>硬件感知调度与在线校准</h1>
+        <p class="subtitle">Hardware-Aware Scheduling</p>
+        <p class="subtitle">根据 GPU 实时负载动态调整验证长度，通过顺序温度缩放持续校准分布偏差</p>
+    </div>
+    <div class="container">
+        <div class="section">
+            <div class="section-title">深度分析（5 个维度）</div>
+            <div class="card-grid">
+                <a href="hardware-aware-scheduling-p1.html" class="card p1">
+                    <span class="badge">P1 · 横纵分析</span>
+                    <h3>硬件感知调度与在线校准 — 横纵分析</h3>
+                    <p>根据 GPU 实时负载动态调整验证长度，通过顺序温度缩放持续校准分布偏差</p>
+                    <div class="meta">深度分析 · 横纵分析</div>
+                </a>
+                <a href="hardware-aware-scheduling-p2.html" class="card p2">
+                    <span class="badge">P2 · 经典论文</span>
+                    <h3>硬件感知调度与在线校准 — 经典论文</h3>
+                    <p>根据 GPU 实时负载动态调整验证长度，通过顺序温度缩放持续校准分布偏差</p>
+                    <div class="meta">深度分析 · 经典论文</div>
+                </a>
+                <a href="hardware-aware-scheduling-p3.html" class="card p3">
+                    <span class="badge">P3 · 拆书</span>
+                    <h3>硬件感知调度与在线校准 — 拆书分析</h3>
+                    <p>根据 GPU 实时负载动态调整验证长度，通过顺序温度缩放持续校准分布偏差</p>
+                    <div class="meta">深度分析 · 拆书分析</div>
+                </a>
+                <a href="hardware-aware-scheduling-p4.html" class="card p4">
+                    <span class="badge">P4 · 知识卡片</span>
+                    <h3>硬件感知调度与在线校准 — 知识卡片</h3>
+                    <p>根据 GPU 实时负载动态调整验证长度，通过顺序温度缩放持续校准分布偏差</p>
+                    <div class="meta">深度分析 · 知识卡片</div>
+                </a>
+                <a href="hardware-aware-scheduling-p5.html" class="card p5">
+                    <span class="badge">P5 · 概念解剖</span>
+                    <h3>硬件感知调度与在线校准 — 概念解剖</h3>
+                    <p>根据 GPU 实时负载动态调整验证长度，通过顺序温度缩放持续校准分布偏差</p>
+                    <div class="meta">深度分析 · 概念解剖</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

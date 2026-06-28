@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连续批处理 — 概念解剖 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="continuous-batching-p4.html">← 上一页</a>
+        <span class="nav-title">连续批处理 — 概念解剖</span>
+        <span></span>
+    </nav>
+    <div class="content">
+        <p>#+TITLE: 八维概念解剖：连续批处理 (Continuous Batching)</p>
+<p>#+SUBTITLE: 历史 / 辩证 / 现象 / 语言 / 形式 / 存在 / 美学 / 元哲学</p>
+<p>#+DATE: [2026-06-28 Sat 10:00]</p>
+<p>#+FILETAGS: :learn:ai:inference:batching:</p>
+<p>#+IDENTIFIER: 20260628T100400</p>
+<hr>
+<ul>
+<li>维度一：历史 (History / Diachronic)</li>
+</ul>
+<p>连续批处理从何而来？</p>
+<p>它的历史是一部"GPU 利用率提升史"。2017 年 Transformer 诞生时，推理不是问题——模型小、用户少、GPU 够。2018 年 BERT/GPT-2 的推理延迟在可接受范围内。但 2020 年 GPT-3（1750 亿参数）改变了游戏规则——单次推理需要读取 350 GB 的模型权重，GPU 99% 的时间在等显存搬运。</p>
+<p>关键节点：</p>
+<ul>
+<li>2017：Transformer 诞生，自回归解码成为主流</li>
+<li>2019：NVIDIA FasterTransformer 引入动态批处理雏形</li>
+<li>2022：Orca 正式提出"迭代级调度"——连续批处理的概念诞生</li>
+<li>2023：vLLM/PagedAttention 解决了显存管理问题，连续批处理走向实用</li>
+<li>2024：FastGen/SplitFuse 解决 prefill 阻塞，SGLang/RadixAttention 解决前缀匹配</li>
+<li>2025：PD 分离架构将连续批处理从单 GPU 扩展到集群级</li>
+<li>2026：连续批处理成为推理引擎标配，前沿转向异构调度和多模型共部署</li>
+</ul>
+<p>历史规律：每一代都解决上一代遗留的"最后一个不连续的环节"。Orca 让 decode 连续了，但 prefill 还不连续；FastGen 让 prefill 也连续了，但前缀匹配还不智能；SGLang 让前缀匹配也智能了。这条演进链的方向是"彻底的连续性"——消除一切"等待"和"碎片"。</p>
+<p>历史的讽刺：连续批处理的核心洞见（"搬一次也是搬，搬十次也是搬"）在 2017 年就已经成立——只要自回归解码是内存带宽受限的，batch 处理就几乎不增加延迟。但直到 2022 年才有人将它形式化为一个调度系统。为什么？因为 2017-2021 年模型还不够大，推理延迟问题不够痛。技术突破往往不是"新洞见"，而是"旧洞见 + 新痛点"。</p>
+<ul>
+<li>维度二：辩证 (Dialectics)</li>
+</ul>
+<p>连续批处理的对立面是什么？</p>
+<p>对立面是"确定性"（Determinism）。连续批处理追求"效率"——让 GPU 永远不闲置。但效率的反面是"可预测性"——每个请求的延迟取决于当前 batch 中有多少其他请求、它们的生成长度、是否有 prefill 在进行。连续批处理的延迟是"动态的"、"不可预测的"。</p>
+<p>辩证张力：</p>
+<ul>
+<li>效率 vs 确定性：连续批处理最大化吞吐量，但引入了延迟波动</li>
+<li>共享 vs 隔离：多个请求共享 GPU 资源，但一个请求的异常可能影响其他请求</li>
+<li>动态 vs 静态：动态调度灵活高效，但实现复杂度高</li>
+<li>连续 vs 原子：连续批处理将推理"流式化"，但某些场景需要"原子性"（如 beam search 的完整候选集）</li>
+</ul>
+<p>辩证综合：</p>
+<ul>
+<li>Chunked Prefill：在效率（prefill 与 decode 混合）和确定性（decode 延迟不超标）之间找到平衡</li>
+<li>SLO-aware Scheduling：在吞吐量（尽量多塞请求）和延迟保证（满足 SLO 约束）之间找到平衡</li>
+<li>PD 分离：在资源共享（单 GPU 混合）和资源隔离（不同 GPU 不同阶段）之间找到平衡</li>
+</ul>
+<p>更深层的辩证：连续批处理的本质是"用统计复用（statistical multiplexing）换取效率"——多个请求共享 GPU，就像多个用户共享网络带宽。统计复用的前提是"请求的波动性可以互相抵消"——有些请求快完成，有些刚开始，平均下来 GPU 利用率稳定。但如果所有请求同时到达、同时需要长 prefill，统计复用就失效了。这就是"效率"和"鲁棒性"的永恒辩证。</p>
+<ul>
+<li>维度三：现象 (Phenomenology)</li>
+</ul>
+<p>连续批处理在"显现"什么？</p>
+<p>当你打开 ChatGPT 输入一个问题，看到文字一个接一个地出现——这个"流式输出"的体验背后，就是连续批处理在工作。你看到的每一个 token，都是 GPU 在一次前向传播中"顺带"计算出来的。但 GPU 不只为你一个用户服务——它同时在为几十上百个用户生成 token。</p>
+<p>现象学描述：</p>
+<ul>
+<li>用户视角：一个 token 接一个 token 地出现，流畅、连续</li>
+<li>GPU 视角：一次前向传播处理几百个 token，来自不同用户、不同请求、不同位置</li>
+<li>调度器视角：一个不断变化的"batch 组合"——每毫秒都有请求进出</li>
+<li>显存视角：一页页 KV Cache 被分配、被共享、被释放，像城市的停车位一样不断周转</li>
+</ul>
+<p>连续批处理"显现"的是一种"看不见的共享"。用户感知到的是"专属的 AI 助手"，实际发生的是"几百个用户共享同一块 GPU"。这种"共享的不可见性"是连续批处理成功的标志——就像操作系统的进程调度一样，你感觉不到你的 CPU 在几千个进程之间切换，但事实就是如此。</p>
+<p>更深层的现象：连续批处理让"推理"从"一次性事件"变成了"持续流动"。传统推理是"接收请求 → 完整计算 → 返回结果"的离散过程。连续批处理将推理变成了"持续接收 → 持续计算 → 持续返回"的流式过程。这改变了推理的"时间性"——不再是"一个请求的时间"，而是"所有请求的叠加时间"。</p>
+<ul>
+<li>维度四：语言 (Linguistics)</li>
+</ul>
+<p>"连续批处理"这个名字说了什么？又隐藏了什么？</p>
+<p>"连续"（Continuous）：强调"不中断"。与"静态"（Static）对立——静态批处理是"一批处理完才开始下一批"，有"中断"（等待当前 batch 完成）。连续批处理"不中断"——新请求随时插入，完成请求立即释放。</p>
+<p>"批处理"（Batching）：强调"批量"。与"逐个处理"（One-by-one）对立。批处理暗示"效率来自规模"——一次处理多个比逐个处理更高效。</p>
+<p>名字隐藏了什么？</p>
+<ul>
+<li>"连续批处理"没有暗示"显存管理"这个核心维度。PagedAttention 的贡献不体现在名字中。</li>
+<li>"连续"暗示了"时间上的连续"，但没有暗示"空间上的分页"——KV Cache 的不连续分配恰恰是连续批处理的关键支撑。</li>
+<li>"批处理"是一个古老的计算术语（batch processing from the 1960s），暗示了"批量提交、批量处理"的旧范式。但连续批处理实际上打破了传统批处理的"批量"概念——它不是"凑满一批再处理"，而是"有什么处理什么"。</li>
+</ul>
+<p>名字的隐喻：</p>
+<ul>
+<li>高速公路隐喻：GPU 是高速公路，模型权重搬运是"修路"，token 是"车"。修路的成本固定，车越多越划算。连续批处理就是"不让高速公路空着"。</li>
+<li>餐厅隐喻：GPU 是厨房，模型权重是"菜谱"（每次做菜都要看），token 是"菜"。厨师看一次菜谱可以同时做几道菜——"看一次也是看，看十次也是看"。</li>
+<li>电梯隐喻：电梯上下一次的成本固定，载 1 人和载 10 人的成本几乎相同。连续批处理就是"不让电梯空跑"。</li>
+<li>维度五：形式 (Formalization)</li>
+</ul>
+<p>连续批处理的数学结构是什么？</p>
+<p>核心优化问题：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>max  Throughput = Σ tokens_generated / total_time</p>
+<p>s.t. </p>
+<p>  ∀ iteration i:</p>
+<p>    batch_i ⊆ active_requests</p>
+<table>
+<thead><tr>
+<th>batch_i</th>
+</tr></thead><tbody>
+</tbody></table>
+<p>    Σ KV_cache(request_j) ≤ GPU_memory - model_size</p>
+<p>    latency(request_j) ≤ SLO_max</p>
+<p>  ∀ request j:</p>
+<p>    arrival_time(j) ≤ start_time(j)</p>
+<p>    completion_time(j) - start_time(j) ≤ SLO_total(j)</p>
+<p>#+END_EXAMPLE</p>
+<p>GPU 利用率的形式化：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>η(B) = T_compute(B) / (T_compute(B) + T_memory)</p>
+<p>T_compute(B) = 2 × P × B / FLOPS_peak    [线性增长]</p>
+<p>T_memory = M_model / BW_memory             [常数]</p>
+<p>η(B) = (2PB/F) / (2PB/F + M/BW)</p>
+<p>     = 1 / (1 + MF / (2PB × BW))</p>
+<p>当 B → 0: η → 0 (memory-bound)</p>
+<p>当 B → ∞: η → 1 (compute-bound)</p>
+<p>当 B = MF / (2P × BW): η = 0.5</p>
+<p>dη/dB = (MF / (2P × BW)) / (B + MF / (2P × BW))^2</p>
+<p>       > 0 for all B > 0</p>
+<p>即：GPU 利用率关于 batch size 单调递增，但增速递减（凹函数）</p>
+<p>#+END_EXAMPLE</p>
+<p>调度策略的形式化：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>静态批处理: batch(t) = batch(t+1) = ... = batch(t+T)  [T = max completion time]</p>
+<p>动态批处理: batch(t+1) = (batch(t) \ {completed}) ∪ {new_requests}</p>
+<p>连续批处理: batch(t+1) = schedule(batch(t), queue, memory_state, SLO_constraints)</p>
+<p>其中 schedule() 是一个决策函数，输入：</p>
+<ul>
+<li>batch(t): 当前 batch 组成</li>
+<li>queue: 等待队列</li>
+<li>memory_state: 显存使用状态（块表）</li>
+<li>SLO_constraints: 延迟约束</li>
+</ul>
+<p>最优调度是一个在线优化问题（online optimization），因为未来的请求到达是未知的。</p>
+<p>#+END_EXAMPLE</p>
+<p>PagedAttention 的形式化：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>令 KV_cache(r) 为请求 r 的 KV Cache</p>
+<p>传统方案: KV_cache(r) = contiguous_memory_block(size=seq_len(r) × kv_per_token)</p>
+<p>PagedAttention: KV_cache(r) = {page_i : i ∈ block_table(r)}</p>
+<p>  block_table(r): logical_block → physical_block</p>
+<p>  physical_block: fixed_size (e.g., 16 tokens)</p>
+<p>约束:</p>
+<p>  ∀ r: |KV_cache(r)| = seq_len(r) × kv_per_token  [完整性]</p>
+<p>  ∀ r: block_table(r) 是单射  [每个逻辑块映射到唯一物理块]</p>
+<p>  可选: block_table(r1) ∩ block_table(r2) ≠ ∅  [前缀共享]</p>
+<p>#+END_EXAMPLE</p>
+<ul>
+<li>维度六：存在 (Existentialism)</li>
+</ul>
+<p>连续批处理改变了什么"存在方式"？</p>
+<p>它改变了"推理"的存在方式。在连续批处理之前，推理是"离散的"——一个请求一个请求地处理，每个请求有自己的"开始"和"结束"。连续批处理之后，推理是"连续的"——没有明确的"开始"和"结束"，只有永恒的"流动"。</p>
+<p>对开发者而言：连续批处理将"推理优化"从"手工艺术"变成了"工程基础设施"。以前优化推理需要理解 GPU 架构、手写 CUDA kernel、精心调参。现在只需 <code>pip install vllm</code> 然后设置 <code>max_batch_size=256</code>。这种"去技能化"（deskilling）让开发者可以专注于模型和业务，但也让他们对底层越来越无知。</p>
+<p>对用户而言：连续批处理让"等待"变得可接受。没有连续批处理，ChatGPT 的响应延迟会高得不可接受（因为 GPU 资源不够）。有了连续批处理，即使同时有百万用户在用，每个用户的体验仍然是"流畅的"。连续批处理"隐藏"了规模——它让你感觉不到"百万用户共享同一块 GPU"的事实。</p>
+<p>对 AI 产业而言：连续批处理改变了"推理成本"的经济学。没有连续批处理，推理成本与用户数量线性相关（每个用户需要专属 GPU）。有了连续批处理，推理成本与用户数量的关系是亚线性的（多个用户共享 GPU）——这意味着 AI 服务可以"规模化"而不"破产"。</p>
+<ul>
+<li>维度七：美学 (Aesthetics)</li>
+</ul>
+<p>连续批处理的"美"在哪里？</p>
+<p>结构之美：PagedAttention 将操作系统的虚拟内存管理"移植"到 GPU 显存管理。同样的分页、页表、写时复制——不同的领域，相同的结构。这种"跨领域的结构同构"是数学美的体现。</p>
+<p>效率之美：一个 7B 模型在 A100 上，batch_size=1 时 GPU 利用率 0.64%，batch_size=156 时利用率 50%。从 0.64% 到 50%——同样的 GPU，同样的模型，只是改变了"调度方式"。这种"不增加任何硬件成本就提升 78 倍利用率"的效果，是工程美的体现。</p>
+<p>演进之美：从 Orca 到 vLLM 到 FastGen 到 SGLang，每一代都精确地解决上一代遗留的"最后一个问题"。这种"问题 → 解决 → 新问题 → 新解决"的递进式演进，有一种"自然生长"的有机美感。</p>
+<p>简洁之美：连续批处理的核心洞见极其简洁——"搬一次也是搬，搬十次也是搬"。十个字，概括了整个技术的物理基础。所有复杂的工程实现（页表、调度器、块分配、前缀缓存）都是这十个字的"展开"。</p>
+<ul>
+<li>维度八：元哲学 (Meta-philosophy)</li>
+</ul>
+<p>连续批处理让我们思考什么更深层的问题？</p>
+<p>"闲置"的本质：GPU 99% 的时间在闲置。连续批处理问的是："闲置"是一种浪费还是一种必然？从物理角度看，闲置是"产能过剩"——计算能力远超当前任务的需要。从经济角度看，闲置是"沉没成本"——GPU 已经买了，闲着也是闲着。连续批处理的哲学立场是："闲置是一种可以被消除的浪费"——通过更聪明的调度。</p>
+<p>"共享"的悖论：连续批处理让多个请求共享 GPU。但"共享"意味着"互相影响"——一个请求的延迟取决于其他请求的行为。这在经济学中被称为"公地悲剧"（Tragedy of the Commons）——共享资源被过度使用。连续批处理通过"调度器"（类似"政府"）来管理共享资源，避免公地悲剧。</p>
+<p>"连续"的代价：连续批处理追求"连续性"——消除一切中断和等待。但"连续"的代价是"复杂性"——调度器需要管理页表、处理请求进出、保证 SLO。这反映了一个普遍的哲学命题："连续性"和"简单性"不可兼得。你想要更高的效率，就必须接受更高的复杂性。</p>
+<p>"搬运"的隐喻：连续批处理的核心隐喻是"搬运"——GPU 的主要工作是"搬运"模型权重，而不是"计算"。这颠覆了我们对"计算"的理解——我们以为 GPU 在"思考"，实际上它在"搬砖"。这个隐喻的深层含义是：在很多系统中，"搬运"（数据传输、资源调度）比"生产"（计算、生成）更重要。</p>
+<hr>
+<ul>
+<li>压缩 (Epiphany)</li>
+</ul>
+<p>八维解剖后，连续批处理的精神内核是：</p>
+<p>"搬一次也是搬，搬十次也是搬" —— 在固定成本（内存搬运）主导的系统中，边际成本（增加 batch size）趋近于零，因此最大化边际利用是最优策略。</p>
+<p>这个洞见适用于一切"固定成本主导 + 边际成本低"的系统：高速公路（修路成本高，多一辆车成本为零）、餐厅厨房（厨师看一次菜谱可以同时做几道菜）、电梯（上下一次的成本固定，载多人成本几乎相同）。</p>
+<p>连续批处理的技术价值在于将这个朴素的洞见形式化为一套完整的调度系统——包括迭代级调度、分页显存管理、智能前缀缓存、PD 分离。它的哲学价值在于提醒我们：在很多系统中，"搬运"比"生产"更重要，"调度"比"堆砌"更有效，"共享"比"独占"更经济。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>硬件感知调度与在线校准 — 概念解剖 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="hardware-aware-scheduling-p4.html">← 上一页</a>
+        <span class="nav-title">硬件感知调度与在线校准 — 概念解剖</span>
+        <span></span>
+    </nav>
+    <div class="content">
+        <h1>硬件感知调度与在线校准 — 概念深潜（ljg-learn 风格）</h1>
+<blockquote><p>**概念**：硬件感知调度与在线校准</p></blockquote>
+<blockquote><p>**领域**：推测解码 / LLM 推理加速 / 智能调度 / 模型校准</p></blockquote>
+<blockquote><p>**核心问题**：每次应该猜几个 token？如何持续保持草稿模型和目标模型的分布一致性？</p></blockquote>
+<hr>
+<h2>一、历史维度：从固定到自适应的演化</h2>
+<h3>1.1 固定长度时代（2023）</h3>
+<p>推测解码诞生时，草稿长度 $K$ 是一个超参数。研究者通过实验确定一个"差不多"的值（通常 K=8 或 K=16），然后在所有场景下使用同一个值。</p>
+<p>这种"一刀切"的问题在于：</p>
+<ul>
+<li>简单场景（如 "the cat sat on the"）：可以接受更多 token，但固定 K 限制了收益</li>
+<li>困难场景（如生成罕见专业术语）：大部分被拒绝，但固定 K 浪费了验证计算</li>
+<h3>1.2 自适应萌芽（2024 初）</h3>
+</ol>
+<p>EAGLE 提出了基于置信度阈值的自适应方案：当草稿模型的 top-1 概率低于阈值时停止生成。这比固定 K 好很多，但仍然是"只看草稿模型"的局部优化。</p>
+<h3>1.3 硬件感知觉醒（2024 中）</h3>
+<p>DSpark 提出了两个关键洞察：</p>
+<ol>
+<li>**最优 K 不仅取决于草稿模型，还取决于 GPU 的实时状态**</li>
+<li>**分布偏差不是静态的，需要持续校准**</li>
+<h3>1.4 在线校准成熟（2024 末）</h3>
+</ol>
+<p>顺序温度缩放 + 在线梯度更新，使得系统能够持续适应分布偏差的变化，实现"越跑越准"。</p>
+<hr>
+<h2>二、辩证维度：调度中的对立面</h2>
+<h3>2.1 正题：激进推测（大 K）</h3>
+<ul>
+<li>优势：每轮可能接受更多 token</li>
+<li>劣势：验证成本高，被拒绝时浪费大</li>
+<h3>2.2 反题：保守推测（小 K）</h3>
+<li>优势：验证成本低，拒绝时浪费小</li>
+<li>劣势：每轮前进 token 少，加速效果有限</li>
+<h3>2.3 合题：硬件感知调度</h3>
+</ol>
+<p>根据实时状态动态选择 K：</p>
+<ul>
+<li>高置信度 + GPU 空闲 → 大 K（激进）</li>
+<li>低置信度 + GPU 繁忙 → 小 K（保守）</li>
+<hr>
+<h2>三、现象学维度：调度器"看到"了什么？</h2>
+<h3>3.1 从调度器的视角看推测解码</h3>
+</ol>
+<p>想象你是 DSpark 的调度器。每一轮推测-验证循环中，你看到的是：</p>
+<ol>
+<li>**草稿模型的隐藏状态**：告诉你草稿模型对每个位置的"信心"</li>
+<li>**置信度头的输出**：告诉你每个位置的预估存活概率</li>
+<li>**吞吐量曲线**：告诉你当前 GPU 在不同配置下的验证成本</li>
+</ul>
+<p>4. <strong>温度参数</strong>：告诉你每个位置的当前校准状态</p>
+<p>你的任务是：综合这些信息，决定这一轮验证多少个 token。</p>
+<h3>3.2 调度器的"决策过程"</h3>
+<pre><code>
+轮次 1：输入 "The capital of France is"
+├── 草稿模型生成: [" Paris", " Paris", " is", " the", " most", " beautiful", " city", " in"]
+├── 置信度头:     [0.95, 0.92, 0.85, 0.72, 0.58, 0.42, 0.30, 0.18]
+├── 累积存活:     [0.95, 1.87, 2.72, 3.44, 4.02, 4.44, 4.74, 4.92]
+├── 验证成本:     [450, 820, 1100, 1350, 1680, 1900, 2100, 2250] (tokens/s)
+├── 净收益:       [2.11, 2.32, 2.48, 2.55, 2.39, 2.34, 2.26, 2.19]
+└── 最优 K* = 4 (净收益最大)
+</code></pre>
+<hr>
+<h2>四、形式化维度：数学表达</h2>
+<h3>4.1 调度优化问题</h3>
+<p>$$</p>
+<p>K^* = \arg\max_{K \in \{1, \ldots, K_{\max}\}} \frac{\sum_{i=1}^{K} P_{\text{survive}}(i) + 1}{T_{\text{verify}}(K, B) / \Theta(B)}</p>
+<p>$$</p>
+<h3>4.2 校准优化问题</h3>
+<p>$$</p>
+<p>\min_{\{T_i\}_{i=1}^{K}} \sum_{i=1}^{K} \text{ECE}^{(i)}(T_i)</p>
+<p>$$</p>
+<p>$$</p>
+<p>\text{s.t.} \quad T_i \in [0.5, 3.0], \quad \forall i</p>
+<p>$$</p>
+<h3>4.3 在线更新规则</h3>
+<p>$$</p>
+<p>T_i^{(t+1)} = \Pi_{[0.5, 3.0]}\left(T_i^{(t)} - \eta_t \nabla_{T_i} \mathcal{L}_{\text{NLL}}^{(t)}\right)</p>
+<p>$$</p>
+<p>其中 $\Pi$ 是投影算子，$\eta_t$ 是学习率。</p>
+<hr>
+<h2>五、存在主义维度：调度如何改变系统的"存在方式"？</h2>
+<h3>5.1 从"被动执行"到"主动决策"</h3>
+<p>传统推测解码是"被动执行"——固定 K，不管什么情况都验证 K 个 token。DSpark 是"主动决策"——根据实时状态动态选择 K。</p>
+<h3>5.2 从"静态配置"到"动态适应"</h3>
+<p>传统方案需要人工调参（选择 K、选择阈值）。DSpark 自动适应——不需要人工干预，系统自己找到最优配置。</p>
+<h3>5.3 从"一次性校准"到"持续进化"</h3>
+<p>传统校准是一次性的——在验证集上优化温度，然后固定。DSpark 的在线校准是持续的——温度参数随输入分布变化而持续更新。</p>
+<hr>
+<h2>六、交叉维度：与其他领域的联系</h2>
+<h3>6.1 与在线学习的联系</h3>
+<p>DSpark 的在线校准本质上是一个在线学习问题：</p>
+<p>$$</p>
+<p>\min_{T \in \mathcal{T}} \sum_{t=1}^{T} \ell_t(T)</p>
+<p>$$</p>
+<p>其中 $\ell_t$ 是第 $t$ 轮的 NLL 损失。由于损失函数是凸的（关于 $T$），在线梯度下降可以保证遗憾界（regret bound）为 $O(\sqrt{T})$。</p>
+<h3>6.2 与_bandit_问题的联系</h3>
+<p>调度问题可以看作一个 context-aware multi-armed bandit 问题：</p>
+<ul>
+<li>臂：不同的 K 值</li>
+<li>上下文：草稿模型的隐藏状态 + GPU 状态</li>
+<li>奖励：净收益（接受长度 / 验证成本）</li>
+<h3>6.3 与控制论的联系</h3>
+</ol>
+<p>在线校准是一个反馈控制系统：</p>
+<ul>
+<li>被控对象：草稿模型的输出分布</li>
+<li>控制输入：温度参数 $T_i$</li>
+<li>参考信号：目标模型的分布</li>
+<li>反馈信号：验证结果（接受/拒绝）</li>
+<hr>
+<h2>七、代码实现</h2>
+<pre><code>
+"""
+硬件感知调度与在线校准完整实现
+"""
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import time
+
+class FullDSparkSystem:
+    """
+    完整的 DSpark 系统
+    
+    集成：
+    1. 置信度头（位置级存活概率预估）
+    2. 吞吐量参考曲线（GPU 成本模型）
+    3. 顺序温度缩放（在线校准）
+    4. GPU 内部调度（零 CPU 开销）
+    """
+    
+    def __init__(self, target_model, draft_model, hidden_dim=4096, max_K=32):
+        self.target_model = target_model
+        self.draft_model = draft_model
+        self.max_K = max_K
+        
+        # 置信度头
+        self.conf_head = nn.Linear(hidden_dim, 1).cuda()
+        
+        # 顺序温度参数
+        self.temperatures = nn.Parameter(torch.ones(max_K).cuda())
+        
+        # 吞吐量曲线（查找表）
+        self.throughput_table = {}
+        
+        # 在线统计
+        self.stats = {"round": 0, "total_accepted": 0, "total_draft": 0}
+    
+    def calibrate_throughput(self, device):
+        """阶段 1：预先测算吞吐量曲线"""
+        for B in [1, 2, 4, 8, 16, 32]:
+            for K in [4, 8, 12, 16, 24, 32]:
+                input_ids = torch.randint(0, 32000, (B, K)).to(device)
+                for _ in range(10): self.target_model(input_ids)
+                torch.cuda.synchronize()
+                
+                start = torch.cuda.Event(enable_timing=True)
+                end = torch.cuda.Event(enable_timing=True)
+                start.record()
+                for _ in range(100): self.target_model(input_ids)
+                end.record()
+                torch.cuda.synchronize()
+                
+                elapsed_ms = start.elapsed_time(end) / 100
+                throughput = B * K / (elapsed_ms / 1000)
+                self.throughput_table[(B, K)] = throughput
+    
+    def schedule(self, draft_hidden, batch_size):
+        """阶段 2：动态调度（全 GPU 执行）"""
+        survival_probs = torch.sigmoid(self.conf_head(draft_hidden)).squeeze(-1)
+        
+        gains = []
+        cum_accept = 0.0
+        for K in range(1, min(draft_hidden.shape[0], self.max_K) + 1):
+            cum_accept += survival_probs[K-1].item()
+            cost = self.throughput_table.get((batch_size, K), 1000)
+            gains.append((cum_accept + 1) / cost)
+        
+        return gains.index(max(gains)) + 1
+    
+    def calibrate_online(self, position, draft_logits, target_probs):
+        """阶段 3：在线校准"""
+        T = self.temperatures[position]
+        calibrated_log_probs = F.log_softmax(draft_logits / T, dim=-1)
+        loss = -(target_probs * calibrated_log_probs).sum(-1).mean()
+        
+        loss.backward()
+        with torch.no_grad():
+            self.temperatures[position] -= 0.01 * self.temperatures[position].grad
+            self.temperatures[position].grad = None
+            self.temperatures[position].clamp_(0.5, 3.0)
+    
+    def speculative_generate(self, prompt_ids, max_new_tokens=256):
+        """完整的推测解码生成"""
+        generated = prompt_ids.clone()
+        batch_size = prompt_ids.shape[0]
+        
+        while generated.shape[1] &lt; prompt_ids.shape[1] + max_new_tokens:
+            # 1. 草稿生成
+            draft_result = self.draft_model(generated)
+            draft_hidden = draft_result.hidden_states[-1]
+            draft_logits = draft_result.logits
+            
+            # 2. 动态调度
+            K_opt = self.schedule(draft_hidden[:, -self.max_K:], batch_size)
+            
+            # 3. 在线校准
+            for i in range(K_opt):
+                pos = min(i, self.max_K - 1)
+                target_out = self.target_model(generated)
+                target_probs = F.softmax(target_out.logits[:, -1], dim=-1)
+                self.calibrate_online(pos, draft_logits[:, -K_opt+i], target_probs)
+            
+            # 4. 验证
+            T_pos = self.temperatures[:K_opt]
+            calibrated_logits = draft_logits[:, -K_opt:] / T_pos.unsqueeze(1)
+            
+            # 5. 接受/拒绝（简化）
+            accepted = self._verify_and_accept(generated, K_opt)
+            generated = torch.cat([generated, accepted], dim=1)
+            
+            self.stats["round"] += 1
+        
+        return generated
+
+
+# 使用示例
+if __name__ == "__main__":
+    print("DSpark 硬件感知调度系统")
+    print("=" * 50)
+    print("核心组件：")
+    print("1. 置信度头：预估每个位置的验证存活概率")
+    print("2. 吞吐量曲线：GPU 成本模型")
+    print("3. 顺序温度缩放：在线校准")
+    print("4. GPU 内部调度：零 CPU 开销")
+    print()
+    print("关键指标：")
+    print(f"• 端到端加速: 2.5x")
+    print(f"• 校准误差: ~1% (vs 基线 3-8%)")
+    print(f"• CPU 开销: 0ms")
+    print(f"• 精神内核: '越跑越准，真正自适应'")
+</code></pre>
+<hr>
+<h2>八、总结</h2>
+</ol>
+<p>硬件感知调度与在线校准的本质是<strong>让推测解码系统成为一个自适应的智能体</strong>——它能感知环境（GPU 状态）、做出决策（最优 K）、持续学习（在线校准）。</p>
+<p>这种"越跑越准"的哲学，不仅适用于推测解码，更适用于所有需要在线适应的智能系统。</p>
+<p><strong>一句话总结</strong>：最优不是预设的，而是涌现的。</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>

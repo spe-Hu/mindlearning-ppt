@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连续批处理 — 知识卡片 | MindLearning</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #0a0a0f;
+    --bg-soft: #14141f;
+    --surface: #1a1a2e;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-muted: #64748b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.8;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.top-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.top-nav a:hover {
+    background: rgba(99,102,241,0.15);
+    color: #fff;
+}
+
+.top-nav .nav-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 80px 40px 60px;
+}
+
+h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 20px;
+    margin-top: 40px;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+h1:first-of-type { margin-top: 0; }
+
+h2 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: var(--text);
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-light);
+    margin-top: 32px;
+    margin-bottom: 12px;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+strong { color: var(--text); font-weight: 600; }
+em { color: var(--text-dim); }
+
+a {
+    color: var(--primary-light);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(99,102,241,0.3);
+    transition: all 0.2s;
+}
+a:hover { color: #fff; border-bottom-color: var(--primary-light); }
+
+blockquote {
+    background: linear-gradient(135deg, var(--surface), var(--bg-soft));
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid var(--primary);
+}
+blockquote p { color: var(--text); margin-bottom: 8px; }
+blockquote p:last-child { margin-bottom: 0; }
+
+ul, ol { padding-left: 24px; margin: 16px 0; }
+li { font-size: 16px; line-height: 1.8; color: var(--text-dim); margin-bottom: 8px; }
+li strong { color: var(--text); }
+
+code {
+    background: rgba(99,102,241,0.12);
+    color: var(--primary-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+pre code { background: none; padding: 0; color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+thead { background: rgba(99,102,241,0.15); }
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-light);
+    font-size: 13px;
+}
+td {
+    padding: 12px 16px;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(99,102,241,0.3), transparent);
+    margin: 40px 0;
+}
+
+.progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--gradient);
+    z-index: 1001;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .content { padding: 70px 20px 40px; }
+    .top-nav { padding: 10px 16px; }
+    .top-nav a { font-size: 13px; padding: 5px 10px; }
+    .top-nav .nav-title { font-size: 12px; }
+    table { font-size: 12px; }
+    th, td { padding: 8px 10px; }
+    pre { padding: 14px 16px; }
+    pre code { font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+    .content { padding: 65px 16px 32px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="continuous-batching-p3.html">← 上一页</a>
+        <span class="nav-title">连续批处理 — 知识卡片</span>
+        <a href="continuous-batching-p5.html">下一页 →</a>
+    </nav>
+    <div class="content">
+        <p>#+TITLE: 知识卡片：连续批处理 (Continuous Batching)</p>
+<p>#+SUBTITLE: 核心定义 / GPU 特性 / 三代对比 / PagedAttention / 推测解码协同 / 产业影响</p>
+<p>#+DATE: [2026-06-28 Sat 10:00]</p>
+<p>#+FILETAGS: :card:ai:inference:batching:</p>
+<p>#+IDENTIFIER: 20260628T100200</p>
+<hr>
+<ul>
+<li>卡片 1：核心定义卡</li>
+</ul>
+<p><strong>连续批处理 (Continuous Batching)</strong></p>
+<p>一句话定义：在 GPU 执行每一次前向传播时，动态地将多个请求的不同位置 token 组合成一个 batch，让新请求随时插入、已完成的请求立即释放，实现 GPU 计算单元和显存的全时满载利用。</p>
+<p>核心机制：</p>
+<ul>
+<li>调度粒度从"batch 级"降低到"iteration 级"</li>
+<li>每次前向传播都可以动态调整 batch 组成</li>
+<li>已完成请求立即释放资源，新请求立即插入</li>
+<li>KV Cache 分页管理，按需分配，消除显存碎片</li>
+</ul>
+<p>核心洞见：</p>
+<ul>
+<li>GPU 推理的瓶颈是显存带宽，不是算力</li>
+<li>每次前向传播都需要读取整个模型权重（固定成本）</li>
+<li>增加 batch 中的 token 数量几乎不增加延迟（在阈值内）</li>
+<li>"搬一次也是搬，搬十次也是搬"</li>
+</ul>
+<p>数学表达：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>GPU 利用率 = T_compute / (T_compute + T_memory)</p>
+<p>T_compute = 2 × P × B / FLOPS_peak</p>
+<p>T_memory = M_model / BW_memory</p>
+<p>当 B 较小时：T_compute << T_memory → GPU 利用率 ≈ 0%</p>
+<p>当 B 增大时：T_compute → T_memory → GPU 利用率 → 50%</p>
+<p>当 B 很大时：T_compute >> T_memory → GPU 利用率 → 100%</p>
+<p>#+END_EXAMPLE</p>
+<p>关键数字：</p>
+<ul>
+<li>7B 模型在 A100 上，batch_size=1 时 GPU 利用率 < 1%</li>
+<li>7B 模型在 A100 上，batch_size=10 时 GPU 利用率 ≈ 6%</li>
+<li>7B 模型在 A100 上，batch_size=156 时 GPU 利用率 ≈ 50%</li>
+<li>7B 模型在 A100 上，batch_size=312 时 GPU 利用率 ≈ 67%</li>
+<hr>
+<li>卡片 2：GPU 特性卡</li>
+</ul>
+<p><strong>GPU 推理的内存墙</strong></p>
+<p>为什么 GPU 推理慢？不是因为算力不够，而是因为"搬运"太慢。</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>GPU 架构示意：</p>
+<p>┌─────────────────────────────────────────────┐</p>
+<p>│                GPU Chip                      │</p>
+<p>│                                             │</p>
+<p>│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │</p>
+<p>│  │ SM 0     │  │ SM 1     │  │ SM ...   │  │  ← 计算核心 (SRAM)</p>
+<p>│  │ 99% 闲置 │  │ 99% 闲置 │  │ 99% 闲置 │  │     带宽: ~12 TB/s</p>
+<p>│  └────▲─────┘  └────▲─────┘  └────▲─────┘  │</p>
+<p>│       │              │              │        │</p>
+<p>│       │    等待数据搬运...           │        │</p>
+<p>│       │              │              │        │</p>
+<p>│  ┌────┴──────────────┴──────────────┴────┐  │</p>
+<p>│  │         Memory Controller             │  │  ← 搬运瓶颈</p>
+<p>│  └────────────────▲──────────────────────┘  │     带宽: 2-3.35 TB/s</p>
+<p>│                   │                         │</p>
+<p>└───────────────────┼─────────────────────────┘</p>
+<p>                    │</p>
+<p>          ┌─────────┴─────────┐</p>
+<p>          │      HBM          │  ← 模型权重存储</p>
+<p>          │  14 GB (7B FP16)  │     容量: 80 GB</p>
+<p>          └───────────────────┘</p>
+<p>#+END_EXAMPLE</p>
+<p>关键数据对比表：</p>
+<table>
+<thead><tr>
+<th>GPU</th>
+<th>HBM 带宽</th>
+<th>HBM 容量</th>
+<th>FP16 算力</th>
+<th>7B 模型搬运时间</th>
+<th>7B 模型计算时间 (B=1)</th>
+<th>GPU 利用率</th>
+</tr></thead><tbody>
+<tr>
+<td>A100</td>
+<td>2.0 TB/s</td>
+<td>80 GB</td>
+<td>312 TFLOPS</td>
+<td>7.0 ms</td>
+<td>0.045 ms</td>
+<td>0.64%</td>
+</tr>
+<tr>
+<td>H100</td>
+<td>3.35 TB/s</td>
+<td>80 GB</td>
+<td>989 TFLOPS</td>
+<td>4.2 ms</td>
+<td>0.014 ms</td>
+<td>0.33%</td>
+</tr>
+<thead><tr>
+<th>H200</th>
+<th>4.8 TB/s</th>
+<th>141 GB</th>
+<th>989 TFLOPS</th>
+<th>2.9 ms</th>
+<th>0.014 ms</th>
+<th>0.48%</th>
+</tr></thead><tbody>
+<tr>
+<td>L40S</td>
+<td>864 GB/s</td>
+<td>48 GB</td>
+<td>362 TFLOPS</td>
+<td>16.2 ms</td>
+<td>0.039 ms</td>
+<td>0.24%</td>
+</tr>
+</tbody></table>
+<p>核心结论：</p>
+<ul>
+<li>所有 GPU 在 batch_size=1 时利用率都 < 1%</li>
+<li>H100 的算力是 A100 的 3.2x，但利用率反而更低（因为搬运更快了，但计算也更快了，搬运仍然是瓶颈）</li>
+<li>增加 batch size 是提升利用率的唯一途径</li>
+<hr>
+<li>卡片 3：三代批处理对比卡</li>
+</ul>
+<p><strong>静态 → 动态 → 连续批处理</strong></p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>=== 静态批处理 (Static Batching) ===</p>
+<p>时间线：</p>
+<p>Batch 1:</p>
+<p>  请求1: [prefill][decode]...[decode][EOS] ← 20步</p>
+<p>  请求2: [prefill][decode]...[decode]......[decode][EOS] ← 200步</p>
+<p>  GPU:   |← 必须等所有请求完成 →|</p>
+<table>
+<thead><tr>
+<th>← 请求1完成后闲置180步 →</th>
+</tr></thead><tbody>
+</tbody></table>
+<p>特点：</p>
+<p>✓ 实现简单</p>
+<p>✗ 木桶效应（最慢请求决定 batch 时间）</p>
+<p>✗ 新请求必须等待当前 batch 完成</p>
+<p>✗ GPU 利用率: 10-30%</p>
+<p>=== 动态批处理 (Dynamic Batching) ===</p>
+<p>时间线：</p>
+<p>  请求1: [prefill][decode][decode][EOS] → 完成，替换为请求4</p>
+<p>  请求2: [prefill][decode]...[decode][EOS] → 完成，替换为请求5</p>
+<p>  请求3: [prefill][decode]...[decode]......[decode]...</p>
+<p>  请求4:            [prefill][decode][EOS] → 完成</p>
+<p>  请求5:                     [prefill]...</p>
+<p>特点：</p>
+<p>✓ 请求完成后可立即替换</p>
+<p>✓ 新请求不必等待整个 batch 完成</p>
+<p>✗ 仍需 padding 对齐</p>
+<p>✗ KV Cache 连续分配，碎片化严重</p>
+<p>✗ GPU 利用率: 40-60%</p>
+<p>=== 连续批处理 (Continuous Batching) ===</p>
+<p>时间线：</p>
+<p>Iteration 1: [请求1-token1, 请求2-token1, 请求3-token1]</p>
+<p>Iteration 2: [请求1-token2, 请求2-token2, 请求3-token2, 请求4-prefill-chunk1]</p>
+<p>Iteration 3: [请求1-EOS→移除, 请求2-token3, 请求3-token3, 请求4-prefill-chunk2, 请求5-新插入]</p>
+<p>Iteration 4: [请求2-token4, 请求3-token4, 请求4-decode1, 请求5-prefill-chunk1]</p>
+<p>特点：</p>
+<p>✓ 每次 iteration 动态调整 batch</p>
+<p>✓ 新请求随时插入，完成请求立即移除</p>
+<p>✓ KV Cache 分页管理，零碎片</p>
+<p>✓ Chunked Prefill 避免阻塞</p>
+<p>✓ GPU 利用率: 70-95%</p>
+<p>#+END_EXAMPLE</p>
+<p>性能对比表：</p>
+<table>
+<thead><tr>
+<th>指标</th>
+<th>静态批处理</th>
+<th>动态批处理</th>
+<th>连续批处理</th>
+</tr></thead><tbody>
+<tr>
+<td>吞吐量</td>
+<td>1x (baseline)</td>
+<td>2-4x</td>
+<td>4-24x</td>
+</tr>
+<tr>
+<td>P50 延迟</td>
+<td>高</td>
+<td>中</td>
+<td>低</td>
+</tr>
+<thead><tr>
+<th>P99 延迟</th>
+<th>极高</th>
+<th>高</th>
+<th>低</th>
+</tr></thead><tbody>
+<tr>
+<td>GPU 利用率</td>
+<td>10-30%</td>
+<td>40-60%</td>
+<td>70-95%</td>
+</tr>
+<tr>
+<td>显存效率</td>
+<td>20-40%</td>
+<td>40-60%</td>
+<td>95%+</td>
+</tr>
+<thead><tr>
+<th>实现复杂度</th>
+<th>低</th>
+<th>中</th>
+<th>高</th>
+</tr></thead><tbody>
+<tr>
+<td>代表系统</td>
+<td>早期 TF Serving</td>
+<td>FasterTransformer</td>
+<td>vLLM/TRT-LLM</td>
+</tr>
+</tbody></table>
+<hr>
+<ul>
+<li>卡片 4：PagedAttention 卡</li>
+</ul>
+<p><strong>PagedAttention：KV Cache 的虚拟内存</strong></p>
+<p>核心类比：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>操作系统虚拟内存                    PagedAttention</p>
+<p>─────────────────                  ──────────────</p>
+<p>虚拟地址空间                       逻辑 KV Cache</p>
+<p>物理内存页框                       物理显存块</p>
+<p>页表 (Page Table)                  块表 (Block Table)</p>
+<p>4KB 页                            16 token 块</p>
+<p>按需分页                           按需分配块</p>
+<p>Copy-on-Write                     前缀共享 (CoW)</p>
+<p>LRU 页面替换                      LRU 块替换</p>
+<p>TLB 缓存映射                      Block Table 缓存</p>
+<p>内存碎片问题：</p>
+<p>  进程A: [████████░░░░░░] → 内部碎片 30%</p>
+<p>  进程B: [████████████████░░░░] → 内部碎片 20%</p>
+<p>  间隙: [░░░░] → 外部碎片</p>
+<p>  PagedAttention：</p>
+<p>  请求1: [块3][块7][块12] → 内部碎片 <5% (仅最后一块)</p>
+<p>  请求2: [块1][块5][块9][块14] → 无外部碎片 (块大小相同)</p>
+<p>#+END_EXAMPLE</p>
+<p>KV Cache 大小计算：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>每个 token 的 KV Cache = 2 × n_layers × d_head × n_heads × dtype_size</p>
+<p>LLaMA-7B (32层, 4096维, 32头, FP16):</p>
+<p>  = 2 × 32 × 128 × 32 × 2 bytes</p>
+<p>  = 524,288 bytes = 512 KB / token</p>
+<p>LLaMA-70B (80层, 8192维, 64头, FP16):</p>
+<p>  = 2 × 80 × 128 × 64 × 2 bytes</p>
+<p>  = 2,621,440 bytes = 2.5 MB / token</p>
+<p>显存占用示例 (LLaMA-7B):</p>
+<p>  模型权重: 14 GB</p>
+<p>  100 请求 × 1000 token × 512 KB = 51.2 GB</p>
+<p>  总计: 65.2 GB → 需要 A100 80GB</p>
+<p>  使用 PagedAttention 后:</p>
+<p>  显存浪费 < 5% → 可支持 ~140 个并发请求 (vs 连续分配的 ~80 个)</p>
+<p>#+END_EXAMPLE</p>
+<p>前缀共享 (Copy-on-Write)：</p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>场景：多个请求共享 system prompt</p>
+<p>System Prompt: "You are a helpful assistant..." (100 tokens)</p>
+<p>请求1: [System Prompt][User: Hello][Response...]</p>
+<p>请求2: [System Prompt][User: How are you][Response...]</p>
+<p>请求3: [System Prompt][User: Tell me about AI][Response...]</p>
+<p>传统方案：</p>
+<p>  请求1 的 KV Cache: [System Prompt KV = 51.2 MB] [User KV] [Response KV]</p>
+<p>  请求2 的 KV Cache: [System Prompt KV = 51.2 MB] [User KV] [Response KV]</p>
+<p>  请求3 的 KV Cache: [System Prompt KV = 51.2 MB] [User KV] [Response KV]</p>
+<p>  总 System Prompt KV: 153.6 MB (重复 3 次)</p>
+<p>PagedAttention：</p>
+<p>  物理块: [块1-3: System Prompt KV] [块4: 请求1 User] [块5: 请求2 User] [块6: 请求3 User] ...</p>
+<p>  请求1 块表: [块1, 块2, 块3, 块4, ...]</p>
+<p>  请求2 块表: [块1, 块2, 块3, 块5, ...]  ← 共享块1-3</p>
+<p>  请求3 块表: [块1, 块2, 块3, 块6, ...]  ← 共享块1-3</p>
+<p>  总 System Prompt KV: 51.2 MB (只存 1 次)</p>
+<p>  节省: 102.4 MB (67%)</p>
+<p>#+END_EXAMPLE</p>
+<hr>
+<ul>
+<li>卡片 5：与推测解码协同卡</li>
+</ul>
+<p><strong>连续批处理 + 推测解码 = 双重加速</strong></p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>两种优化的互补关系：</p>
+<p>连续批处理：</p>
+<p>  优化维度：请求间并行</p>
+<p>  核心思想：多个请求共享同一次模型权重读取</p>
+<p>  效果：吞吐量提升 4-24x</p>
+<p>  作用层面：请求级调度</p>
+<p>推测解码：</p>
+<p>  优化维度：请求内并行</p>
+<p>  核心思想：用草稿模型猜测多个 token，目标模型一次验证</p>
+<p>  效果：单请求延迟降低 2-5x</p>
+<p>  作用层面：算法级优化</p>
+<p>协同效果：</p>
+<p>  ┌─────────────────────────────────────────┐</p>
+<p>  │         GPU 一次前向传播                  │</p>
+<p>  │                                         │</p>
+<p>  │  请求1: [draft: t1,t2,t3] [verify: ok]  │ ← 推测解码</p>
+<p>  │  请求2: [draft: t1,t2] [verify: ok]     │ ← 推测解码</p>
+<p>  │  请求3: [draft: t1,t2,t3,t4] [verify]   │ ← 推测解码</p>
+<p>  │  请求4: [decode: t1]                    │ ← 普通解码</p>
+<p>  │  ...                                    │</p>
+<p>  │  请求N: [decode: t1]                    │ ← 普通解码</p>
+<p>  │                                         │</p>
+<p>  │  ← 连续批处理：多个请求共享模型权重读取 → │</p>
+<p>  └─────────────────────────────────────────┘</p>
+<p>叠加效果：</p>
+<p>  单独连续批处理: 吞吐量 4-24x</p>
+<p>  单独推测解码: 单请求速度 2-5x</p>
+<p>  两者叠加: 有效吞吐量 8-100x+ (理论值，实际受接受率和 batch size 限制)</p>
+<p>#+END_EXAMPLE</p>
+<p>协同约束：</p>
+<ul>
+<li>推测解码增加计算量（草稿模型 + 验证），可能使 batch 更快进入 compute-bound 区域</li>
+<li>连续批处理的 batch size 需要为推测解码"留出"计算预算</li>
+<li>最优配置：batch_size × draft_length ≈ B_optimal</li>
+<hr>
+<li>卡片 6：产业影响卡</li>
+</ul>
+<p><strong>连续批处理的产业影响</strong></p>
+<p>#+BEGIN_EXAMPLE</p>
+<p>推理引擎生态 (2026):</p>
+<p>┌────────────────────────────────────────────────────┐</p>
+<p>│                  推理引擎生态                        │</p>
+<p>├──────────┬──────────┬──────────┬──────────┬────────┤</p>
+<p>│  vLLM    │ TRT-LLM  │  SGLang  │ FastGen  │  TGI   │</p>
+<p>│  25k★    │ NVIDIA   │ Stanford │ MSFT     │  HF    │</p>
+<p>│          │          │          │          │        │</p>
+<p>│ Paged    │ In-flight│ Radix    │ Split    │ Conti- │</p>
+<p>│ Attn     │ Batch    │ Attn     │ Fuse     │ nuous  │</p>
+<p>│          │          │          │          │        │</p>
+<p>│ OpenAI   │ NVIDIA   │ Anthro-  │ Azure    │ Hugging│</p>
+<p>│ Together │ 生态     │ pic      │ OpenAI   │ Face   │</p>
+<p>└──────────┴──────────┴──────────┴──────────┴────────┘</p>
+<p>成本影响：</p>
+<p>  无连续批处理: 需要 100 GPU 服务 ChatGPT 级别用户量</p>
+<p>  有连续批处理: 需要 5-10 GPU (吞吐量提升 10-20x)</p>
+<p>  成本节省: 80-95%</p>
+<p>技术栈层次：</p>
+<p>  应用层: ChatGPT / Claude / Gemini / 通义千问</p>
+<p>    ↑</p>
+<p>  推理引擎: vLLM / TRT-LLM / SGLang (连续批处理)</p>
+<p>    ↑</p>
+<p>  基础库: CUDA / cuBLAS / FlashAttention</p>
+<p>    ↑</p>
+<p>  硬件: NVIDIA H100/H200/B200</p>
+<p>关键趋势 (2026):</p>
+<ol>
+<li>PD 分离成为大规模部署标配</li>
+<li>KV Cache 压缩 (量化/剪枝) 进一步扩大 batch size</li>
+<li>异构 GPU 集群的自适应调度</li>
+</ul>
+<p>  4. 推测解码 + 连续批处理的联合优化</p>
+<p>  5. 多模型共部署的 batch 复用</p>
+<p>#+END_EXAMPLE</p>
+<hr>
+<ul>
+<li>卡片 7：核心公式卡</li>
+</ul>
+<p><strong>连续批处理核心公式速查</strong></p>
+<p>#+BEGIN_EXAMPLE</p>
+<ol>
+<li>GPU 利用率公式：</li>
+</ul>
+<p>   η = T_compute / (T_compute + T_memory)</p>
+<p>     = (2PB/F) / (2PB/F + M/BW)</p>
+<p>   P=参数量, B=batch_size, F=FLOPS_peak, M=模型大小, BW=带宽</p>
+<ol>
+<li>最优 batch size (η=50%)：</li>
+</ul>
+<p>   B_opt = M × F / (2P × BW)</p>
+<p>   对于 7B + A100: B_opt ≈ 156</p>
+<p>   对于 70B + A100: B_opt ≈ 156 (与参数量无关！)</p>
+<p>   对于 7B + H100: B_opt ≈ 249</p>
+<ol>
+<li>KV Cache 大小：</li>
+</ul>
+<p>   KV_size = 2 × L × d_h × n_h × dtype × seq_len</p>
+<p>   L=层数, d_h=头维度, n_h=头数</p>
+<p>4. 最大并发请求数：</p>
+<p>   N_max = (GPU_memory - M_model) / (KV_per_token × avg_seq_len)</p>
+<p>   7B + A100 80GB: N_max ≈ (80-14) / (0.5MB × 1000) ≈ 132</p>
+<p>5. 吞吐量：</p>
+<p>   Throughput = N_active × tokens_per_step / step_time</p>
+<p>   step_time ≈ T_memory (当 B < B_opt 时)</p>
+<p>   step_time ≈ T_compute (当 B > B_opt 时)</p>
+<p>6. 延迟 vs 吞吐量权衡：</p>
+<p>   延迟敏感: B = 1-10 (低延迟, 低吞吐量)</p>
+<p>   吞吐量优先: B = B_opt (高吞吐量, 中等延迟)</p>
+<p>   过犹不及: B >> B_opt (高延迟, GPU 计算瓶颈)</p>
+<p>#+END_EXAMPLE</p>
+    </div>
+    <div class="progress" id="progress"></div>
+    <script>
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight > 0) {
+            document.getElementById('progress').style.width = (scrollTop / docHeight * 100) + '%';
+        }
+    });
+    </script>
+</body>
+</html>
